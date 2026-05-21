@@ -1,12 +1,12 @@
 package ar.edu.utn.frba.dds;
 
-public class Telefono extends MedioDeContacto{
+public class Telefono extends MedioDeContacto {
   public Telefono(String valor) {
     super(valor);
   }
 
   @Override
   public void enviarMensaje() {
-    //TODO - implementar
+    System.out.println("Enviando mensaje a " + valor);
   }
 }

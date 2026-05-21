@@ -1,25 +1,38 @@
 package ar.edu.utn.frba.dds;
 
-public class NecesidadExtraordinaria extends Necesidad{
-  private Integer cantidadObjetivoPorPeriodo;
-  private String periodoDescripcion;
-  private Integer cantidadRecibidaEnPeriodo;
+public class NecesidadExtraordinaria extends Necesidad {
+  private Integer cantidadRequerida;
+  private Integer cantidadRecibida;
 
-  public NecesidadExtraordinaria(Subcategoria subcategoria, String descripcion, Integer cantidadObjetivoPorPeriodo, String periodoDescripcion, Integer cantidadRecibidaEnPeriodo) {
+  public NecesidadExtraordinaria(Subcategoria subcategoria, String descripcion, Integer cantidadRequerida, Integer cantidadRecibida) {
     super(subcategoria, descripcion);
-    this.cantidadObjetivoPorPeriodo = cantidadObjetivoPorPeriodo;
-    this.periodoDescripcion = periodoDescripcion;
-    this.cantidadRecibidaEnPeriodo = cantidadRecibidaEnPeriodo;
+    validarCantidadRequerida(cantidadRequerida);
+    validarCantidadNoNegativa(cantidadRecibida);
+
+    this.cantidadRequerida = cantidadRequerida;
+    this.cantidadRecibida = cantidadRecibida;
   }
 
   @Override
-  public Boolean estaSatisfecha() { //TODO - implementar
-    return null;
+  public Boolean estaSatisfecha() {
+    return cantidadRecibida >= cantidadRequerida;
   }
 
-  public void registrarRecepcion(Integer cantidad){//TODO - implementar
+  @Override
+  public void registrarRecepcion(Integer cantidad) {
+    validarCantidadNoNegativa(cantidad);
+    this.cantidadRecibida += cantidad;
   }
 
-  public void reiniciarPeriodo(){//TODO - implementar
+  private void validarCantidadRequerida(Integer cantidad) {
+    if (cantidad == null || cantidad <= 0) {
+      throw new IllegalArgumentException("La cantidad requerida debe ser mayor a cero");
+    }
+  }
+
+  private void validarCantidadNoNegativa(Integer cantidad) {
+    if (cantidad == null || cantidad < 0) {
+      throw new IllegalArgumentException("La cantidad no puede ser negativa");
+    }
   }
 }

@@ -41,4 +41,12 @@ public class Donacion {
   public EstadoDonacion getEstado() {
     return estado;
   }
+
+  public Subcategoria getSubcategoria() {
+    return this.subcategoria;
+  }
+
+  public Integer getCantidad() {
+    return this.cantidad;
+  }
 }

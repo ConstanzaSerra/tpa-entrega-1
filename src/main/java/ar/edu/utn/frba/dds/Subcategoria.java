@@ -13,6 +13,7 @@ public class Subcategoria {
     this.esPeredecedero = esPeredecedero;
   }
 
+
   public String getNombre() {
     return nombre;
   }

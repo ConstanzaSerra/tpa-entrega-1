@@ -38,14 +38,23 @@ public class ImportadorDonantesCSV {
         Optional<PersonaDonante> existente = repo.buscarPorEmail(email);
 
         if (existente.isPresent()) {
-          // TODO: actualizar datos del donante existente
-          procesados.add(existente.get());
-        } else {
-          PersonaDonante nuevo = parsearLinea(campos);
-          if (nuevo != null) {
-            repo.guardar(nuevo);
-            procesados.add(nuevo);
+          PersonaDonante donante = existente.get();
+          String nuevoNombre = campos[COL_NOMBRE].trim();
+          String nuevoTelefono = campos[COL_TELEFONO].trim();
+
+          donante.actualizarEmail(campos[COL_EMAIL].trim());
+          donante.actualizarTelefono(nuevoTelefono);
+
+          if (donante instanceof PersonaHumana humana) {
+            String[] partes = nuevoNombre.split(" ", 2);
+            humana.setNombre(partes[0]);
+            humana.setApellido(partes.length > 1 ? partes[1] : "");
+          } else if (donante instanceof PersonaJuridica juridica) {
+            juridica.setRazonSocial(nuevoNombre);
           }
+
+          repo.guardar(donante);
+          procesados.add(donante);
         }
       }
 

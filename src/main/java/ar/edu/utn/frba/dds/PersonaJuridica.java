@@ -20,4 +20,8 @@ public class PersonaJuridica extends PersonaDonante {
   public void agregarRepresentante(Representante representante){
     this.representantes.add(representante);
   }
+
+  public void setRazonSocial(String razonSocial) {
+    this.razonSocial = razonSocial;
+  }
 }

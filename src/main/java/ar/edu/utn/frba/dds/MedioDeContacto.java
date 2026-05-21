@@ -1,7 +1,7 @@
 package ar.edu.utn.frba.dds;
 
 public abstract class MedioDeContacto {
-  public String valor;
+  private String valor;  // private, no public
 
   public MedioDeContacto(String valor) {
     this.valor = valor;
@@ -11,6 +11,9 @@ public abstract class MedioDeContacto {
     return valor;
   }
 
-  public abstract void enviarMensaje(); //TODO - creé este metodo abstracto porque todas las subclases lo usan
+  public void setValor(String valor) {  // esto es lo que faltaba
+    this.valor = valor;
+  }
 
+  public abstract void enviarMensaje();
 }

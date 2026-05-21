@@ -5,6 +5,12 @@ public class NecesidadExtraordinaria extends Necesidad{
   private String periodoDescripcion;
   private Integer cantidadRecibidaEnPeriodo;
 
+  public NecesidadExtraordinaria(Subcategoria subcategoria, String descripcion, Integer cantidadObjetivoPorPeriodo, String periodoDescripcion, Integer cantidadRecibidaEnPeriodo) {
+    super(subcategoria, descripcion);
+    this.cantidadObjetivoPorPeriodo = cantidadObjetivoPorPeriodo;
+    this.periodoDescripcion = periodoDescripcion;
+    this.cantidadRecibidaEnPeriodo = cantidadRecibidaEnPeriodo;
+  }
 
   @Override
   public Boolean estaSatisfecha() { //TODO - implementar

@@ -10,4 +10,5 @@ public class Email extends MedioDeContacto {
   public void enviarMensaje() {
     //TODO - implementar
   }
+
 }

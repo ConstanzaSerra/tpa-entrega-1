@@ -25,11 +25,8 @@ public class Donacion {
   public void avanzarEstado() {
     switch (estado) {
       case EN_DEPOSITO:
-        // No se puede avanzar sin asignar una entidad primero.
-        // La asignación se hace mediante asignarEntidad().
         throw new IllegalStateException(
             "Para avanzar desde EN_DEPOSITO debe usarse asignarEntidad(EntidadBeneficiaria).");
-
       case ASIGNACION_REALIZADA:
         estado = EstadoDonacion.LISTA_PARA_ENTREGAR;
         break;
@@ -60,7 +57,6 @@ public class Donacion {
     }
   }
 
-
   public void asignarEntidad(EntidadBeneficiaria entidadBeneficiaria) {
     if (estado != EstadoDonacion.EN_DEPOSITO) {
       throw new IllegalStateException(
@@ -69,7 +65,6 @@ public class Donacion {
     this.entidadAsignada = entidadBeneficiaria;
     this.estado = EstadoDonacion.ASIGNACION_REALIZADA;
   }
-
 
   public void marcarEntregaFallida(String justificacion) {
     if (estado != EstadoDonacion.EN_TRASLADO) {
@@ -80,7 +75,6 @@ public class Donacion {
     this.estado = EstadoDonacion.ENTREGA_FALLIDA;
   }
 
-
   public void marcarVencida() {
     if (estado == EstadoDonacion.ENTREGADA || estado == EstadoDonacion.VENCIDA) {
       throw new IllegalStateException(
@@ -89,13 +83,35 @@ public class Donacion {
     this.estado = EstadoDonacion.VENCIDA;
   }
 
-  // Getters
-  public EstadoDonacion getEstado() { return estado; }
-  public Subcategoria getSubcategoria() { return subcategoria; }
-  public int getCantidad() { return cantidad; }
-  public String getUnidadMedida() { return unidadMedida; }
-  public LocalDate getFechaRegistro() { return fechaRegistro; }
-  public PersonaDonante getDonante() { return donante; }
-  public EntidadBeneficiaria getEntidadAsignada() { return entidadAsignada; }
-  public String getJustificacionFallida() { return justificacionFallida; }
+  public EstadoDonacion getEstado() {
+    return estado;
+  }
+
+  public Subcategoria getSubcategoria() {
+    return subcategoria;
+  }
+
+  public int getCantidad() {
+    return cantidad;
+  }
+
+  public String getUnidadMedida() {
+    return unidadMedida;
+  }
+
+  public LocalDate getFechaRegistro() {
+    return fechaRegistro;
+  }
+
+  public PersonaDonante getDonante() {
+    return donante;
+  }
+
+  public EntidadBeneficiaria getEntidadAsignada() {
+    return entidadAsignada;
+  }
+
+  public String getJustificacionFallida() {
+    return justificacionFallida;
+  }
 }

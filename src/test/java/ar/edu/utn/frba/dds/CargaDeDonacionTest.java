@@ -13,6 +13,7 @@ class CargaDeDonacionTest {
 
   private PersonaDonante donante;
   private Subcategoria sillas;
+  private Subcategoria mesas;
   private Subcategoria fideos;
 
   @BeforeEach
@@ -26,6 +27,7 @@ class CargaDeDonacionTest {
     Categoria alimentos = Categoria.ALIMENTOS;
 
     sillas = new Subcategoria("Sillas", muebles,   true,  false);
+    mesas = new Subcategoria("Mesas", muebles, true, false);
     fideos = new Subcategoria("Fideos", alimentos, false, true);
   }
 
@@ -46,7 +48,7 @@ class CargaDeDonacionTest {
   void segmentarAgrupaCorrectamentePorSubcategoria() {
     Bien silla1 = new BienSimple("Silla A", null, sillas, 6, "unidades");
     Bien silla2 = new BienSimple("Silla B", null, sillas, 4, "unidades");
-    Bien mesa   = new BienSimple("Mesa",    null, fideos, 1, "unidades");
+    Bien mesa   = new BienSimple("Mesa",    null, mesas, 1, "unidades");
 
     CargaDeDonacion carga = new CargaDeDonacion("Donación mixta", LocalDate.now(), donante,
         new ArrayList<>(List.of(silla1, silla2, mesa)));

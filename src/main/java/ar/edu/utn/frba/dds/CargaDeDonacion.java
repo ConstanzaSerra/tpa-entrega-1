@@ -32,7 +32,11 @@ public class CargaDeDonacion {
           ? ((BienPercibible) bien).getFechaVencimiento()
           : null;
 
-      ClaveSegmentacion clave = new ClaveSegmentacion(bien.getSubcategoria(), fechaVencimiento);
+      ClaveSegmentacion clave = new ClaveSegmentacion(
+          bien.getSubcategoria(),
+          fechaVencimiento,
+          bien.getUnidadDeMedida()
+      );
       cantidadPorClave.merge(clave, bien.getCantidad(), Integer::sum);
     }
 
@@ -40,12 +44,12 @@ public class CargaDeDonacion {
         .map(entry -> new Donacion(
             entry.getKey().subcategoria(),
             entry.getValue(),
-            EstadoDonacion.EN_DEPOSITO,
-            this.fecha,
-            this.donante
+            entry.getKey().unidadMedida(),
+            this.donante,
+            this.fecha
         ))
         .collect(Collectors.toList());
   }
 
-  private record ClaveSegmentacion(Subcategoria subcategoria, LocalDate fechaVencimiento) {}
+  private record ClaveSegmentacion(Subcategoria subcategoria, LocalDate fechaVencimiento, String unidadMedida) {}
 }

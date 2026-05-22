@@ -26,4 +26,7 @@ public abstract class Bien {
   public Integer getCantidad() {
     return cantidad;
   }
+
+  public String getUnidadDeMedida() { return unidadDeMedida;
+  }
 }

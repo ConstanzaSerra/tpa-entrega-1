@@ -22,4 +22,18 @@ public abstract class PersonaDonante {
   public MedioDeContacto getMedioDeContactoPredeterminado() {
     return medioDeContactoPredeterminado;
   }
+
+  public void actualizarEmail(String nuevoEmail) {
+    medioDeContactos.stream()
+        .filter(m -> m instanceof Email)
+        .findFirst()
+        .ifPresent(m -> m.setValor(nuevoEmail));
+  }
+
+  public void actualizarTelefono(String nuevoTelefono) {
+    medioDeContactos.stream()
+        .filter(m -> m instanceof Telefono)
+        .findFirst()
+        .ifPresent(m -> m.setValor(nuevoTelefono));
+  }
 }

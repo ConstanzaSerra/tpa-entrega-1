@@ -1,6 +1,6 @@
 package ar.edu.utn.frba.dds;
 
-public class WhatsApp extends MedioDeContacto{
+public class WhatsApp extends MedioDeContacto {
 
   public WhatsApp(String valor) {
     super(valor);
@@ -8,6 +8,6 @@ public class WhatsApp extends MedioDeContacto{
 
   @Override
   public void enviarMensaje() {
-    //TODO - implementar
+    System.out.println("Enviando whatsapp a " + valor);
   }
 }

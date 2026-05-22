@@ -1,0 +1,82 @@
+@startuml DonaTrack - Diagrama General de Casos de Uso
+
+left to right direction
+
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 80
+
+skinparam actorStyle stick
+skinparam packageStyle rectangle
+skinparam usecaseBorderColor #7F77DD
+skinparam usecaseBackgroundColor #EEEDFE
+skinparam usecaseFontStyle bold
+skinparam arrowColor #534AB7
+skinparam actorBorderColor #534AB7
+
+actor "Donante" as donante
+actor "Administrador" as admin
+
+rectangle "DonaTrack" {
+
+  package "Gestión de donantes" {
+    usecase "Registrar donante" as UC1
+    usecase "Importar donantes\npor CSV" as UC2
+    usecase "Enviar mail\nde bienvenida" as UC3
+    usecase "Configurar medio\npredeterminado" as UC1a
+    usecase "Gestionar\nrepresentantes" as UC1b
+  }
+
+  package "Gestión de donaciones" {
+    usecase "Registrar carga\nde donación" as UC4
+    usecase "Segmentar en\ndonaciones" as UC5
+    usecase "Gestionar estado\nde donación" as UC6
+    usecase "Marcar entrega\nfallida" as UC7a
+    usecase "Marcar donación\nvencida" as UC7b
+    usecase "Confirmar\nentrega" as UC7c
+  }
+
+  package "Entidades beneficiarias" {
+    usecase "Registrar entidad\nbeneficiaria" as UC8
+    usecase "Registrar\nnecesidad" as UC9
+    usecase "Necesidad\nextraordinaria" as UC9a
+    usecase "Necesidad\nrecurrente" as UC9b
+  }
+
+  package "Notificaciones" {
+    usecase "Enviar\nnotificación" as UC10
+  }
+
+  UC1 .> UC3 : <<include>>
+  UC1 .> UC1a : <<extend>>
+  UC1 .> UC1b : <<extend>>
+  UC2 .> UC1 : <<include>>
+  UC3 .> UC10 : <<include>>
+  UC4 .> UC5 : <<include>>
+  UC6 .> UC7a : <<extend>>
+  UC6 .> UC7b : <<extend>>
+  UC6 .> UC7c : <<extend>>
+  UC9 .> UC9a : <<extend>>
+  UC9 .> UC9b : <<extend>>
+}
+
+actor "Entidad Beneficiaria" as entidad
+actor "Sistema" as sistema
+
+donante --> UC1
+donante --> UC4
+
+admin --> UC1
+admin --> UC2
+admin --> UC4
+admin --> UC6
+
+UC8 <-- entidad
+UC9 <-- entidad
+UC7c <-- entidad
+UC8 <-- admin
+
+UC5 <-- sistema
+UC10 <-- sistema
+
+@enduml

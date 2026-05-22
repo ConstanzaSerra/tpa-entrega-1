@@ -1,0 +1,47 @@
+package ar.edu.utn.frba.dds;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class NecesidadRecurrenteTest {
+
+  private Subcategoria fideos;
+
+  @BeforeEach
+  void setUp() {
+    fideos = new Subcategoria("Fideos", Categoria.ALIMENTOS, false, true);
+  }
+
+  @Test
+  void seSatisfaceCuandoAlcanzaElObjetivoDelPeriodo() {
+    NecesidadRecurrente necesidad = new NecesidadRecurrente(
+        fideos, "Fideos mensuales", 10, "Mayo", 4
+    );
+
+    necesidad.registrarRecepcion(6);
+
+    assertTrue(necesidad.estaSatisfecha());
+  }
+
+  @Test
+  void reiniciarPeriodoVuelveLaCantidadRecibidaACero() {
+    NecesidadRecurrente necesidad = new NecesidadRecurrente(
+        fideos, "Fideos mensuales", 10, "Mayo", 10
+    );
+
+    necesidad.reiniciarPeriodo();
+
+    assertFalse(necesidad.estaSatisfecha());
+  }
+
+  @Test
+  void noPermitePeriodoVacio() {
+    assertThrows(IllegalArgumentException.class, () -> new NecesidadRecurrente(
+        fideos, "Fideos mensuales", 10, " ", 0
+    ));
+  }
+}

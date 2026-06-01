@@ -33,7 +33,7 @@ class CargaDeDonacionTest {
 
   @Test
   void segmentarConUnSoloBienGeneraUnaDonacion() {
-    Bien silla = new BienSimple("Silla de oficina", null, sillas, 6, "unidades");
+    Bien silla = new BienConEstado("Silla de oficina", null, sillas, 6, "unidades", true);
     CargaDeDonacion carga = new CargaDeDonacion("Donación muebles", LocalDate.now(), donante,
         new ArrayList<>(List.of(silla)));
 
@@ -46,9 +46,9 @@ class CargaDeDonacionTest {
 
   @Test
   void segmentarAgrupaCorrectamentePorSubcategoria() {
-    Bien silla1 = new BienSimple("Silla A", null, sillas, 6, "unidades");
-    Bien silla2 = new BienSimple("Silla B", null, sillas, 4, "unidades");
-    Bien mesa   = new BienSimple("Mesa",    null, mesas, 1, "unidades");
+    Bien silla1 = new BienConEstado("Silla A", null, sillas, 6, "unidades", true);
+    Bien silla2 = new BienConEstado("Silla B", null, sillas, 4, "unidades", true);
+    Bien mesa   = new BienConEstado("Mesa",    null, mesas, 1, "unidades", true);
 
     CargaDeDonacion carga = new CargaDeDonacion("Donación mixta", LocalDate.now(), donante,
         new ArrayList<>(List.of(silla1, silla2, mesa)));
@@ -103,5 +103,14 @@ class CargaDeDonacionTest {
     List<Donacion> resultado = carga.segmentar();
 
     assertTrue(resultado.isEmpty());
+  }
+
+  @Test
+  void segmentarLanzaExcepcionSiBienRequiereEstadoYNoEsBienConEstado() {
+    Bien silla = new BienSimple("Silla sin estado", null, sillas, 3, "unidades");
+    CargaDeDonacion carga = new CargaDeDonacion("Carga inválida", LocalDate.now(), donante,
+        new ArrayList<>(List.of(silla)));
+
+    assertThrows(IllegalArgumentException.class, carga::segmentar);
   }
 }

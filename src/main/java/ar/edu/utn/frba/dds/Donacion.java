@@ -11,15 +11,22 @@ public class Donacion {
   private PersonaDonante donante;
   private EntidadBeneficiaria entidadAsignada;
   private String justificacionFallida;
+  private Boolean esNuevo;
 
   public Donacion(Subcategoria subcategoria, int cantidad, String unidadMedida,
                   PersonaDonante donante, LocalDate fechaRegistro) {
+    this(subcategoria, cantidad, unidadMedida, donante, fechaRegistro, null);
+  }
+
+  public Donacion(Subcategoria subcategoria, int cantidad, String unidadMedida,
+                  PersonaDonante donante, LocalDate fechaRegistro, Boolean esNuevo) {
     this.subcategoria = subcategoria;
     this.cantidad = cantidad;
     this.unidadMedida = unidadMedida;
     this.donante = donante;
     this.fechaRegistro = fechaRegistro;
     this.estado = EstadoDonacion.EN_DEPOSITO;
+    this.esNuevo = esNuevo;
   }
 
   public void avanzarEstado() {
@@ -113,5 +120,9 @@ public class Donacion {
 
   public String getJustificacionFallida() {
     return justificacionFallida;
+  }
+
+  public Boolean getEsNuevo() {
+    return esNuevo;
   }
 }

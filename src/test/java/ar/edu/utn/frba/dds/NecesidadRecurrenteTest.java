@@ -44,4 +44,34 @@ class NecesidadRecurrenteTest {
         fideos, "Fideos mensuales", 10, " ", 0
     ));
   }
+
+  @Test
+  void noPermiteCantidadObjetivoCero() {
+    assertThrows(IllegalArgumentException.class, () -> new NecesidadRecurrente(
+        fideos, "Fideos mensuales", 0, "Mayo", 0
+    ));
+  }
+
+  @Test
+  void noPermiteCantidadObjetivoNegativa() {
+    assertThrows(IllegalArgumentException.class, () -> new NecesidadRecurrente(
+        fideos, "Fideos mensuales", -5, "Mayo", 0
+    ));
+  }
+
+  @Test
+  void noPermiteCantidadRecibidaInicialNegativa() {
+    assertThrows(IllegalArgumentException.class, () -> new NecesidadRecurrente(
+        fideos, "Fideos mensuales", 10, "Mayo", -1
+    ));
+  }
+
+  @Test
+  void noPermiteRegistrarRecepcionNegativa() {
+    NecesidadRecurrente necesidad = new NecesidadRecurrente(
+        fideos, "Fideos mensuales", 10, "Mayo", 0
+    );
+
+    assertThrows(IllegalArgumentException.class, () -> necesidad.registrarRecepcion(-1));
+  }
 }

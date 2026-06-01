@@ -53,4 +53,25 @@ class NecesidadExtraordinariaTest {
 
     assertThrows(IllegalArgumentException.class, () -> necesidad.registrarRecepcion(-1));
   }
+
+  @Test
+  void noPermiteCantidadRequeridaCero() {
+    assertThrows(IllegalArgumentException.class, () -> new NecesidadExtraordinaria(
+        medicamentos, "Antibioticos", 0, 0
+    ));
+  }
+
+  @Test
+  void noPermiteCantidadRequeridaNegativa() {
+    assertThrows(IllegalArgumentException.class, () -> new NecesidadExtraordinaria(
+        medicamentos, "Antibioticos", -10, 0
+    ));
+  }
+
+  @Test
+  void noPermiteCantidadRecibidaInicialNegativa() {
+    assertThrows(IllegalArgumentException.class, () -> new NecesidadExtraordinaria(
+        medicamentos, "Antibioticos", 10, -1
+    ));
+  }
 }

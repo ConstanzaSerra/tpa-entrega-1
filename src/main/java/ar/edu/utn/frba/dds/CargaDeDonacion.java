@@ -32,10 +32,21 @@ public class CargaDeDonacion {
           ? ((BienPercibible) bien).getFechaVencimiento()
           : null;
 
+      Boolean esNuevo = null;
+      if (bien.getSubcategoria().getRequiereEstado()) {
+        if (!(bien instanceof BienConEstado)) {
+          throw new IllegalArgumentException(
+              "El bien '" + bien.getDescripcion() + "' pertenece a una subcategoría que requiere " +
+              "estado (nuevo/usado) pero no es un BienConEstado.");
+        }
+        esNuevo = ((BienConEstado) bien).esNuevo();
+      }
+
       ClaveSegmentacion clave = new ClaveSegmentacion(
           bien.getSubcategoria(),
           fechaVencimiento,
-          bien.getUnidadDeMedida()
+          bien.getUnidadDeMedida(),
+          esNuevo
       );
       cantidadPorClave.merge(clave, bien.getCantidad(), Integer::sum);
     }
@@ -46,10 +57,11 @@ public class CargaDeDonacion {
             entry.getValue(),
             entry.getKey().unidadMedida(),
             this.donante,
-            this.fecha
+            this.fecha,
+            entry.getKey().esNuevo()
         ))
         .collect(Collectors.toList());
   }
 
-  private record ClaveSegmentacion(Subcategoria subcategoria, LocalDate fechaVencimiento, String unidadMedida) {}
+  private record ClaveSegmentacion(Subcategoria subcategoria, LocalDate fechaVencimiento, String unidadMedida, Boolean esNuevo) {}
 }

@@ -21,4 +21,8 @@ public class Subcategoria {
   public Categoria getCategoria() {
     return categoria;
   }
+
+  public Boolean getRequiereEstado() {
+    return requiereEstado;
+  }
 }

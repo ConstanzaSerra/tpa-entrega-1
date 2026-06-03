@@ -26,9 +26,9 @@ class CargaDeDonacionTest {
     Categoria muebles   = Categoria.MOBILIARIO;
     Categoria alimentos = Categoria.ALIMENTOS;
 
-    sillas = new Subcategoria("Sillas", muebles,   true,  false);
-    mesas = new Subcategoria("Mesas", muebles, true, false);
-    fideos = new Subcategoria("Fideos", alimentos, false, true);
+    sillas = new Subcategoria("Sillas", muebles);
+    mesas  = new Subcategoria("Mesas",  muebles);
+    fideos = new Subcategoria("Fideos", alimentos);
   }
 
   @Test

@@ -33,7 +33,7 @@ public class CargaDeDonacion {
           : null;
 
       Boolean esNuevo = null;
-      if (bien.getSubcategoria().getRequiereEstado()) {
+      if (bien.getSubcategoria().requiereEstado()) {
         if (!(bien instanceof BienConEstado)) {
           throw new IllegalArgumentException(
               "El bien '" + bien.getDescripcion() + "' pertenece a una subcategoría que requiere " +

@@ -29,7 +29,7 @@ public class NotificacionTest {
   public void envioDeNotificacion() {
     this.notificacion.enviar();
 
-    verify(this.medioDeContacto, times(1)).enviarMensaje();
+    verify(this.medioDeContacto, times(1)).enviarMensaje(this.notificacion);
 
     assertTrue(this.notificacion.getCompletada());
 

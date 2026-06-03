@@ -6,7 +6,7 @@ public class Telefono extends MedioDeContacto {
   }
 
   @Override
-  public void enviarMensaje() {
-    System.out.println("Enviando mensaje a " + getValor());
+  public void enviarMensaje(Notificacion notificacion) {
+    System.out.println("Enviando mensaje a " + getValor() + ": " + notificacion.getMensaje());
   }
 }

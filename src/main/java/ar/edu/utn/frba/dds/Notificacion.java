@@ -23,7 +23,7 @@ public class Notificacion {
 
     if (this.medio != null) {
 
-      this.medio.enviarMensaje();
+      this.medio.enviarMensaje(this);
       this.marcarCompletada();
 
     } else {
@@ -34,6 +34,10 @@ public class Notificacion {
 
   public void marcarCompletada() {
     this.completada = true;
+  }
+
+  public String getMensaje() {
+    return mensaje;
   }
 
   public Boolean getCompletada() {

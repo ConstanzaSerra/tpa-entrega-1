@@ -16,7 +16,7 @@ class DonacionTest {
 
   @BeforeEach
   void setUp() {
-    Subcategoria sillas = new Subcategoria("Sillas", Categoria.MOBILIARIO, true, false);
+    Subcategoria sillas = new Subcategoria("Sillas", Categoria.MOBILIARIO);
     PersonaDonante donante = mock(PersonaDonante.class);
     entidad = mock(EntidadBeneficiaria.class);
     donacion = new Donacion(sillas, 5, "unidades", donante, LocalDate.now());

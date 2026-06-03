@@ -15,5 +15,5 @@ public abstract class MedioDeContacto {
     this.valor = valor;
   }
 
-  public abstract void enviarMensaje();
+  public abstract void enviarMensaje(Notificacion notificacion);
 }

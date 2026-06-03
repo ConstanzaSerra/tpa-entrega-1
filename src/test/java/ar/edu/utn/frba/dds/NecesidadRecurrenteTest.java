@@ -13,7 +13,7 @@ class NecesidadRecurrenteTest {
 
   @BeforeEach
   void setUp() {
-    fideos = new Subcategoria("Fideos", Categoria.ALIMENTOS, false, true);
+    fideos = new Subcategoria("Fideos", Categoria.ALIMENTOS);
   }
 
   @Test

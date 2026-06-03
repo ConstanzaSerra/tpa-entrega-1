@@ -12,8 +12,8 @@ public class Email extends MedioDeContacto {
   }
 
   @Override
-  public void enviarMensaje() {
-    System.out.println("Enviando email a " + getValor());
+  public void enviarMensaje(Notificacion notificacion) {
+    System.out.println("Enviando email a " + getValor() + ": " + notificacion.getMensaje());
   }
 
   private static String validar(String valor) {

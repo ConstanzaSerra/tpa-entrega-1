@@ -3,16 +3,11 @@ package ar.edu.utn.frba.dds;
 public class Subcategoria {
   private String nombre;
   private Categoria categoria;
-  private Boolean requiereEstado;
-  private Boolean esPeredecedero;
 
-  public Subcategoria(String nombre, Categoria categoria, Boolean requiereEstado, Boolean esPeredecedero) {
+  public Subcategoria(String nombre, Categoria categoria) {
     this.nombre = nombre;
     this.categoria = categoria;
-    this.requiereEstado = requiereEstado;
-    this.esPeredecedero = esPeredecedero;
   }
-
 
   public String getNombre() {
     return nombre;
@@ -22,7 +17,11 @@ public class Subcategoria {
     return categoria;
   }
 
-  public Boolean getRequiereEstado() {
-    return requiereEstado;
+  public boolean requiereEstado() {
+    return categoria.requiereEstado();
+  }
+
+  public boolean esPerecedero() {
+    return categoria.esPerecedero();
   }
 }

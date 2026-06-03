@@ -13,7 +13,7 @@ class NecesidadExtraordinariaTest {
 
   @BeforeEach
   void setUp() {
-    medicamentos = new Subcategoria("Medicamentos", Categoria.ALIMENTOS, false, false);
+    medicamentos = new Subcategoria("Medicamentos", Categoria.ALIMENTOS);
   }
 
   @Test

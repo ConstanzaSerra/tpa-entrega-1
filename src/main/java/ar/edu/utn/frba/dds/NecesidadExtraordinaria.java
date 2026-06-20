@@ -21,7 +21,13 @@ public class NecesidadExtraordinaria extends Necesidad {
   @Override
   public void registrarRecepcion(Integer cantidad) {
     validarCantidadNoNegativa(cantidad);
-    this.cantidadRecibida += cantidad;
+
+    int faltanteParaSatisfecho = this.cantidadRequerida - this.cantidadRecibida;
+
+    if (faltanteParaSatisfecho > 0) {
+      int aAceptar = Math.min(cantidad, faltanteParaSatisfecho);
+      this.cantidadRecibida += aAceptar;
+    }
   }
 
   private void validarCantidadRequerida(Integer cantidad) {
@@ -34,5 +40,13 @@ public class NecesidadExtraordinaria extends Necesidad {
     if (cantidad == null || cantidad < 0) {
       throw new IllegalArgumentException("La cantidad no puede ser negativa");
     }
+  }
+
+  public Integer getCantidadRequerida() {
+    return cantidadRequerida;
+  }
+
+  public Integer getCantidadRecibida() {
+    return cantidadRecibida;
   }
 }

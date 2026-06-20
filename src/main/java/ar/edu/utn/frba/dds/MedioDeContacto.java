@@ -1,7 +1,7 @@
 package ar.edu.utn.frba.dds;
 
 public abstract class MedioDeContacto {
-  private String valor;  // private, no public
+  public String valor;  // private, no public
 
   public MedioDeContacto(String valor) {
     this.valor = valor;

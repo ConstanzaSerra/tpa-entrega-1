@@ -1,51 +1,34 @@
 package ar.edu.utn.frba.dds;
 
+import ar.edu.utn.frba.dds.exceptions.PeriodoConsumoException;
+
 public class NecesidadRecurrente extends Necesidad {
-  private Integer cantidadObjetivoPorPeriodo;
-  private String periodoDescripcion;
-  private Integer cantidadRecibidaEnPeriodo;
+  private PeriodoConsumo periodoConsumo;
 
-  public NecesidadRecurrente(Subcategoria subcategoria, String descripcion, Integer cantidadObjetivoPorPeriodo, String periodoDescripcion, Integer cantidadRecibidaEnPeriodo) {
+  public NecesidadRecurrente(Subcategoria subcategoria, String descripcion, PeriodoConsumo periodoConsumo) {
     super(subcategoria, descripcion);
-    validarCantidadObjetivo(cantidadObjetivoPorPeriodo);
-    validarPeriodo(periodoDescripcion);
-    validarCantidadNoNegativa(cantidadRecibidaEnPeriodo);
+    if (periodoConsumo == null) {
+      throw new PeriodoConsumoException("Agregue un periodo de consumo de consumo");
+    }
 
-    this.cantidadObjetivoPorPeriodo = cantidadObjetivoPorPeriodo;
-    this.periodoDescripcion = periodoDescripcion.trim();
-    this.cantidadRecibidaEnPeriodo = cantidadRecibidaEnPeriodo;
+    this.periodoConsumo = periodoConsumo;
   }
 
   @Override
   public Boolean estaSatisfecha() {
-    return cantidadRecibidaEnPeriodo >= cantidadObjetivoPorPeriodo;
+    return periodoConsumo.estaSatisfecha();
   }
 
   @Override
   public void registrarRecepcion(Integer cantidad) {
-    validarCantidadNoNegativa(cantidad);
-    this.cantidadRecibidaEnPeriodo += cantidad;
+    periodoConsumo.registrarCantidad(cantidad);
   }
 
   public void reiniciarPeriodo() {
-    this.cantidadRecibidaEnPeriodo = 0;
+    periodoConsumo.reiniciar();
   }
 
-  private void validarCantidadObjetivo(Integer cantidad) {
-    if (cantidad == null || cantidad <= 0) {
-      throw new IllegalArgumentException("La cantidad objetivo debe ser mayor a cero");
-    }
-  }
-
-  private void validarCantidadNoNegativa(Integer cantidad) {
-    if (cantidad == null || cantidad < 0) {
-      throw new IllegalArgumentException("La cantidad no puede ser negativa");
-    }
-  }
-
-  private void validarPeriodo(String periodoDescripcion) {
-    if (periodoDescripcion == null || periodoDescripcion.isBlank()) {
-      throw new IllegalArgumentException("La descripcion del periodo no puede estar vacia");
-    }
+  public PeriodoConsumo getPeriodoConsumo() {
+    return periodoConsumo;
   }
 }

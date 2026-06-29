@@ -24,10 +24,11 @@ public abstract class PersonaDonante {
   }
 
   public void actualizarEmail(String nuevoEmail) {
-    medioDeContactos.stream()
-        .filter(m -> m instanceof Email)
-        .findFirst()
-        .ifPresent(m -> m.setValor(nuevoEmail));
+    Email validado = new Email(nuevoEmail);
+    medioDeContactos.replaceAll(m -> m instanceof Email ? validado : m);
+    if (medioDeContactoPredeterminado instanceof Email) {
+      medioDeContactoPredeterminado = validado;
+    }
   }
 
   public void actualizarTelefono(String nuevoTelefono) {

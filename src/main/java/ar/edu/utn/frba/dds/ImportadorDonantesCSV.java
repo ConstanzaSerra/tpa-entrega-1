@@ -53,8 +53,13 @@ public class ImportadorDonantesCSV {
             juridica.setRazonSocial(nuevoNombre);
           }
 
-          repo.guardar(donante);
           procesados.add(donante);
+        } else {
+          PersonaDonante nuevo = parsearLinea(campos);
+          if (nuevo != null) {
+            repo.guardar(nuevo);
+            procesados.add(nuevo);
+          }
         }
       }
 

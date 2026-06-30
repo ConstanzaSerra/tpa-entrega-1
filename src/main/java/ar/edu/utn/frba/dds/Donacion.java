@@ -3,6 +3,7 @@ package ar.edu.utn.frba.dds;
 import java.time.LocalDate;
 
 public class Donacion {
+  private Long id;
   private Subcategoria subcategoria;
   private int cantidad;
   private String unidadMedida;
@@ -124,5 +125,13 @@ public class Donacion {
 
   public Boolean getEsNuevo() {
     return esNuevo;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
   }
 }

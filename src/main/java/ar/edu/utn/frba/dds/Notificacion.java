@@ -15,6 +15,13 @@ public class Notificacion {
     this.completada = false;
   }
 
+  public Notificacion(String mensaje, MedioDeContacto medio) {
+    this.destinatario = null;
+    this.mensaje = mensaje;
+    this.medio = medio;
+    this.completada = false;
+  }
+
   public void agregarMedioContacto(MedioDeContacto medioDeContactoPredeterminado) {
     this.medio = medioDeContactoPredeterminado;
   }

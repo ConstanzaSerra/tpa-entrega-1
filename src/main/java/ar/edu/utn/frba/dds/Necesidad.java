@@ -12,6 +12,9 @@ public abstract class Necesidad {
   public Subcategoria getSubcategoria() {
     return subcategoria;
   }
+
+  public String getDescripcion() {return descripcion;}
+
   public abstract Boolean estaSatisfecha();
 
   public abstract void registrarRecepcion(Integer cantidad);

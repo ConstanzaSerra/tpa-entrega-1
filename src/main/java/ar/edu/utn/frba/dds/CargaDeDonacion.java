@@ -52,4 +52,12 @@ public class CargaDeDonacion {
   }
 
   private record ClaveSegmentacion(Subcategoria subcategoria, LocalDate fechaVencimiento, String unidadMedida) {}
+
+  public String getDescripcionGeneral() {
+    return descripcionGeneral;
+  }
+
+  public List<Bien> getBienes() {
+    return bienes;
+  }
 }

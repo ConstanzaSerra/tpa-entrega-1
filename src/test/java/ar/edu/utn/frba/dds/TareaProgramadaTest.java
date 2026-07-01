@@ -11,7 +11,7 @@ import java.util.List;
 public class TareaProgramadaTest {
 
   @Test
-  public void testTareaProgramada_DebeGuardarPropuestaAutomaticamenteAlPasarElTiempo() throws InterruptedException {
+  public void testTareaProgramadaTest() throws InterruptedException {
     DonacionRepository repoDonaciones = new DonacionRepository();
     EntidadRepository repoEntidades = new EntidadRepository();
     PropuestaRepository repoPropuestas = new PropuestaRepository();

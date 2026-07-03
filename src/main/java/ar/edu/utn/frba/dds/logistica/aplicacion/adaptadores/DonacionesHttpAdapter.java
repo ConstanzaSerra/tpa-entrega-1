@@ -15,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class DonacionesHttpAdapter implements DonacionesAPI {
     private final String baseUrl;
@@ -46,32 +47,39 @@ public class DonacionesHttpAdapter implements DonacionesAPI {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return Collections.emptyList();
+            return Collections.emptyList(); // devuelvo la lista vacia para que no reviente todo
         }
     }
 
     @Override
+    public void informarDonacionPlanificada(Long donacionId) {
+        // La donacion ya tiene ruta armada: en Donaciones pasa a LISTA_PARA_ENTREGAR
+        // y deja de aparecer en el GET /donaciones?estado=ASIGNACION_REALIZADA.
+        enviarAsync("PATCH", "/donaciones/" + donacionId, Map.of("estado", "LISTA_PARA_ENTREGAR"));
+    }
+
+    @Override
     public void notificarInicioRuta(EventoInicioRutaDTO evento) {
-        enviarNotificacionAsync("/notificaciones/inicio-ruta", evento);
+        enviarAsync("POST", "/notificaciones/inicio-ruta", evento);
     }
 
     @Override
     public void notificarEntregaConfirmada(EventoEntregaConfirmadaDTO evento) {
-        enviarNotificacionAsync("/notificaciones/entrega-confirmada", evento);
+        enviarAsync("POST", "/notificaciones/entrega-confirmada", evento);
     }
 
     @Override
     public void notificarEntregaFallida(EventoEntregaFallidaDTO evento) {
-        enviarNotificacionAsync("/notificaciones/entrega-fallida", evento);
+        enviarAsync("POST", "/notificaciones/entrega-fallida", evento);
     }
 
-    private void enviarNotificacionAsync(String endpoint, Object payload) {
+    private void enviarAsync(String metodo, String endpoint, Object payload) {
         try {
             String jsonBody = objectMapper.writeValueAsString(payload);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + endpoint))
                     .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .method(metodo, HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
 
             httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())

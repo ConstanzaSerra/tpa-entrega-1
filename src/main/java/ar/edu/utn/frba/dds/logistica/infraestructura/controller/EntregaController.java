@@ -2,8 +2,10 @@ package ar.edu.utn.frba.dds.logistica.infraestructura.controller;
 
 import ar.edu.utn.frba.dds.logistica.dominio.Camion;
 import ar.edu.utn.frba.dds.logistica.dominio.Entrega;
+import ar.edu.utn.frba.dds.logistica.dominio.EstadoEntrega;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.AgregarFotoRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.ConfirmarEntregaRequestDTO;
+import ar.edu.utn.frba.dds.logistica.infraestructura.dto.EntregaRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.RechazarEntregaRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.notificaciones.EventoEntregaConfirmadaDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.notificaciones.EventoEntregaFallidaDTO;
@@ -124,6 +126,37 @@ public class EntregaController {
 
         entregaOpt.get().agregarFoto(request.url);
         ctx.status(HttpStatus.OK).result("Foto agregada");
+    }
+
+    public void create(Context ctx) {
+        EntregaRequestDTO dto = ctx.bodyAsClass(EntregaRequestDTO.class);
+
+        if (dto.donacionId == null || dto.entidadBeneficiariaId == null) {
+            ctx.status(HttpStatus.BAD_REQUEST).result("Faltan donacionId o entidadBeneficiariaId");
+            return;
+        }
+
+        Entrega entrega = new Entrega(dto.donacionId, dto.entidadBeneficiariaId, dto.direccionDestino);
+        Entrega guardada = entregaRepository.guardar(entrega);
+        ctx.status(HttpStatus.CREATED).json(guardada);
+    }
+
+    public void delete(Context ctx) {
+        Long id = Long.parseLong(ctx.pathParam("id"));
+        Optional<Entrega> entregaOpt = entregaRepository.buscarPorId(id);
+
+        if (entregaOpt.isEmpty()) {
+            ctx.status(HttpStatus.NOT_FOUND).result("Entrega no encontrada");
+            return;
+        }
+        if (entregaOpt.get().getEstado() != EstadoEntrega.PENDIENTE) {
+            // Una entrega en traslado o ya resuelta es parte de la trazabilidad: no se borra
+            ctx.status(HttpStatus.BAD_REQUEST).result("Solo se puede eliminar una entrega PENDIENTE");
+            return;
+        }
+
+        entregaRepository.eliminar(id);
+        ctx.status(HttpStatus.NO_CONTENT);
     }
 
     public void getAll(Context ctx) {

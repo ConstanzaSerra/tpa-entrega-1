@@ -34,7 +34,7 @@ public class GpsController {
             ctx.status(HttpStatus.BAD_REQUEST).result("Longitud invalida");
             return;
         }
-        if (request.velocidad < 0) {
+        if (request.velocidad != null && request.velocidad < 0) {
             ctx.status(HttpStatus.BAD_REQUEST).result("Velocidad invalida");
             return;
         }

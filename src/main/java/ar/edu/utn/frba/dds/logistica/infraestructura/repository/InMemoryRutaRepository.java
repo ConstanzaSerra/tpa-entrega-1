@@ -31,4 +31,9 @@ public class InMemoryRutaRepository implements RutaRepository {
     public List<Ruta> buscarTodas() {
         return new ArrayList<>(rutas);
     }
+
+    @Override
+    public void eliminar(Long id) {
+        rutas.removeIf(r -> r.getId().equals(id));
+    }
 }

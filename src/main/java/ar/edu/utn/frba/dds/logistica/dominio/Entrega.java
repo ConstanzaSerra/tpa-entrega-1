@@ -8,6 +8,7 @@ public class Entrega {
   private Long id;
   private Long donacionId;
   private Long entidadBeneficiariaId;
+  private String direccionDestino;
   private EstadoEntrega estado;
   private Camion camionQueEntrego;
   private LocalDateTime fechaHoraEntrega;
@@ -22,6 +23,11 @@ public class Entrega {
     this();
     this.donacionId = donacionId;
     this.entidadBeneficiariaId = entidadBeneficiariaId;
+  }
+
+  public Entrega(Long donacionId, Long entidadBeneficiariaId, String direccionDestino) {
+    this(donacionId, entidadBeneficiariaId);
+    this.direccionDestino = direccionDestino;
   }
 
   public void iniciarTraslado() {
@@ -66,6 +72,8 @@ public class Entrega {
   public void setDonacionId(Long donacionId) { this.donacionId = donacionId; }
   public Long getEntidadBeneficiariaId() { return entidadBeneficiariaId; }
   public void setEntidadBeneficiariaId(Long entidadBeneficiariaId) { this.entidadBeneficiariaId = entidadBeneficiariaId; }
+  public String getDireccionDestino() { return direccionDestino; }
+  public void setDireccionDestino(String direccionDestino) { this.direccionDestino = direccionDestino; }
   public EstadoEntrega getEstado() { return estado; }
   public Camion getCamionQueEntrego() { return camionQueEntrego; }
   public LocalDateTime getFechaHoraEntrega() { return fechaHoraEntrega; }

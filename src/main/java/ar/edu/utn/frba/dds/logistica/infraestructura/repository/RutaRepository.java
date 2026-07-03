@@ -8,4 +8,5 @@ public interface RutaRepository {
     Ruta guardar(Ruta ruta);
     Optional<Ruta> buscarPorId(Long id);
     List<Ruta> buscarTodas();
+    void eliminar(Long id);
 }

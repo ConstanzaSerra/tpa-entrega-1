@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import java.time.LocalTime;
 import java.util.concurrent.TimeUnit;
 
 public class LogisticaApp {
@@ -27,27 +28,37 @@ public class LogisticaApp {
         GpsRepository gpsRepository = new InMemoryGpsRepository();
         
         // 2. Inicializar adaptadores (puertos salientes) leídos desde config
-        String donacionesUrl = ConfigManager.getProperty("api.donaciones.url", "http://localhost:8081");
+        // Acuerdo entre equipos: Donaciones en :8080, Logística en :8081
+        String donacionesUrl = ConfigManager.getProperty("api.donaciones.url", "http://localhost:8080");
         String planificadorUrl = ConfigManager.getProperty("api.planificador.url", "http://localhost:8082");
-        
+
         DonacionesAPI donacionesAPI = new DonacionesHttpAdapter(donacionesUrl);
         PlanificadorExternoAPI planificadorAPI = new PlanificadorHttpAdapter(planificadorUrl);
-        
+
         // 3. Inicializar servicios de dominio
-        int port = Integer.parseInt(ConfigManager.getProperty("server.port", "8080"));
-        String callbackUrl = "http://localhost:" + port + "/planificador/callback";
+        int port = Integer.parseInt(ConfigManager.getProperty("server.port", "8081"));
+        String publicUrl = ConfigManager.getProperty("server.public.url", "http://localhost:" + port);
+        String callbackUrl = publicUrl + "/planificador/callback";
         PlanificadorRutasService planificadorService = new PlanificadorRutasService(
-                donacionesAPI, planificadorAPI, camionRepository, callbackUrl);
-                
+                donacionesAPI, planificadorAPI, camionRepository, rutaRepository, entregaRepository, callbackUrl);
+
         // 4. Inicializar tareas en background (Scheduler)
+        // Con scheduler.period.minutes seteado corre en modo frecuencia (demo);
+        // si no, corre calendarizado a la hora de baja carga (scheduler.hora, default 02:00)
         PlanificacionScheduler scheduler = new PlanificacionScheduler(planificadorService);
-        long periodMinutes = Long.parseLong(ConfigManager.getProperty("scheduler.period.minutes", "1"));
-        scheduler.iniciar(periodMinutes, periodMinutes, TimeUnit.MINUTES);
-        
+        String periodMinutes = ConfigManager.getProperty("scheduler.period.minutes", "");
+        if (!periodMinutes.isBlank()) {
+            long period = Long.parseLong(periodMinutes);
+            scheduler.iniciar(period, period, TimeUnit.MINUTES);
+        } else {
+            LocalTime horaBajaCarga = LocalTime.parse(ConfigManager.getProperty("scheduler.hora", "02:00"));
+            scheduler.iniciarDiario(horaBajaCarga);
+        }
+
         // 5. Inicializar controladores (puertos entrantes)
         CamionController camionController = new CamionController(camionRepository);
-        PlanificadorController planificadorController = new PlanificadorController(rutaRepository, entregaRepository, camionRepository);
-        RutaController rutaController = new RutaController(rutaRepository, donacionesAPI);
+        PlanificadorController planificadorController = new PlanificadorController(planificadorService);
+        RutaController rutaController = new RutaController(rutaRepository, camionRepository, entregaRepository, donacionesAPI);
         EntregaController entregaController = new EntregaController(entregaRepository, camionRepository, donacionesAPI);
         GpsController gpsController = new GpsController(gpsRepository, camionRepository);
         
@@ -71,10 +82,14 @@ public class LogisticaApp {
         // Rutas de Planificación de Rutas
         app.get("/rutas", rutaController::getAll);
         app.get("/rutas/{id}", rutaController::getById);
-        
+        app.post("/rutas", rutaController::create);
+        app.delete("/rutas/{id}", rutaController::delete);
+
         // Rutas de Trazabilidad de Entregas
         app.get("/entregas", entregaController::getAll);
         app.get("/entregas/{id}", entregaController::getById);
+        app.post("/entregas", entregaController::create);
+        app.delete("/entregas/{id}", entregaController::delete);
         
         // Rutas del Planificador
         app.post("/planificador/callback", planificadorController::recibirCallback);
@@ -97,7 +112,7 @@ public class LogisticaApp {
             e.printStackTrace();
         });
         
-        System.out.println("Servidor Logistica iniciado en http://localhost:8080");
+        System.out.println("Servidor Logistica iniciado en http://localhost:" + port);
         
         // Hook para apagar el scheduler cuando se apaga la app
         Runtime.getRuntime().addShutdownHook(new Thread(scheduler::detener));

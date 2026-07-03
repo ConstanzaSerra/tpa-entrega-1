@@ -11,10 +11,10 @@ public class PosicionCamion {
   private final Long camionId;
   private final double latitud;
   private final double longitud;
-  private final double velocidad;
+  private final Double velocidad; // null si el dispositivo no la reporta
   private final Instant timestamp;
 
-  public PosicionCamion(Long camionId, double latitud, double longitud, double velocidad, Instant timestamp) {
+  public PosicionCamion(Long camionId, double latitud, double longitud, Double velocidad, Instant timestamp) {
     this.camionId = camionId;
     this.latitud = latitud;
     this.longitud = longitud;
@@ -25,6 +25,6 @@ public class PosicionCamion {
   public Long getCamionId() { return camionId; }
   public double getLatitud() { return latitud; }
   public double getLongitud() { return longitud; }
-  public double getVelocidad() { return velocidad; }
+  public Double getVelocidad() { return velocidad; }
   public Instant getTimestamp() { return timestamp; }
 }

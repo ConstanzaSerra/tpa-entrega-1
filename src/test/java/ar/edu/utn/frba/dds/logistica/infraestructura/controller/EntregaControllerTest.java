@@ -4,6 +4,7 @@ import ar.edu.utn.frba.dds.logistica.dominio.Camion;
 import ar.edu.utn.frba.dds.logistica.dominio.Entrega;
 import ar.edu.utn.frba.dds.logistica.dominio.EstadoEntrega;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.ConfirmarEntregaRequestDTO;
+import ar.edu.utn.frba.dds.logistica.infraestructura.dto.EntregaRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.RechazarEntregaRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.notificaciones.EventoEntregaConfirmadaDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.notificaciones.EventoEntregaFallidaDTO;
@@ -140,5 +141,68 @@ class EntregaControllerTest {
         ArgumentCaptor<EventoEntregaFallidaDTO> captor = ArgumentCaptor.forClass(EventoEntregaFallidaDTO.class);
         verify(donacionesAPI, times(1)).notificarEntregaFallida(captor.capture());
         assertEquals("No habia nadie", captor.getValue().motivo);
+    }
+
+    // POST /entregas crea la entrega y responde 201
+    @Test
+    void testCrearEntrega_Devuelve201() {
+        EntregaRequestDTO dto = new EntregaRequestDTO(10L, 20L, "Calle Falsa 123");
+        when(ctx.bodyAsClass(EntregaRequestDTO.class)).thenReturn(dto);
+        when(entregaRepository.guardar(any(Entrega.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(ctx.status(HttpStatus.CREATED)).thenReturn(ctx);
+
+        entregaController.create(ctx);
+
+        ArgumentCaptor<Entrega> captor = ArgumentCaptor.forClass(Entrega.class);
+        verify(entregaRepository).guardar(captor.capture());
+        assertEquals(10L, captor.getValue().getDonacionId());
+        assertEquals(EstadoEntrega.PENDIENTE, captor.getValue().getEstado());
+        verify(ctx).status(HttpStatus.CREATED);
+    }
+
+    // POST /entregas sin donacionId responde 400
+    @Test
+    void testCrearEntrega_SinDonacionId_Devuelve400() {
+        EntregaRequestDTO dto = new EntregaRequestDTO(null, 20L, "Calle Falsa 123");
+        when(ctx.bodyAsClass(EntregaRequestDTO.class)).thenReturn(dto);
+        when(ctx.status(HttpStatus.BAD_REQUEST)).thenReturn(ctx);
+
+        entregaController.create(ctx);
+
+        verify(entregaRepository, never()).guardar(any());
+        verify(ctx).status(HttpStatus.BAD_REQUEST);
+    }
+
+    // DELETE /entregas/{id} elimina una entrega PENDIENTE
+    @Test
+    void testEliminarEntrega_Pendiente_Elimina() {
+        Entrega entrega = new Entrega(10L, 20L);
+        entrega.setId(1L); // queda PENDIENTE
+
+        when(ctx.pathParam("id")).thenReturn("1");
+        when(entregaRepository.buscarPorId(1L)).thenReturn(Optional.of(entrega));
+        when(ctx.status(HttpStatus.NO_CONTENT)).thenReturn(ctx);
+
+        entregaController.delete(ctx);
+
+        verify(entregaRepository).eliminar(1L);
+        verify(ctx).status(HttpStatus.NO_CONTENT);
+    }
+
+    // DELETE /entregas/{id} sobre una entrega EN_TRASLADO responde 400: la trazabilidad no se borra
+    @Test
+    void testEliminarEntrega_EnTraslado_Devuelve400() {
+        Entrega entrega = new Entrega(10L, 20L);
+        entrega.setId(1L);
+        entrega.iniciarTraslado();
+
+        when(ctx.pathParam("id")).thenReturn("1");
+        when(entregaRepository.buscarPorId(1L)).thenReturn(Optional.of(entrega));
+        when(ctx.status(HttpStatus.BAD_REQUEST)).thenReturn(ctx);
+
+        entregaController.delete(ctx);
+
+        verify(entregaRepository, never()).eliminar(any());
+        verify(ctx).status(HttpStatus.BAD_REQUEST);
     }
 }

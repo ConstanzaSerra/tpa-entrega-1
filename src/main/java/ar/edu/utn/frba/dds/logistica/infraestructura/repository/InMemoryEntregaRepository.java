@@ -1,6 +1,7 @@
 package ar.edu.utn.frba.dds.logistica.infraestructura.repository;
 
 import ar.edu.utn.frba.dds.logistica.dominio.Entrega;
+import ar.edu.utn.frba.dds.logistica.dominio.EstadoEntrega;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,5 +31,24 @@ public class InMemoryEntregaRepository implements EntregaRepository {
     @Override
     public List<Entrega> buscarTodas() {
         return new ArrayList<>(entregas);
+    }
+
+    @Override
+    public List<Entrega> buscarPorDonacionId(Long donacionId) {
+        return entregas.stream()
+                .filter(e -> e.getDonacionId().equals(donacionId))
+                .toList();
+    }
+
+    @Override
+    public List<Entrega> buscarPorEstado(EstadoEntrega estado) {
+        return entregas.stream()
+                .filter(e -> e.getEstado() == estado)
+                .toList();
+    }
+
+    @Override
+    public void eliminar(Long id) {
+        entregas.removeIf(e -> e.getId().equals(id));
     }
 }

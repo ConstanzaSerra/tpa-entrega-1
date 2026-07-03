@@ -9,7 +9,9 @@ import java.util.List;
 
 public interface DonacionesAPI {
     List<DonacionParaRutaDTO> obtenerDonacionesListasParaRepartir();
-    
+
+    void informarDonacionPlanificada(Long donacionId);
+
     void notificarInicioRuta(EventoInicioRutaDTO evento);
     void notificarEntregaConfirmada(EventoEntregaConfirmadaDTO evento);
     void notificarEntregaFallida(EventoEntregaFallidaDTO evento);

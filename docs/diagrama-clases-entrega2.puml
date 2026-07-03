@@ -1,0 +1,322 @@
+@startuml DonaTrack - Entrega 2 - Modelo del Dominio
+
+' Entregable 1 de la Entrega 2: Modelo del Dominio.
+' Contempla las funcionalidades requeridas por el enunciado E2:
+'   - Asignación de donaciones (matchmaking con algoritmos intercambiables)
+'   - Eventos e integración con medios de notificación
+'   - Logística: planificación de rutas, trazabilidad de entregas y monitoreo GPS
+' El detalle técnico de Logística (controllers, repositorios, adaptadores)
+' está en diagrama-clases-logistica.puml. Las clases de la Entrega 1 que no
+' cambiaron (Bien y subclases, CargaDeDonacion, Representante, etc.) se
+' mantienen en diagrama-clases.puml y acá se muestran solo las involucradas
+' en las funcionalidades nuevas.
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam classBackgroundColor #EEEDFE
+skinparam classBorderColor #7F77DD
+skinparam classArrowColor #534AB7
+skinparam stereotypeCBackgroundColor #E1F5EE
+skinparam stereotypeABackgroundColor #FAEEDA
+skinparam stereotypeIBackgroundColor #D6E8FF
+skinparam noteBackgroundColor #FAEEDA
+skinparam noteBorderColor #BA7517
+skinparam packageStyle rectangle
+
+' ═════════════════════════════════════════
+'  MICROSERVICIO DONACIONES
+' ═════════════════════════════════════════
+
+package "Microservicio Donaciones" {
+
+  ' ── Núcleo (viene de la Entrega 1) ──
+
+  abstract class PersonaDonante {
+    - List<MedioDeContacto> mediosDeContacto
+    - MedioDeContacto predeterminado
+    - LocalDate ultimaInteraccion
+    + registrarInteraccion(): void
+    + diasSinInteraccion(): long
+  }
+
+  class Donacion {
+    - Subcategoria subcategoria
+    - int cantidad
+    - EstadoDonacion estado
+    - PersonaDonante donante
+    - EntidadBeneficiaria entidadAsignada
+    - List<CambioDeEstado> historial
+    + avanzarEstado(): void
+    + asignarEntidad(EntidadBeneficiaria): void
+    + marcarEntregaFallida(String): void
+  }
+
+  class CambioDeEstado {
+    - EstadoDonacion estadoAnterior
+    - EstadoDonacion estadoNuevo
+    - LocalDateTime fechaHora
+  }
+
+  enum EstadoDonacion {
+    EN_DEPOSITO
+    ASIGNACION_REALIZADA
+    LISTA_PARA_ENTREGAR
+    EN_TRASLADO
+    ENTREGADA
+    ENTREGA_FALLIDA
+    VENCIDA
+  }
+
+  class EntidadBeneficiaria {
+    - String razonSocial
+    - String direccion
+    - List<Necesidad> necesidades
+    + agregarNecesidad(Necesidad): void
+  }
+
+  abstract class Necesidad {
+    - Subcategoria subcategoria
+    + estaSatisfecha(): boolean
+    + registrarRecepcion(int): void
+  }
+
+  class NecesidadExtraordinaria
+  class NecesidadRecurrente
+
+  ' ── NUEVO E2: Matchmaking / asignación ──
+
+  interface AlgoritmoDeAsignacion <<Strategy>> {
+    + proponer(Donacion, List<EntidadBeneficiaria>): List<EntidadBeneficiaria>
+  }
+
+  class CompatibilidadSemantica {
+    + proponer(...): List<EntidadBeneficiaria>
+  }
+
+  class PrioridadSubAtendidos {
+    + proponer(...): List<EntidadBeneficiaria>
+  }
+
+  class ProcesoDeMatchmaking {
+    - List<AlgoritmoDeAsignacion> algoritmos
+    + ejecutar(): List<PropuestaDeAsignacion>
+  }
+
+  class PropuestaDeAsignacion {
+    - Donacion donacion
+    - List<EntidadBeneficiaria> coincidencias
+    - Map<AlgoritmoDeAsignacion, List<EntidadBeneficiaria>> rankings
+    + hayCoincidencias(): boolean
+    + confirmar(EntidadBeneficiaria): void
+  }
+
+  class MatchmakingScheduler {
+    - LocalTime horarioBajaCarga
+    + iniciar(): void
+  }
+
+  ' ── NUEVO E2: Eventos de notificación ──
+
+  enum TipoDeEvento {
+    AUSENCIA_PLATAFORMA
+    DONACION_ASIGNADA_BENEFICIARIO
+    DONACION_ASIGNADA_DONANTE
+    INICIO_RUTA
+    ENTREGA_EXITOSA
+    ENTREGA_NO_SATISFACTORIA
+  }
+
+  class NotificadorDeEventos {
+    + notificar(TipoDeEvento, destinatarios, datos): void
+  }
+
+  class Notificacion {
+    - String mensaje
+    - MedioDeContacto medio
+    + enviar(): void
+  }
+
+  class DetectorDeInactividad {
+    - int diasUmbral = 20
+    + revisarDonantes(): void
+  }
+
+  abstract class MedioDeContacto <<Strategy>> {
+    + enviarMensaje(String): void
+  }
+
+  class Email
+  class Telefono <<SMS>>
+  class WhatsApp
+}
+
+' ═════════════════════════════════════════
+'  MICROSERVICIO LOGÍSTICA
+' ═════════════════════════════════════════
+
+package "Microservicio Logística" {
+
+  class Camion {
+    - String patente
+    - double volumenM3
+    - double alturaM
+    - double capacidadKg
+  }
+
+  class Ruta {
+    - EstadoRuta estado
+    - String linkMapa
+    + iniciar(): void
+    + completar(): void
+  }
+
+  enum EstadoRuta {
+    PLANIFICADA
+    EN_CURSO
+    COMPLETADA
+  }
+
+  class ParadaDeRuta {
+    - Long entidadBeneficiariaId
+    - String direccion
+  }
+
+  class Entrega {
+    - Long donacionId
+    - Long entidadBeneficiariaId
+    - EstadoEntrega estado
+    - LocalDateTime fechaHoraEntrega
+    - List<String> fotosUrl
+    + iniciarTraslado(): void
+    + confirmar(Camion, LocalDateTime): void
+    + rechazar(): void
+    + retornarADeposito(): void
+    + agregarFoto(String): void
+  }
+
+  enum EstadoEntrega {
+    PENDIENTE
+    EN_TRASLADO
+    ENTREGADA
+    NO_RECIBIDA
+  }
+
+  class PosicionCamion {
+    - Long camionId
+    - double latitud
+    - double longitud
+    - double velocidad
+    - Instant timestamp
+  }
+
+  class PlanificadorRutasService {
+    - String callbackUrl
+    + planificar(): void
+  }
+
+  class PlanificacionScheduler {
+    - LocalTime horarioBajaCarga
+    + iniciar(): void
+  }
+
+  interface PlanificadorExternoAPI <<puerto>> {
+    + solicitarPlanificacion(lote, camiones): void
+  }
+
+  interface DonacionesAPI <<puerto>> {
+    + obtenerDonacionesListasParaRepartir()
+    + notificarInicioRuta()
+    + notificarEntregaConfirmada()
+    + notificarEntregaFallida()
+  }
+}
+
+' ═════════════════════════════════════════
+'  RELACIONES — DONACIONES
+' ═════════════════════════════════════════
+
+Donacion --> EstadoDonacion
+Donacion "1" *-- "0..*" CambioDeEstado : historial\n(auditoría)
+Donacion --> PersonaDonante
+Donacion --> EntidadBeneficiaria : entidadAsignada
+
+EntidadBeneficiaria "1" *-- "0..*" Necesidad
+Necesidad <|-- NecesidadExtraordinaria
+Necesidad <|-- NecesidadRecurrente
+
+' Matchmaking
+AlgoritmoDeAsignacion <|.. CompatibilidadSemantica
+AlgoritmoDeAsignacion <|.. PrioridadSubAtendidos
+ProcesoDeMatchmaking o-- "2..*" AlgoritmoDeAsignacion
+ProcesoDeMatchmaking ..> Donacion : filtra EN_DEPOSITO
+ProcesoDeMatchmaking ..> PropuestaDeAsignacion : <<genera>>
+PropuestaDeAsignacion --> Donacion
+PropuestaDeAsignacion --> "0..10" EntidadBeneficiaria : coincidencias
+MatchmakingScheduler --> ProcesoDeMatchmaking : ejecuta en\nbaja carga
+
+note right of PropuestaDeAsignacion
+  Cada algoritmo propone hasta 10 entidades.
+  Si ambos coinciden en alguna(s), se muestran
+  solo las coincidencias; si no, ambos rankings.
+  Una persona administradora confirma el
+  destino final (confirmar → asignarEntidad).
+end note
+
+' Notificaciones
+NotificadorDeEventos --> TipoDeEvento
+NotificadorDeEventos ..> Notificacion : <<crea>>
+Notificacion --> MedioDeContacto
+MedioDeContacto <|-- Email
+MedioDeContacto <|-- Telefono
+MedioDeContacto <|-- WhatsApp
+DetectorDeInactividad ..> PersonaDonante : diasSinInteraccion() > 20
+DetectorDeInactividad --> NotificadorDeEventos
+PropuestaDeAsignacion ..> NotificadorDeEventos : al confirmar
+
+note bottom of MedioDeContacto
+  E2: envío real por email, SMS y/o
+  WhatsApp (antes simulado). El Strategy
+  de la E1 se conserva; solo cambia la
+  implementación de enviarMensaje().
+end note
+
+' ═════════════════════════════════════════
+'  RELACIONES — LOGÍSTICA
+' ═════════════════════════════════════════
+
+Ruta "1" *-- "1..*" ParadaDeRuta
+ParadaDeRuta "1" *-- "1..*" Entrega
+Ruta --> Camion
+Ruta --> EstadoRuta
+Entrega --> EstadoEntrega
+Camion "1" -- "0..*" PosicionCamion : app móvil del\nconductor reporta >
+
+PlanificacionScheduler --> PlanificadorRutasService : baja carga
+PlanificadorRutasService --> PlanificadorExternoAPI : lotes ≤ 100
+PlanificadorRutasService --> DonacionesAPI
+PlanificadorRutasService ..> Ruta : registra vía\ncallback
+
+note right of Entrega
+  Trazabilidad (E2):
+  inicio de ruta → EN_TRASLADO (automático)
+  confirmación → ENTREGADA (+ camión + fotos)
+  no recibida → NO_RECIBIDA (revisan admins)
+  regreso a depósito → PENDIENTE (replanificable)
+end note
+
+' ═════════════════════════════════════════
+'  FRONTERA ENTRE MICROSERVICIOS
+' ═════════════════════════════════════════
+
+DonacionesAPI ..> Donacion : REST — solo IDs\n(contrato HTTP)
+Entrega ..> Donacion : donacionId\n(referencia, no objeto)
+
+note as NFrontera
+  Frontera entre microservicios: Logística referencia
+  las donaciones y entidades SOLO por ID (donacionId,
+  entidadBeneficiariaId) y se integra vía REST según
+  CONTRATO-DONACIONES.md. Ningún objeto de dominio
+  cruza la frontera.
+end note
+
+@enduml

@@ -1,5 +1,9 @@
 package ar.edu.utn.frba.dds;
 
+import ar.edu.utn.frba.dds.contacto.MedioDeContacto;
+import ar.edu.utn.frba.dds.contacto.Notificacion;
+import ar.edu.utn.frba.dds.donantes.PersonaDonante;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 

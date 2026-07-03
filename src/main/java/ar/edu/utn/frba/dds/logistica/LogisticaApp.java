@@ -1,17 +1,18 @@
 package ar.edu.utn.frba.dds.logistica;
 
-import ar.edu.utn.frba.dds.logistica.adaptadores.DonacionesHttpAdapter;
-import ar.edu.utn.frba.dds.logistica.adaptadores.PlanificadorHttpAdapter;
-import ar.edu.utn.frba.dds.logistica.controller.*;
-import ar.edu.utn.frba.dds.logistica.puertos.DonacionesAPI;
-import ar.edu.utn.frba.dds.logistica.puertos.PlanificadorExternoAPI;
-import ar.edu.utn.frba.dds.logistica.repository.*;
-import ar.edu.utn.frba.dds.logistica.service.PlanificacionScheduler;
-import ar.edu.utn.frba.dds.logistica.service.PlanificadorRutasService;
+import ar.edu.utn.frba.dds.logistica.aplicacion.adaptadores.DonacionesHttpAdapter;
+import ar.edu.utn.frba.dds.logistica.aplicacion.adaptadores.PlanificadorHttpAdapter;
+import ar.edu.utn.frba.dds.logistica.infraestructura.controller.*;
+import ar.edu.utn.frba.dds.logistica.aplicacion.puertos.DonacionesAPI;
+import ar.edu.utn.frba.dds.logistica.aplicacion.puertos.PlanificadorExternoAPI;
+import ar.edu.utn.frba.dds.logistica.infraestructura.repository.*;
+import ar.edu.utn.frba.dds.logistica.aplicacion.service.PlanificacionScheduler;
+import ar.edu.utn.frba.dds.logistica.aplicacion.service.PlanificadorRutasService;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.util.concurrent.TimeUnit;
@@ -45,19 +46,19 @@ public class LogisticaApp {
         
         // 5. Inicializar controladores (puertos entrantes)
         CamionController camionController = new CamionController(camionRepository);
-        PlanificadorController planificadorController = new PlanificadorController(
-                rutaRepository, entregaRepository, camionRepository);
+        PlanificadorController planificadorController = new PlanificadorController(rutaRepository, entregaRepository, camionRepository);
         RutaController rutaController = new RutaController(rutaRepository, donacionesAPI);
         EntregaController entregaController = new EntregaController(entregaRepository, camionRepository, donacionesAPI);
         GpsController gpsController = new GpsController(gpsRepository, camionRepository);
         
         // 6. Configurar e iniciar Javalin
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule()); // Para mapear LocalDate/Instant en JSON
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         
         Javalin app = Javalin.create(config -> {
             config.showJavalinBanner = false;
-            config.jsonMapper(new JavalinJackson(mapper));
+            config.jsonMapper(new JavalinJackson(mapper, false));
         }).start(port);
         
         // Rutas de Camiones (Gestión de Flota)

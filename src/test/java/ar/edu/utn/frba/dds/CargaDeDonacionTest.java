@@ -1,5 +1,11 @@
 package ar.edu.utn.frba.dds;
 
+import ar.edu.utn.frba.dds.bienes.*;
+import ar.edu.utn.frba.dds.contacto.Email;
+import ar.edu.utn.frba.dds.donaciones.CargaDeDonacion;
+import ar.edu.utn.frba.dds.donaciones.Donacion;
+import ar.edu.utn.frba.dds.donantes.PersonaDonante;
+import ar.edu.utn.frba.dds.donantes.PersonaHumana;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

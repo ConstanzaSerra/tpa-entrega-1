@@ -1,5 +1,8 @@
 package ar.edu.utn.frba.dds;
 
+import ar.edu.utn.frba.dds.bienes.Categoria;
+import ar.edu.utn.frba.dds.bienes.Subcategoria;
+import ar.edu.utn.frba.dds.necesidades.NecesidadRecurrente;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

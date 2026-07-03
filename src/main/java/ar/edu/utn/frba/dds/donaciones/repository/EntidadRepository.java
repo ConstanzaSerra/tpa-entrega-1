@@ -1,16 +1,26 @@
 package ar.edu.utn.frba.dds.donaciones.repository;
 
 import ar.edu.utn.frba.dds.donaciones.domain.*;
-import ar.edu.utn.frba.dds.donaciones.matchmaking.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class EntidadRepository {
-  private List<EntidadBeneficiaria> entidades = new ArrayList<>();
+  private final List<EntidadBeneficiaria> entidades = new ArrayList<>();
+  private Long proximoId = 1L;
 
   public void guardar(EntidadBeneficiaria entidad) {
+    if (entidad.getId() == null) {
+      entidad.setId(proximoId++);
+    }
     this.entidades.add(entidad);
+  }
+
+  public Optional<EntidadBeneficiaria> buscarPorId(Long id) {
+    return entidades.stream()
+        .filter(e -> id.equals(e.getId()))
+        .findFirst();
   }
 
   public List<EntidadBeneficiaria> obtenerTodas() {

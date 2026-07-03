@@ -3,6 +3,7 @@ package ar.edu.utn.frba.dds.donaciones.domain;
 import java.util.List;
 
 public class EntidadBeneficiaria {
+  private Long id;
   private String razonSocial;
   private String direccion;
   private String telefono;
@@ -24,5 +25,29 @@ public class EntidadBeneficiaria {
 
   public List<Necesidad> getNecesidades() {
     return necesidades;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getRazonSocial() {
+    return razonSocial;
+  }
+
+  public String getDireccion() {
+    return direccion;
+  }
+
+  public String getTelefono() {
+    return telefono;
+  }
+
+  public List<String> getEmailsRepresentantes() {
+    return emailsRepresentantes;
   }
 }

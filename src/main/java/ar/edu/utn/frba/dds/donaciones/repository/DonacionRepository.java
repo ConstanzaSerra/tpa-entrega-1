@@ -1,23 +1,37 @@
 package ar.edu.utn.frba.dds.donaciones.repository;
 
 import ar.edu.utn.frba.dds.donaciones.domain.*;
-import ar.edu.utn.frba.dds.donaciones.matchmaking.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class DonacionRepository {
-  private List<Donacion> donaciones = new ArrayList<>();
+  private final List<Donacion> donaciones = new ArrayList<>();
+  private Long proximoId = 1L;
 
   public void guardar(Donacion donacion) {
+    if (donacion.getId() == null) {
+      donacion.setId(proximoId++);
+    }
     this.donaciones.add(donacion);
   }
 
-  public List<Donacion> obtenerDonacionesEnDeposito() {
+  public List<Donacion> buscarPorEstado(EstadoDonacion estado) {
     return donaciones.stream()
-        .filter(d -> d.getEstado() == EstadoDonacion.EN_DEPOSITO)
+        .filter(d -> d.getEstado() == estado)
         .collect(Collectors.toList());
+  }
+
+  public Optional<Donacion> buscarPorId(Long id) {
+    return donaciones.stream()
+        .filter(d -> id.equals(d.getId()))
+        .findFirst();
+  }
+
+  public List<Donacion> obtenerDonacionesEnDeposito() {
+    return buscarPorEstado(EstadoDonacion.EN_DEPOSITO);
   }
 
   public List<Donacion> obtenerTodas() {

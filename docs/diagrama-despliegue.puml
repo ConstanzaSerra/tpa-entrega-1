@@ -1,5 +1,10 @@
 @startuml DonaTrack_Despliegue
 
+' Diagrama de despliegue - TPA2 DonaTrack
+' Refleja la division en DOS microservicios independientes (enunciado TPA2:
+' "se solicita que se divida al sistema en, inicialmente, dos microservicios",
+' integracion via HTTP/REST). Cada servidor corre un proyecto Maven autocontenido.
+
 skinparam backgroundColor #FFFFFF
 skinparam node {
  BackgroundColor #EEEDFE
@@ -16,26 +21,34 @@ skinparam database {
  BorderColor #BA7517
  FontColor #000000
 }
+skinparam note {
+ BackgroundColor #FFF9E6
+ BorderColor #BA7517
+}
 
-node "Cliente" <<device>> {
- artifact "Web Browser\n(dashboard)" as browser
+' --- Actores / dispositivos externos ---
+node "Cliente\n(administrador / entidad)" <<device>> {
+ artifact "Web Browser\n(dashboard de monitoreo)" as browser
  artifact "donantes.csv" as csv
 }
 
 node "Celular del chofer" <<device>> {
- artifact "App móvil" as appMovil
+ artifact "App móvil\n(reporte de posición)" as appMovil
 }
 
+' --- Microservicio 1 ---
 node "Servidor Donaciones" <<device>> {
- artifact "donaciones.jar\n(Java 17 + Javalin)\n:8080" as donaciones
+ artifact "tpa-donaciones.jar\n(Java 17 + Javalin)\n:8080" as donaciones
  database "Repositorios\nen memoria" as dbDonaciones
 }
 
+' --- Microservicio 2 ---
 node "Servidor Logística" <<device>> {
- artifact "logistica.jar\n(Java 17 + Javalin)\n:8081" as logistica
+ artifact "tpa-logistica.jar\n(Java 17 + Javalin)\n:8081" as logistica
  database "Repositorios\nen memoria" as dbLogistica
 }
 
+' --- Terceros ---
 node "Proveedor externo" <<device>> {
  artifact "Planificador de Rutas\n:8082" as planificador
 }
@@ -44,14 +57,24 @@ node "Servicios de notificación" <<device>> {
  artifact "Email / SMS / WhatsApp" as canales
 }
 
-browser --> logistica : HTTPS
-csv --> donaciones : HTTPS (upload)
-appMovil --> logistica : HTTPS
-logistica --> donaciones : HTTP (REST)
-logistica --> planificador : HTTP (async)
-planificador --> logistica : HTTP (callback)
-donaciones --> canales : API externa
+note top of donaciones
+  Cada servidor despliega un
+  proyecto Maven independiente
+  integración solo por HTTP/REST
+end note
+
+' --- Conexiones ---
+csv      --> donaciones  : HTTPS\n(importación CSV)
+browser  --> logistica   : HTTPS\n(dashboard tiempo real)
+appMovil --> logistica   : HTTPS\n(POST /camiones/{id}/posicion)
+
+logistica --> donaciones  : HTTP/REST\n(consulta donaciones asignadas\n+ notifica eventos de entrega)
+logistica --> planificador : HTTP async\n(lotes de ≤100)
+planificador --> logistica : HTTP\n(POST /planificador/callback)
+
+donaciones --> canales : envío real de\nnotificaciones
+
 donaciones --> dbDonaciones
-logistica --> dbLogistica
+logistica  --> dbLogistica
 
 @enduml

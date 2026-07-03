@@ -1,0 +1,125 @@
+@startuml DonaTrack - Diagrama de Clases - Logistica
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam classBackgroundColor #EEEDFE
+skinparam classBorderColor #7F77DD
+skinparam classArrowColor #534AB7
+skinparam stereotypeCBackgroundColor #E1F5EE
+skinparam stereotypeABackgroundColor #FAEEDA
+skinparam noteBackgroundColor #FAEEDA
+skinparam noteBorderColor #BA7517
+
+' ─────────────────────────────────────────
+'  CAMIONES
+' ─────────────────────────────────────────
+
+class Camion {
+  - String patente
+  - double volumenM3
+  - double alturaM
+  - double capacidadKg
+  + getPatente(): String
+  + getCapacidadKg(): double
+}
+
+class PosicionCamion {
+  - Long camionId
+  - double latitud
+  - double longitud
+  - Double velocidad
+  - Instant timestamp
+}
+
+' ─────────────────────────────────────────
+'  RUTAS
+' ─────────────────────────────────────────
+
+class Ruta {
+  - Camion camion
+  - List<ParadaDeRuta> paradas
+  - EstadoRuta estado
+  - String linkMapa
+  + iniciar(): void
+  + completar(): void
+  + agregarParada(ParadaDeRuta): void
+  + getEstado(): EstadoRuta
+}
+
+enum EstadoRuta {
+  PLANIFICADA
+  EN_CURSO
+  COMPLETADA
+}
+
+class ParadaDeRuta {
+  - Long entidadBeneficiariaId
+  - String direccion
+  - List<Entrega> entregas
+  + agregarEntrega(Entrega): void
+}
+
+' ─────────────────────────────────────────
+'  ENTREGAS
+' ─────────────────────────────────────────
+
+class Entrega {
+  - Long donacionId
+  - Long entidadBeneficiariaId
+  - String direccionDestino
+  - EstadoEntrega estado
+  - Camion camionQueEntrego
+  - LocalDateTime fechaHoraEntrega
+  - List<String> fotosUrl
+  + iniciarTraslado(): void
+  + confirmar(Camion, LocalDateTime): void
+  + rechazar(): void
+  + retornarADeposito(): void
+  + agregarFoto(String): void
+  + getEstado(): EstadoEntrega
+}
+
+enum EstadoEntrega {
+  PENDIENTE
+  EN_TRASLADO
+  ENTREGADA
+  NO_RECIBIDA
+}
+
+' ─────────────────────────────────────────
+'  PLANIFICACION DE RUTAS
+' ─────────────────────────────────────────
+
+class PlanificadorRutasService {
+  - Set<Long> donacionesEnPlanificacion
+  - String callbackUrl
+  + planificar(): void
+  + registrarResultado(PlanificacionCallbackDTO): void
+}
+
+class PlanificacionScheduler {
+  + iniciar(delay, period, unit): void
+  + iniciarDiario(LocalTime): void
+  + detener(): void
+}
+
+' ─────────────────────────────────────────
+'  RELACIONES
+' ─────────────────────────────────────────
+
+Ruta --> Camion
+Ruta --> EstadoRuta
+Ruta "1" *-- "0..*" ParadaDeRuta
+
+ParadaDeRuta "1" o-- "0..*" Entrega
+
+Entrega --> EstadoEntrega
+Entrega --> "0..1" Camion : camionQueEntrego
+
+PosicionCamion --> Camion : camionId
+
+PlanificacionScheduler --> PlanificadorRutasService
+PlanificadorRutasService ..> Ruta : <<genera>>
+PlanificadorRutasService ..> Entrega : <<genera>>
+
+@enduml

@@ -1,0 +1,57 @@
+@startuml DonaTrack_Despliegue
+
+skinparam backgroundColor #FFFFFF
+skinparam node {
+ BackgroundColor #EEEDFE
+ BorderColor #7F77DD
+ FontColor #000000
+}
+skinparam artifact {
+ BackgroundColor #E1F5EE
+ BorderColor #7F77DD
+ FontColor #000000
+}
+skinparam database {
+ BackgroundColor #FAEEDA
+ BorderColor #BA7517
+ FontColor #000000
+}
+
+node "Cliente" <<device>> {
+ artifact "Web Browser\n(dashboard)" as browser
+ artifact "donantes.csv" as csv
+}
+
+node "Celular del chofer" <<device>> {
+ artifact "App móvil" as appMovil
+}
+
+node "Servidor Donaciones" <<device>> {
+ artifact "donaciones.jar\n(Java 17 + Javalin)\n:8080" as donaciones
+ database "Repositorios\nen memoria" as dbDonaciones
+}
+
+node "Servidor Logística" <<device>> {
+ artifact "logistica.jar\n(Java 17 + Javalin)\n:8081" as logistica
+ database "Repositorios\nen memoria" as dbLogistica
+}
+
+node "Proveedor externo" <<device>> {
+ artifact "Planificador de Rutas\n:8082" as planificador
+}
+
+node "Servicios de notificación" <<device>> {
+ artifact "Email / SMS / WhatsApp" as canales
+}
+
+browser --> logistica : HTTPS
+csv --> donaciones : HTTPS (upload)
+appMovil --> logistica : HTTPS
+logistica --> donaciones : HTTP (REST)
+logistica --> planificador : HTTP (async)
+planificador --> logistica : HTTP (callback)
+donaciones --> canales : API externa
+donaciones --> dbDonaciones
+logistica --> dbLogistica
+
+@enduml

@@ -1,0 +1,13 @@
+package ar.edu.utn.frba.dds.contacto;
+
+public class WhatsApp extends MedioDeContacto {
+
+  public WhatsApp(String valor) {
+    super(valor);
+  }
+
+  @Override
+  public void enviarMensaje(Notificacion notificacion) {
+    System.out.println("Enviando whatsapp a " + getValor() + ": " + notificacion.getMensaje());
+  }
+}

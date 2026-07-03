@@ -5,6 +5,12 @@ import ar.edu.utn.frba.dds.donaciones.matchmaking.*;
 import ar.edu.utn.frba.dds.donaciones.repository.*;
 import ar.edu.utn.frba.dds.donaciones.service.*;
 
+import ar.edu.utn.frba.dds.bienes.*;
+import ar.edu.utn.frba.dds.contacto.Email;
+import ar.edu.utn.frba.dds.donaciones.CargaDeDonacion;
+import ar.edu.utn.frba.dds.donaciones.Donacion;
+import ar.edu.utn.frba.dds.donantes.PersonaDonante;
+import ar.edu.utn.frba.dds.donantes.PersonaHumana;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,14 +37,14 @@ class CargaDeDonacionTest {
     Categoria muebles   = Categoria.MOBILIARIO;
     Categoria alimentos = Categoria.ALIMENTOS;
 
-    sillas = new Subcategoria("Sillas", muebles,   true,  false);
-    mesas = new Subcategoria("Mesas", muebles, true, false);
-    fideos = new Subcategoria("Fideos", alimentos, false, true);
+    sillas = new Subcategoria("Sillas", muebles);
+    mesas  = new Subcategoria("Mesas",  muebles);
+    fideos = new Subcategoria("Fideos", alimentos);
   }
 
   @Test
   void segmentarConUnSoloBienGeneraUnaDonacion() {
-    Bien silla = new BienSimple("Silla de oficina", null, sillas, 6, "unidades");
+    Bien silla = new BienConEstado("Silla de oficina", null, sillas, 6, "unidades", true);
     CargaDeDonacion carga = new CargaDeDonacion("Donación muebles", LocalDate.now(), donante,
         new ArrayList<>(List.of(silla)));
 
@@ -51,9 +57,9 @@ class CargaDeDonacionTest {
 
   @Test
   void segmentarAgrupaCorrectamentePorSubcategoria() {
-    Bien silla1 = new BienSimple("Silla A", null, sillas, 6, "unidades");
-    Bien silla2 = new BienSimple("Silla B", null, sillas, 4, "unidades");
-    Bien mesa   = new BienSimple("Mesa",    null, mesas, 1, "unidades");
+    Bien silla1 = new BienConEstado("Silla A", null, sillas, 6, "unidades", true);
+    Bien silla2 = new BienConEstado("Silla B", null, sillas, 4, "unidades", true);
+    Bien mesa   = new BienConEstado("Mesa",    null, mesas, 1, "unidades", true);
 
     CargaDeDonacion carga = new CargaDeDonacion("Donación mixta", LocalDate.now(), donante,
         new ArrayList<>(List.of(silla1, silla2, mesa)));
@@ -108,5 +114,14 @@ class CargaDeDonacionTest {
     List<Donacion> resultado = carga.segmentar();
 
     assertTrue(resultado.isEmpty());
+  }
+
+  @Test
+  void segmentarLanzaExcepcionSiBienRequiereEstadoYNoEsBienConEstado() {
+    Bien silla = new BienSimple("Silla sin estado", null, sillas, 3, "unidades");
+    CargaDeDonacion carga = new CargaDeDonacion("Carga inválida", LocalDate.now(), donante,
+        new ArrayList<>(List.of(silla)));
+
+    assertThrows(IllegalArgumentException.class, carga::segmentar);
   }
 }

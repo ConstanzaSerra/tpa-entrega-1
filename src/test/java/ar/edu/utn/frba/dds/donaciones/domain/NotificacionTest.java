@@ -5,6 +5,10 @@ import ar.edu.utn.frba.dds.donaciones.matchmaking.*;
 import ar.edu.utn.frba.dds.donaciones.repository.*;
 import ar.edu.utn.frba.dds.donaciones.service.*;
 
+import ar.edu.utn.frba.dds.contacto.MedioDeContacto;
+import ar.edu.utn.frba.dds.contacto.Notificacion;
+import ar.edu.utn.frba.dds.donantes.PersonaDonante;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
@@ -34,7 +38,7 @@ public class NotificacionTest {
   public void envioDeNotificacion() {
     this.notificacion.enviar();
 
-    verify(this.medioDeContacto, times(1)).enviarMensaje();
+    verify(this.medioDeContacto, times(1)).enviarMensaje(this.notificacion);
 
     assertTrue(this.notificacion.getCompletada());
 

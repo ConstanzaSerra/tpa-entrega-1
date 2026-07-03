@@ -5,6 +5,7 @@ import ar.edu.utn.frba.dds.donaciones.matchmaking.*;
 import ar.edu.utn.frba.dds.donaciones.repository.*;
 import ar.edu.utn.frba.dds.donaciones.service.*;
 
+import ar.edu.utn.frba.dds.contacto.Email;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

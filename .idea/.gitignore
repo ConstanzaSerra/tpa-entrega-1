@@ -1,3 +1,20 @@
-# Default ignored files
-/shelf/
-/workspace.xml
+# Maven
+target/
+
+# IntelliJ IDEA
+.idea/workspace.xml
+.idea/shelf/
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.class

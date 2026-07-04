@@ -1,10 +1,13 @@
 package ar.edu.utn.frba.dds.donaciones.controller;
 
 import ar.edu.utn.frba.dds.donaciones.domain.*;
+import ar.edu.utn.frba.dds.donaciones.dto.AsignarEntidadDTO;
+import ar.edu.utn.frba.dds.donaciones.dto.CambioEstadoDTO;
 import ar.edu.utn.frba.dds.donaciones.dto.DonacionDTO;
 import ar.edu.utn.frba.dds.donaciones.dto.DonacionParaRutaDTO;
 import ar.edu.utn.frba.dds.donaciones.repository.DonacionRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.DonanteRepository;
+import ar.edu.utn.frba.dds.donaciones.repository.EntidadRepository;
 import io.javalin.http.Context;
 
 import java.time.LocalDate;
@@ -19,10 +22,14 @@ public class DonacionController {
 
   private final DonacionRepository donacionRepository;
   private final DonanteRepository donanteRepository;
+  private final EntidadRepository entidadRepository;
 
-  public DonacionController(DonacionRepository donacionRepository, DonanteRepository donanteRepository) {
+  public DonacionController(DonacionRepository donacionRepository,
+                            DonanteRepository donanteRepository,
+                            EntidadRepository entidadRepository) {
     this.donacionRepository = donacionRepository;
     this.donanteRepository = donanteRepository;
+    this.entidadRepository = entidadRepository;
   }
 
   /**
@@ -108,6 +115,25 @@ public class DonacionController {
     }
     DonacionDTO dto = ctx.bodyAsClass(DonacionDTO.class);
     Donacion d = existente.get();
+
+    // Cambio de estado: lo usa Logistica al planificar (PATCH {"estado":"LISTA_PARA_ENTREGAR"}).
+    // No setea el campo directamente: canaliza la transicion validada del dominio.
+    if (dto.estado != null) {
+      EstadoDonacion objetivo;
+      try {
+        objetivo = EstadoDonacion.valueOf(dto.estado);
+      } catch (IllegalArgumentException e) {
+        ctx.status(400).json(Map.of("error", "Estado invalido: " + dto.estado));
+        return;
+      }
+      try {
+        d.avanzarHacia(objetivo);
+      } catch (IllegalStateException e) {
+        ctx.status(409).json(Map.of("error", e.getMessage()));
+        return;
+      }
+    }
+
     try {
       if (dto.cantidad != null) {
         d.setCantidad(dto.cantidad);
@@ -134,6 +160,47 @@ public class DonacionController {
     } else {
       ctx.status(404).json(Map.of("error", "No existe la donacion " + id));
     }
+  }
+
+  // GET /donaciones/{id}/historial  (trazabilidad de estados)
+  public void historial(Context ctx) {
+    Long id = Long.valueOf(ctx.pathParam("id"));
+    donacionRepository.buscarPorId(id).ifPresentOrElse(
+        d -> {
+          List<CambioEstadoDTO> historial = d.getHistorial().stream()
+              .map(c -> new CambioEstadoDTO(c.getEstado().name(), c.getFechaHora().toString()))
+              .collect(Collectors.toList());
+          ctx.json(historial);
+        },
+        () -> ctx.status(404).json(Map.of("error", "No existe la donacion " + id)));
+  }
+
+  // POST /donaciones/{id}/asignacion  (accion de negocio: asignar destino)
+  public void asignar(Context ctx) {
+    Long id = Long.valueOf(ctx.pathParam("id"));
+    var oDonacion = donacionRepository.buscarPorId(id);
+    if (oDonacion.isEmpty()) {
+      ctx.status(404).json(Map.of("error", "No existe la donacion " + id));
+      return;
+    }
+    AsignarEntidadDTO dto = ctx.bodyAsClass(AsignarEntidadDTO.class);
+    if (dto.entidadBeneficiariaId == null) {
+      ctx.status(400).json(Map.of("error", "Falta 'entidadBeneficiariaId'"));
+      return;
+    }
+    var oEntidad = entidadRepository.buscarPorId(dto.entidadBeneficiariaId);
+    if (oEntidad.isEmpty()) {
+      ctx.status(400).json(Map.of("error", "No existe la entidad " + dto.entidadBeneficiariaId));
+      return;
+    }
+    try {
+      oDonacion.get().asignarEntidad(oEntidad.get());
+    } catch (IllegalStateException e) {
+      // La donacion no estaba en un estado que permita la asignacion
+      ctx.status(409).json(Map.of("error", e.getMessage()));
+      return;
+    }
+    ctx.json(aDTO(oDonacion.get()));
   }
 
   // ---------- mapeo dominio -> DTO ----------

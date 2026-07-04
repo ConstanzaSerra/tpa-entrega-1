@@ -1,6 +1,9 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Donacion {
   private Long id;
@@ -12,6 +15,7 @@ public class Donacion {
   private PersonaDonante donante;
   private EntidadBeneficiaria entidadAsignada;
   private String justificacionFallida;
+  private final List<CambioDeEstado> historial = new ArrayList<>();
 
   public Donacion(Subcategoria subcategoria, int cantidad, String unidadMedida,
                   PersonaDonante donante, LocalDate fechaRegistro) {
@@ -21,41 +25,55 @@ public class Donacion {
     this.donante = donante;
     this.fechaRegistro = fechaRegistro;
     this.estado = EstadoDonacion.EN_DEPOSITO;
+    registrarCambio();
   }
 
+  // Anota en el historial el estado actual. Se llama desde cada transicion,
+  // por lo que la trazabilidad no se puede saltear.
+  private void registrarCambio() {
+    this.historial.add(new CambioDeEstado(this.estado, LocalDateTime.now()));
+  }
+
+  // Avanza al proximo estado de la linea de entrega, si corresponde.
   public void avanzarEstado() {
-    switch (estado) {
-      case EN_DEPOSITO:
-        throw new IllegalStateException(
-            "Para avanzar desde EN_DEPOSITO debe usarse asignarEntidad(EntidadBeneficiaria).");
-      case ASIGNACION_REALIZADA:
-        estado = EstadoDonacion.LISTA_PARA_ENTREGAR;
-        break;
-
-      case LISTA_PARA_ENTREGAR:
-        estado = EstadoDonacion.EN_TRASLADO;
-        break;
-
-      case EN_TRASLADO:
-        estado = EstadoDonacion.ENTREGADA;
-        break;
-
-      case ENTREGA_FALLIDA:
-        // Vuelve al depósito para reintentar el proceso
-        estado = EstadoDonacion.EN_DEPOSITO;
-        entidadAsignada = null;
-        justificacionFallida = null;
-        break;
-
-      case ENTREGADA:
-        throw new IllegalStateException("La donación ya fue entregada y no puede avanzar de estado.");
-
-      case VENCIDA:
-        throw new IllegalStateException("La donación está vencida y no puede avanzar de estado.");
-
-      default:
-        throw new IllegalStateException("Estado desconocido: " + estado);
+    EstadoDonacion siguiente = calcularSiguiente();
+    if (siguiente == null) {
+      throw new IllegalStateException("La donación no puede avanzar de estado desde: " + estado);
     }
+    aplicarAvance(siguiente);
+  }
+
+  // Avanza solo si el proximo estado natural coincide con el objetivo pedido.
+  // Lo usa la integracion con Logistica, que indica a que estado quiere pasar.
+  public void avanzarHacia(EstadoDonacion objetivo) {
+    EstadoDonacion siguiente = calcularSiguiente();
+    if (siguiente == null) {
+      throw new IllegalStateException("La donación no puede avanzar de estado desde: " + estado);
+    }
+    if (siguiente != objetivo) {
+      throw new IllegalStateException(
+          "Desde " + estado + " la donación solo puede pasar a " + siguiente + ", no a " + objetivo);
+    }
+    aplicarAvance(siguiente);
+  }
+
+  private EstadoDonacion calcularSiguiente() {
+    switch (estado) {
+      case ASIGNACION_REALIZADA: return EstadoDonacion.LISTA_PARA_ENTREGAR;
+      case LISTA_PARA_ENTREGAR:  return EstadoDonacion.EN_TRASLADO;
+      case EN_TRASLADO:          return EstadoDonacion.ENTREGADA;
+      case ENTREGA_FALLIDA:      return EstadoDonacion.EN_DEPOSITO; // reintento: vuelve al deposito
+      default:                   return null; // EN_DEPOSITO, ENTREGADA, VENCIDA no avanzan por esta via
+    }
+  }
+
+  private void aplicarAvance(EstadoDonacion siguiente) {
+    if (estado == EstadoDonacion.ENTREGA_FALLIDA && siguiente == EstadoDonacion.EN_DEPOSITO) {
+      entidadAsignada = null;
+      justificacionFallida = null;
+    }
+    estado = siguiente;
+    registrarCambio();
   }
 
   public void asignarEntidad(EntidadBeneficiaria entidadBeneficiaria) {
@@ -65,6 +83,7 @@ public class Donacion {
     }
     this.entidadAsignada = entidadBeneficiaria;
     this.estado = EstadoDonacion.ASIGNACION_REALIZADA;
+    registrarCambio();
   }
 
   public void marcarEntregaFallida(String justificacion) {
@@ -74,6 +93,7 @@ public class Donacion {
     }
     this.justificacionFallida = justificacion;
     this.estado = EstadoDonacion.ENTREGA_FALLIDA;
+    registrarCambio();
   }
 
   public void marcarVencida() {
@@ -82,6 +102,11 @@ public class Donacion {
           "No se puede marcar como vencida una donación que ya está en estado: " + estado);
     }
     this.estado = EstadoDonacion.VENCIDA;
+    registrarCambio();
+  }
+
+  public List<CambioDeEstado> getHistorial() {
+    return new ArrayList<>(historial);
   }
 
   public EstadoDonacion getEstado() {

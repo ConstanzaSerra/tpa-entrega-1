@@ -26,4 +26,8 @@ public class EntidadRepository {
   public List<EntidadBeneficiaria> obtenerTodas() {
     return new ArrayList<>(entidades);
   }
+
+  public boolean eliminar(Long id) {
+    return entidades.removeIf(e -> id.equals(e.getId()));
+  }
 }

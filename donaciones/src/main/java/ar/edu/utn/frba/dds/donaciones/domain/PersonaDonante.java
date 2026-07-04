@@ -1,11 +1,13 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
+import java.time.LocalDate;
 import java.util.List;
 
-public abstract class PersonaDonante {
+public abstract class PersonaDonante implements Notificable {
   private Long id;
   private List<MedioDeContacto> medioDeContactos;
   private MedioDeContacto medioDeContactoPredeterminado;
+  private LocalDate ultimaInteraccion = LocalDate.now();
 
   public PersonaDonante(List<MedioDeContacto> medioDeContactos, MedioDeContacto medioDeContactoPredeterminado) {
     this.medioDeContactos = medioDeContactos;
@@ -24,6 +26,11 @@ public abstract class PersonaDonante {
     return medioDeContactoPredeterminado;
   }
 
+  @Override
+  public MedioDeContacto medioDePreferencia() {
+    return medioDeContactoPredeterminado;
+  }
+
   public List<MedioDeContacto> getMedioDeContactos() {
     return medioDeContactos;
   }
@@ -34,6 +41,19 @@ public abstract class PersonaDonante {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  public LocalDate getUltimaInteraccion() {
+    return ultimaInteraccion;
+  }
+
+  public void setUltimaInteraccion(LocalDate ultimaInteraccion) {
+    this.ultimaInteraccion = ultimaInteraccion;
+  }
+
+  // Marca que el donante interactuo con la plataforma hoy.
+  public void registrarInteraccion() {
+    this.ultimaInteraccion = LocalDate.now();
   }
 
   public void actualizarEmail(String nuevoEmail) {

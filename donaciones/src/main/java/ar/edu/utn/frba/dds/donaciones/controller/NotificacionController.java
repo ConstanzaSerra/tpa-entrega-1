@@ -1,30 +1,35 @@
 package ar.edu.utn.frba.dds.donaciones.controller;
 
 import ar.edu.utn.frba.dds.donaciones.domain.Donacion;
+import ar.edu.utn.frba.dds.donaciones.domain.Email;
 import ar.edu.utn.frba.dds.donaciones.domain.EstadoDonacion;
+import ar.edu.utn.frba.dds.donaciones.domain.Notificable;
 import ar.edu.utn.frba.dds.donaciones.dto.EntregaAfectadaDTO;
 import ar.edu.utn.frba.dds.donaciones.dto.EventoEntregaConfirmadaDTO;
 import ar.edu.utn.frba.dds.donaciones.dto.EventoEntregaFallidaDTO;
 import ar.edu.utn.frba.dds.donaciones.dto.EventoInicioRutaDTO;
+import ar.edu.utn.frba.dds.donaciones.notificaciones.EventoDeNotificacion;
+import ar.edu.utn.frba.dds.donaciones.notificaciones.GestorDeNotificaciones;
 import ar.edu.utn.frba.dds.donaciones.repository.DonacionRepository;
-import ar.edu.utn.frba.dds.donaciones.service.ServicioDeNotificaciones;
 import io.javalin.http.Context;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Recibe los eventos que invoca Logistica.
- * Cada evento: (1) actualiza la trazabilidad de la donacion y (2) dispara la notificacion.
- * Devuelve 200 para acusar recibo (Logistica los envia de forma asincrona).
+ * Cada evento: (1) actualiza la trazabilidad de la donacion y (2) publica un evento de notificacion.
+ * El envio real lo resuelven los observadores suscriptos al GestorDeNotificaciones.
  */
 public class NotificacionController {
 
   private final DonacionRepository donacionRepository;
-  private final ServicioDeNotificaciones notificaciones;
+  private final GestorDeNotificaciones gestor;
 
-  public NotificacionController(DonacionRepository donacionRepository, ServicioDeNotificaciones notificaciones) {
+  public NotificacionController(DonacionRepository donacionRepository, GestorDeNotificaciones gestor) {
     this.donacionRepository = donacionRepository;
-    this.notificaciones = notificaciones;
+    this.gestor = gestor;
   }
 
   // POST /notificaciones/inicio-ruta
@@ -46,8 +51,7 @@ public class NotificacionController {
     EventoEntregaConfirmadaDTO evento = ctx.bodyAsClass(EventoEntregaConfirmadaDTO.class);
     donacionRepository.buscarPorId(evento.donacionId).ifPresent(d -> {
       transicionar(d, EstadoDonacion.ENTREGADA);
-      String comprobante = "Entrega confirmada. Fecha: " + evento.fechaHora + " | camión: " + evento.patenteCamion;
-      notificarPartes(d, comprobante);
+      notificarPartes(d, "Entrega confirmada. Fecha: " + evento.fechaHora + " | camión: " + evento.patenteCamion);
     });
     ctx.status(200).json(Map.of("status", "ok"));
   }
@@ -62,7 +66,10 @@ public class NotificacionController {
         System.err.println("No se pudo marcar fallida la donacion " + d.getId() + ": " + e.getMessage());
       }
       notificarPartes(d, "La entrega no pudo concretarse. Motivo: " + evento.motivo);
-      notificaciones.notificar("administracion", "Entrega fallida de la donacion " + d.getId() + ": " + evento.motivo);
+      // La administracion tambien se entera (destinatario definido al vuelo con un lambda Notificable)
+      Notificable admin = () -> new Email("admin@donatrack.org");
+      gestor.publicar(new EventoDeNotificacion(List.of(admin),
+          "Entrega fallida de la donacion " + d.getId() + ": " + evento.motivo));
     });
     ctx.status(200).json(Map.of("status", "ok"));
   }
@@ -78,11 +85,15 @@ public class NotificacionController {
   }
 
   private void notificarPartes(Donacion d, String mensaje) {
+    List<Notificable> destinatarios = new ArrayList<>();
     if (d.getDonante() != null) {
-      notificaciones.notificar("donante#" + d.getDonante().getId(), mensaje);
+      destinatarios.add(d.getDonante());
     }
     if (d.getEntidadAsignada() != null) {
-      notificaciones.notificar("entidad#" + d.getEntidadAsignada().getId(), mensaje);
+      destinatarios.add(d.getEntidadAsignada());
+    }
+    if (!destinatarios.isEmpty()) {
+      gestor.publicar(new EventoDeNotificacion(destinatarios, mensaje));
     }
   }
 }

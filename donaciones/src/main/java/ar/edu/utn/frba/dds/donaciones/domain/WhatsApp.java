@@ -7,7 +7,7 @@ public class WhatsApp extends MedioDeContacto {
   }
 
   @Override
-  public void enviarMensaje() {
-    System.out.println("Enviando whatsapp a " + this.getValor());
+  public void enviarMensaje(String mensaje) {
+    System.out.println("Enviando whatsapp a " + this.getValor() + ": " + mensaje);
   }
 }

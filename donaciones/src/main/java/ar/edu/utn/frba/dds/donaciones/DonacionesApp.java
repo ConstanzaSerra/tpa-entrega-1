@@ -6,11 +6,13 @@ import ar.edu.utn.frba.dds.donaciones.controller.EntidadController;
 import ar.edu.utn.frba.dds.donaciones.controller.MatchmakingController;
 import ar.edu.utn.frba.dds.donaciones.controller.NotificacionController;
 import ar.edu.utn.frba.dds.donaciones.matchmaking.ProcesadorMatchmaking;
+import ar.edu.utn.frba.dds.donaciones.notificaciones.EnviadorPorMedioPreferido;
+import ar.edu.utn.frba.dds.donaciones.notificaciones.GestorDeNotificaciones;
 import ar.edu.utn.frba.dds.donaciones.repository.DonacionRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.DonanteRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.EntidadRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.PropuestaRepository;
-import ar.edu.utn.frba.dds.donaciones.service.ServicioDeNotificaciones;
+import ar.edu.utn.frba.dds.donaciones.service.TareaDeInactividad;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -40,9 +42,13 @@ public class DonacionesApp {
     DonacionController donacionController = new DonacionController(donacionRepository, donanteRepository, entidadRepository);
     DonanteController donanteController = new DonanteController(donanteRepository);
     EntidadController entidadController = new EntidadController(entidadRepository);
-    ServicioDeNotificaciones servicioDeNotificaciones = new ServicioDeNotificaciones();
-    NotificacionController notificacionController = new NotificacionController(donacionRepository, servicioDeNotificaciones);
+    GestorDeNotificaciones gestorNotificaciones = new GestorDeNotificaciones();
+    gestorNotificaciones.suscribir(new EnviadorPorMedioPreferido());
+    NotificacionController notificacionController = new NotificacionController(donacionRepository, gestorNotificaciones);
     MatchmakingController matchmakingController = new MatchmakingController(donacionRepository, entidadRepository, propuestaRepository, procesadorMatchmaking);
+
+    // Tarea calendarizada de inactividad (reusa el gestor de notificaciones)
+    TareaDeInactividad tareaInactividad = new TareaDeInactividad(donanteRepository, gestorNotificaciones);
 
     // 3. Servidor (Jackson con soporte de fechas Java 8, igual que Logistica)
     ObjectMapper mapper = new ObjectMapper();
@@ -85,11 +91,23 @@ public class DonacionesApp {
     app.post("/entidades", entidadController::crear);
     app.get("/entidades", entidadController::listar);
     app.get("/entidades/{id}", entidadController::obtenerPorId);
+    app.patch("/entidades/{id}", entidadController::actualizar);
+    app.delete("/entidades/{id}", entidadController::eliminar);
 
     // Eventos que invoca Logistica (trazabilidad + notificacion)
     app.post("/notificaciones/inicio-ruta", notificacionController::inicioRuta);
     app.post("/notificaciones/entrega-confirmada", notificacionController::entregaConfirmada);
     app.post("/notificaciones/entrega-fallida", notificacionController::entregaFallida);
+
+    // Deteccion de inactividad de donantes a demanda (ademas de la calendarizada)
+    app.post("/tareas/inactividad", ctx -> {
+      tareaInactividad.ejecutar();
+      ctx.json(Map.of("status", "ejecutado"));
+    });
+
+    // Tarea calendarizada: corre una vez por dia
+    tareaInactividad.iniciarDiario();
+    Runtime.getRuntime().addShutdownHook(new Thread(tareaInactividad::detener));
 
     System.out.println("Servidor Donaciones iniciado en http://localhost:" + PUERTO);
   }

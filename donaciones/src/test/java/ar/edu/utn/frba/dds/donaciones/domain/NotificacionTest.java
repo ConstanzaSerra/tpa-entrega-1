@@ -34,7 +34,7 @@ public class NotificacionTest {
   public void envioDeNotificacion() {
     this.notificacion.enviar();
 
-    verify(this.medioDeContacto, times(1)).enviarMensaje();
+    verify(this.medioDeContacto, times(1)).enviarMensaje("Donacion recibida");
 
     assertTrue(this.notificacion.getCompletada());
 

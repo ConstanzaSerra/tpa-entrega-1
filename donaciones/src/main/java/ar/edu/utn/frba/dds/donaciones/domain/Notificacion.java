@@ -23,7 +23,7 @@ public class Notificacion {
 
     if (this.medio != null) {
 
-      this.medio.enviarMensaje();
+      this.medio.enviarMensaje(this.mensaje);
       this.marcarCompletada();
 
     } else {

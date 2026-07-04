@@ -5,6 +5,8 @@ import ar.edu.utn.frba.dds.donaciones.dto.DonanteDTO;
 import ar.edu.utn.frba.dds.donaciones.repository.DonanteRepository;
 import io.javalin.http.Context;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,14 @@ public class DonanteController {
     } catch (IllegalArgumentException e) {
       ctx.status(400).json(Map.of("error", e.getMessage()));
       return;
+    }
+    if (dto.ultimaInteraccion != null) {
+      try {
+        donante.setUltimaInteraccion(LocalDate.parse(dto.ultimaInteraccion));
+      } catch (DateTimeParseException e) {
+        ctx.status(400).json(Map.of("error", "ultimaInteraccion debe ser una fecha ISO (yyyy-MM-dd)"));
+        return;
+      }
     }
     donanteRepository.guardar(donante);
     ctx.status(201).json(aDTO(donante));
@@ -129,6 +139,7 @@ public class DonanteController {
     dto.id = d.getId();
     dto.email = valorDe(d, Email.class);
     dto.telefono = valorDe(d, Telefono.class);
+    dto.ultimaInteraccion = d.getUltimaInteraccion() != null ? d.getUltimaInteraccion().toString() : null;
 
     if (d instanceof PersonaHumana h) {
       dto.tipo = "HUMANA";

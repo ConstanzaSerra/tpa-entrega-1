@@ -52,6 +52,42 @@ public class EntidadController {
         () -> ctx.status(404).json(Map.of("error", "No existe la entidad " + id)));
   }
 
+  // PATCH /entidades/{id}  (actualizacion parcial)
+  public void actualizar(Context ctx) {
+    Long id = Long.valueOf(ctx.pathParam("id"));
+    var existente = entidadRepository.buscarPorId(id);
+    if (existente.isEmpty()) {
+      ctx.status(404).json(Map.of("error", "No existe la entidad " + id));
+      return;
+    }
+    EntidadBeneficiariaDTO dto = ctx.bodyAsClass(EntidadBeneficiariaDTO.class);
+    EntidadBeneficiaria entidad = existente.get();
+    if (dto.razonSocial != null) {
+      entidad.setRazonSocial(dto.razonSocial);
+    }
+    if (dto.direccion != null) {
+      entidad.setDireccion(dto.direccion);
+    }
+    if (dto.telefono != null) {
+      entidad.setTelefono(dto.telefono);
+    }
+    if (dto.emailsRepresentantes != null) {
+      entidad.setEmailsRepresentantes(dto.emailsRepresentantes);
+    }
+    ctx.json(aDTO(entidad));
+  }
+
+  // DELETE /entidades/{id}
+  public void eliminar(Context ctx) {
+    Long id = Long.valueOf(ctx.pathParam("id"));
+    boolean eliminado = entidadRepository.eliminar(id);
+    if (eliminado) {
+      ctx.status(204);
+    } else {
+      ctx.status(404).json(Map.of("error", "No existe la entidad " + id));
+    }
+  }
+
   private EntidadBeneficiariaDTO aDTO(EntidadBeneficiaria e) {
     EntidadBeneficiariaDTO dto = new EntidadBeneficiariaDTO();
     dto.id = e.getId();

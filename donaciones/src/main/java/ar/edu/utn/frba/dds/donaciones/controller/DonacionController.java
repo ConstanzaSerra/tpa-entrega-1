@@ -92,6 +92,7 @@ public class DonacionController {
     Subcategoria subcategoria = new Subcategoria(dto.subcategoriaNombre, categoria, false, false);
     int cantidad = dto.cantidad != null ? dto.cantidad : 0;
 
+    oDonante.get().registrarInteraccion(); // crear una donacion cuenta como interaccion
     Donacion donacion = new Donacion(subcategoria, cantidad, dto.unidadMedida, oDonante.get(), LocalDate.now());
     donacionRepository.guardar(donacion);
     ctx.status(201).json(aDTO(donacion));

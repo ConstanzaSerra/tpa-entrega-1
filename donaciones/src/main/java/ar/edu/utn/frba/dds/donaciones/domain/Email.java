@@ -1,5 +1,7 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
+import ar.edu.utn.frba.dds.donaciones.adaptadores.EmailSender;
+
 import java.util.regex.Pattern;
 
 public class Email extends MedioDeContacto {
@@ -12,8 +14,8 @@ public class Email extends MedioDeContacto {
   }
 
   @Override
-  public void enviarMensaje() {
-    System.out.println("Enviando email a " + getValor());
+  public void enviarMensaje(String mensaje) {
+    EmailSender.enviar(getValor(), mensaje);
   }
 
   private static String validar(String valor) {

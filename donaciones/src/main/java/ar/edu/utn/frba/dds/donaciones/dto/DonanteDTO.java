@@ -23,6 +23,9 @@ public class DonanteDTO {
   public String tipoJuridico;  // GUBERNAMENTAL | ONG | EMPRESA | INSTITUCION
   public String rubro;
 
+  // Fecha ISO (yyyy-MM-dd) de ultima interaccion. Opcional al crear; util para import/testing.
+  public String ultimaInteraccion;
+
   public DonanteDTO() {
   }
 }

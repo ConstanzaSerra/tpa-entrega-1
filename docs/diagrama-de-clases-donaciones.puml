@@ -1,0 +1,314 @@
+@startuml DonaTrack - Diagrama de Clases (Donaciones)
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam classBackgroundColor #EEEDFE
+skinparam classBorderColor #7F77DD
+skinparam classArrowColor #534AB7
+skinparam stereotypeCBackgroundColor #E1F5EE
+skinparam stereotypeABackgroundColor #FAEEDA
+skinparam noteBackgroundColor #FAEEDA
+skinparam noteBorderColor #BA7517
+
+' ─────────────────────────────────────────
+'  DONANTES
+' ─────────────────────────────────────────
+
+abstract class PersonaDonante {
+  - Long id
+  - List<MedioDeContacto> mediosDeContacto
+  - MedioDeContacto predeterminado
+  + agregarMedio(MedioDeContacto): void
+  + setPredeterminado(MedioDeContacto): void
+  + getMedioDeContactoPredeterminado(): MedioDeContacto
+  + medioDePreferencia(): MedioDeContacto
+}
+
+class PersonaHumana {
+  - String nombre
+  - String apellido
+  - Integer edad
+  - Integer dni
+  - String genero
+  - String direccion
+}
+
+class PersonaJuridica {
+  - String razonSocial
+  - TipoJuridico tipo
+  - String rubro
+  - List<Representante> representantes
+  + agregarRepresentante(Representante): void
+}
+
+class Representante {
+  - String nombre
+  - String apellido
+  - String dni
+  - String email
+}
+
+enum TipoJuridico {
+  GUBERNAMENTAL
+  ONG
+  EMPRESA
+  INSTITUCION
+}
+
+' ─────────────────────────────────────────
+'  MEDIOS DE CONTACTO  (Strategy de envio)
+' ─────────────────────────────────────────
+
+abstract class MedioDeContacto {
+  - String valor
+  + getValor(): String
+  + enviarMensaje(String): void
+}
+
+class Email {
+  + enviarMensaje(String): void
+}
+
+class Telefono {
+  + enviarMensaje(String): void
+}
+
+class WhatsApp {
+  + enviarMensaje(String): void
+}
+
+class EmailSender <<infraestructura>> {
+  + {static} enviar(destino: String, cuerpo: String): void
+}
+
+note right of MedioDeContacto
+  <b>Strategy</b>: cada medio sabe
+  enviar por su canal. Email delega
+  el envio real (SMTP) en EmailSender.
+end note
+
+' ─────────────────────────────────────────
+'  BIENES Y CATEGORIAS
+' ─────────────────────────────────────────
+
+class Subcategoria {
+  - String nombre
+  - Categoria categoria
+  - boolean requiereEstado
+  - boolean esPerecible
+  + getNombre(): String
+  + getCategoria(): Categoria
+}
+
+enum Categoria {
+  MOBILIARIO
+  ALIMENTOS
+  VESTIMENTA
+}
+
+abstract class Bien {
+  - String descripcion
+  - Subcategoria subcategoria
+  - int cantidad
+  - String unidadMedida
+}
+
+class BienSimple
+class BienConEstado {
+  - boolean esNuevo
+}
+class BienPerecible {
+  - LocalDate fechaVencimiento
+}
+
+' ─────────────────────────────────────────
+'  CARGA Y DONACIONES  (trazabilidad de estados)
+' ─────────────────────────────────────────
+
+class CargaDeDonacion {
+  - LocalDate fecha
+  - PersonaDonante donante
+  - List<Bien> bienes
+  + segmentar(): List<Donacion>
+}
+
+class Donacion {
+  - Long id
+  - Subcategoria subcategoria
+  - int cantidad
+  - String unidadMedida
+  - EstadoDonacion estado
+  - LocalDate fechaRegistro
+  - PersonaDonante donante
+  - EntidadBeneficiaria entidadAsignada
+  - String justificacionFallida
+  - List<CambioDeEstado> historial
+  + asignarEntidad(EntidadBeneficiaria): void
+  + avanzarEstado(): void
+  + avanzarHacia(EstadoDonacion): void
+  + marcarEntregaFallida(String): void
+  + marcarVencida(): void
+  + getHistorial(): List<CambioDeEstado>
+}
+
+class CambioDeEstado {
+  - EstadoDonacion estado
+  - LocalDateTime fechaHora
+}
+
+enum EstadoDonacion {
+  EN_DEPOSITO
+  ASIGNACION_REALIZADA
+  LISTA_PARA_ENTREGAR
+  EN_TRASLADO
+  ENTREGADA
+  ENTREGA_FALLIDA
+  VENCIDA
+}
+
+' ─────────────────────────────────────────
+'  ENTIDADES BENEFICIARIAS Y NECESIDADES
+' ─────────────────────────────────────────
+
+class EntidadBeneficiaria {
+  - Long id
+  - String razonSocial
+  - String direccion
+  - String telefono
+  - List<String> emailsRepresentantes
+  - List<Necesidad> necesidades
+  + agregarNecesidad(Necesidad): void
+  + medioDePreferencia(): MedioDeContacto
+}
+
+abstract class Necesidad {
+  - Subcategoria subcategoria
+  - String descripcion
+  + estaSatisfecha(): boolean
+  + registrarRecepcion(int): void
+}
+
+class NecesidadExtraordinaria {
+  - int cantidadRequerida
+  - int cantidadRecibida
+}
+
+class NecesidadRecurrente {
+  - int cantidadObjetivoPorPeriodo
+  - int cantidadRecibidaEnPeriodo
+}
+
+' ─────────────────────────────────────────
+'  MATCHMAKING  (Strategy de algoritmos)
+' ─────────────────────────────────────────
+
+interface AlgoritmoDonacion {
+  + calcularSugerencias(Donacion, List<EntidadBeneficiaria>, List<Donacion>): List<EntidadBeneficiaria>
+}
+
+class CompatibilidadSemantica
+class PrioridadSubatendidos
+
+class ProcesadorMatchmaking {
+  + procesar(Donacion, List<EntidadBeneficiaria>, List<Donacion>): PropuestaMatchmaking
+}
+
+class PropuestaMatchmaking {
+  - Donacion donacion
+  - List<EntidadBeneficiaria> entidadesSugeridas
+  - boolean esCoincidenciaExacta
+}
+
+' ─────────────────────────────────────────
+'  NOTIFICACIONES  (Observer)
+' ─────────────────────────────────────────
+
+interface Notificable {
+  + medioDePreferencia(): MedioDeContacto
+}
+
+class EventoDeNotificacion {
+  - List<Notificable> destinatarios
+  - String mensaje
+}
+
+interface ObservadorDeNotificaciones {
+  + notificar(EventoDeNotificacion): void
+}
+
+class GestorDeNotificaciones {
+  - List<ObservadorDeNotificaciones> observadores
+  + suscribir(ObservadorDeNotificaciones): void
+  + publicar(EventoDeNotificacion): void
+}
+
+class EnviadorPorMedioPreferido {
+  + notificar(EventoDeNotificacion): void
+}
+
+class Notificacion {
+  - String mensaje
+  - MedioDeContacto medio
+  - boolean completada
+  + enviar(): void
+}
+
+note right of GestorDeNotificaciones
+  <b>Observer</b>: el gestor (sujeto) publica
+  eventos; los observadores reaccionan.
+  Desacopla "ocurrio un evento" de "como se notifica".
+end note
+
+' ─────────────────────────────────────────
+'  RELACIONES
+' ─────────────────────────────────────────
+
+PersonaDonante <|-- PersonaHumana
+PersonaDonante <|-- PersonaJuridica
+PersonaJuridica "1" *-- "1..*" Representante
+PersonaJuridica --> TipoJuridico
+PersonaDonante "1" o-- "1..*" MedioDeContacto
+PersonaDonante ..|> Notificable
+
+MedioDeContacto <|-- Email
+MedioDeContacto <|-- Telefono
+MedioDeContacto <|-- WhatsApp
+Email ..> EmailSender : delega envio
+
+Subcategoria --> Categoria
+Bien <|-- BienSimple
+Bien <|-- BienConEstado
+Bien <|-- BienPerecible
+Bien --> Subcategoria
+
+CargaDeDonacion "1" *-- "1..*" Bien
+CargaDeDonacion ..> Donacion : <<genera>>
+
+Donacion --> Subcategoria
+Donacion --> EstadoDonacion
+Donacion --> PersonaDonante
+Donacion --> EntidadBeneficiaria
+Donacion "1" *-- "0..*" CambioDeEstado : historial
+CambioDeEstado --> EstadoDonacion
+
+EntidadBeneficiaria "1" *-- "0..*" Necesidad
+EntidadBeneficiaria ..|> Notificable
+Necesidad <|-- NecesidadExtraordinaria
+Necesidad <|-- NecesidadRecurrente
+Necesidad --> Subcategoria
+
+AlgoritmoDonacion <|.. CompatibilidadSemantica
+AlgoritmoDonacion <|.. PrioridadSubatendidos
+ProcesadorMatchmaking ..> AlgoritmoDonacion : usa
+ProcesadorMatchmaking ..> PropuestaMatchmaking : produce
+PropuestaMatchmaking --> Donacion
+PropuestaMatchmaking --> EntidadBeneficiaria
+
+ObservadorDeNotificaciones <|.. EnviadorPorMedioPreferido
+GestorDeNotificaciones o-- "0..*" ObservadorDeNotificaciones
+GestorDeNotificaciones ..> EventoDeNotificacion : publica
+EventoDeNotificacion --> "0..*" Notificable : destinatarios
+EnviadorPorMedioPreferido ..> MedioDeContacto : enviarMensaje
+Notificacion --> MedioDeContacto
+
+@enduml

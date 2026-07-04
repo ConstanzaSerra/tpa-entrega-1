@@ -123,4 +123,16 @@ public class Donacion {
   public void setId(Long id) {
     this.id = id;
   }
+
+  public void setCantidad(int cantidad) {
+    this.cantidad = cantidad;
+  }
+
+  public void setUnidadMedida(String unidadMedida) {
+    this.unidadMedida = unidadMedida;
+  }
+
+  public void setSubcategoria(Subcategoria subcategoria) {
+    this.subcategoria = subcategoria;
+  }
 }

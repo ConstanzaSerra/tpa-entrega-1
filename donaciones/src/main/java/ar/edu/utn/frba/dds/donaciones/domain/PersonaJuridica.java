@@ -24,4 +24,28 @@ public class PersonaJuridica extends PersonaDonante {
   public void setRazonSocial(String razonSocial) {
     this.razonSocial = razonSocial;
   }
+
+  public void setTipo(TipoJuridico tipo) {
+    this.tipo = tipo;
+  }
+
+  public void setRubro(String rubro) {
+    this.rubro = rubro;
+  }
+
+  public String getRazonSocial() {
+    return razonSocial;
+  }
+
+  public TipoJuridico getTipo() {
+    return tipo;
+  }
+
+  public String getRubro() {
+    return rubro;
+  }
+
+  public List<Representante> getRepresentantes() {
+    return representantes;
+  }
 }

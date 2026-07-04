@@ -37,4 +37,8 @@ public class DonacionRepository {
   public List<Donacion> obtenerTodas() {
     return new ArrayList<>(donaciones);
   }
+
+  public boolean eliminar(Long id) {
+    return donaciones.removeIf(d -> id.equals(d.getId()));
+  }
 }

@@ -1,9 +1,11 @@
 package ar.edu.utn.frba.dds.donaciones;
 
 import ar.edu.utn.frba.dds.donaciones.controller.DonacionController;
+import ar.edu.utn.frba.dds.donaciones.controller.DonanteController;
 import ar.edu.utn.frba.dds.donaciones.domain.Donacion;
 import ar.edu.utn.frba.dds.donaciones.domain.EntidadBeneficiaria;
 import ar.edu.utn.frba.dds.donaciones.repository.DonacionRepository;
+import ar.edu.utn.frba.dds.donaciones.repository.DonanteRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.EntidadRepository;
 import io.javalin.Javalin;
 
@@ -24,12 +26,11 @@ public class DonacionesApp {
     // 1. Persistencia en memoria
     DonacionRepository donacionRepository = new DonacionRepository();
     EntidadRepository entidadRepository = new EntidadRepository();
-
-    // TODO temporal: datos de ejemplo para probar el endpoint hasta que exista el CRUD
-    cargarDatosDeEjemplo(donacionRepository, entidadRepository);
+    DonanteRepository donanteRepository = DonanteRepository.getInstancia();
 
     // 2. Controllers
-    DonacionController donacionController = new DonacionController(donacionRepository);
+    DonacionController donacionController = new DonacionController(donacionRepository, donanteRepository);
+    DonanteController donanteController = new DonanteController(donanteRepository);
 
     // 3. Servidor
     Javalin app = Javalin.create(config -> {
@@ -42,17 +43,19 @@ public class DonacionesApp {
     // Contrato con Logistica: donaciones listas para planificar rutas
     app.get("/donaciones", donacionController::listarPorEstado);
 
+    // CRUD de donaciones (parte 1: crear y leer)
+    app.post("/donaciones", donacionController::crear);
+    app.get("/donaciones/{id}", donacionController::obtenerPorId);
+    app.patch("/donaciones/{id}", donacionController::actualizar);
+    app.delete("/donaciones/{id}", donacionController::eliminar);
+
+    // CRUD de personas donantes
+    app.post("/donantes", donanteController::crear);
+    app.get("/donantes", donanteController::listar);
+    app.get("/donantes/{id}", donanteController::obtenerPorId);
+    app.patch("/donantes/{id}", donanteController::actualizar);
+    app.delete("/donantes/{id}", donanteController::eliminar);
+
     System.out.println("Servidor Donaciones iniciado en http://localhost:" + PUERTO);
-  }
-
-  private static void cargarDatosDeEjemplo(DonacionRepository donacionRepo, EntidadRepository entidadRepo) {
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria(
-        "Comedor Los Girasoles", "Av. Siempreviva 742, CABA", "011-4444-5555",
-        new ArrayList<>(), new ArrayList<>());
-    entidadRepo.guardar(entidad);
-
-    Donacion donacion = new Donacion(null, 10, "kg", null, LocalDate.now());
-    donacion.asignarEntidad(entidad); // pasa a ASIGNACION_REALIZADA
-    donacionRepo.guardar(donacion);
   }
 }

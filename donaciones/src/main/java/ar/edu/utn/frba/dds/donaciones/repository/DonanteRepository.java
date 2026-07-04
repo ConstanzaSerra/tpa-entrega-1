@@ -1,7 +1,6 @@
 package ar.edu.utn.frba.dds.donaciones.repository;
 
 import ar.edu.utn.frba.dds.donaciones.domain.*;
-import ar.edu.utn.frba.dds.donaciones.matchmaking.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +10,7 @@ public class DonanteRepository {
 
   private static DonanteRepository instancia;
   private final List<PersonaDonante> donantes = new ArrayList<>();
+  private Long proximoId = 1L;
 
   private DonanteRepository() {}
 
@@ -22,7 +22,16 @@ public class DonanteRepository {
   }
 
   public void guardar(PersonaDonante donante) {
+    if (donante.getId() == null) {
+      donante.setId(proximoId++);
+    }
     donantes.add(donante);
+  }
+
+  public Optional<PersonaDonante> buscarPorId(Long id) {
+    return donantes.stream()
+        .filter(d -> id.equals(d.getId()))
+        .findFirst();
   }
 
   public Optional<PersonaDonante> buscarPorEmail(String email) {
@@ -34,6 +43,10 @@ public class DonanteRepository {
 
   public List<PersonaDonante> obtenerTodos() {
     return new ArrayList<>(donantes);
+  }
+
+  public boolean eliminar(Long id) {
+    return donantes.removeIf(d -> id.equals(d.getId()));
   }
 
   public int cantidadDonantes() {

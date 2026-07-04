@@ -3,10 +3,13 @@ package ar.edu.utn.frba.dds.donaciones;
 import ar.edu.utn.frba.dds.donaciones.controller.DonacionController;
 import ar.edu.utn.frba.dds.donaciones.controller.DonanteController;
 import ar.edu.utn.frba.dds.donaciones.controller.EntidadController;
+import ar.edu.utn.frba.dds.donaciones.controller.MatchmakingController;
 import ar.edu.utn.frba.dds.donaciones.controller.NotificacionController;
+import ar.edu.utn.frba.dds.donaciones.matchmaking.ProcesadorMatchmaking;
 import ar.edu.utn.frba.dds.donaciones.repository.DonacionRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.DonanteRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.EntidadRepository;
+import ar.edu.utn.frba.dds.donaciones.repository.PropuestaRepository;
 import ar.edu.utn.frba.dds.donaciones.service.ServicioDeNotificaciones;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -30,6 +33,8 @@ public class DonacionesApp {
     DonacionRepository donacionRepository = new DonacionRepository();
     EntidadRepository entidadRepository = new EntidadRepository();
     DonanteRepository donanteRepository = DonanteRepository.getInstancia();
+    PropuestaRepository propuestaRepository = new PropuestaRepository();
+    ProcesadorMatchmaking procesadorMatchmaking = new ProcesadorMatchmaking();
 
     // 2. Controllers
     DonacionController donacionController = new DonacionController(donacionRepository, donanteRepository, entidadRepository);
@@ -37,6 +42,7 @@ public class DonacionesApp {
     EntidadController entidadController = new EntidadController(entidadRepository);
     ServicioDeNotificaciones servicioDeNotificaciones = new ServicioDeNotificaciones();
     NotificacionController notificacionController = new NotificacionController(donacionRepository, servicioDeNotificaciones);
+    MatchmakingController matchmakingController = new MatchmakingController(donacionRepository, entidadRepository, propuestaRepository, procesadorMatchmaking);
 
     // 3. Servidor (Jackson con soporte de fechas Java 8, igual que Logistica)
     ObjectMapper mapper = new ObjectMapper();
@@ -63,6 +69,10 @@ public class DonacionesApp {
     // Accion de negocio + trazabilidad
     app.post("/donaciones/{id}/asignacion", donacionController::asignar);
     app.get("/donaciones/{id}/historial", donacionController::historial);
+
+    // Matchmaking (algoritmos de asignacion) expuesto por REST
+    app.post("/donaciones/{id}/matchmaking", matchmakingController::ejecutar);
+    app.get("/donaciones/{id}/propuesta", matchmakingController::obtenerPropuesta);
 
     // CRUD de personas donantes
     app.post("/donantes", donanteController::crear);

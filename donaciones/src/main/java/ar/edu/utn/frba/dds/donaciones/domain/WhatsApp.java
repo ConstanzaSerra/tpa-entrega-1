@@ -1,5 +1,7 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
+import ar.edu.utn.frba.dds.donaciones.adaptadores.WhatsappSender;
+
 public class WhatsApp extends MedioDeContacto {
 
   public WhatsApp(String valor) {
@@ -8,6 +10,6 @@ public class WhatsApp extends MedioDeContacto {
 
   @Override
   public void enviarMensaje(String mensaje) {
-    System.out.println("Enviando whatsapp a " + this.getValor() + ": " + mensaje);
+    WhatsappSender.enviar(this.getValor(), mensaje);
   }
 }

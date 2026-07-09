@@ -77,6 +77,7 @@ class PlanificadorRutasServiceTest {
         return callback;
     }
 
+    // Para testear que con 100 donaciones o menos se envia una sola solicitud al planificador
     @Test
     void testPlanificarConMenosDe100Donaciones_MandaUnSoloLote() {
         when(donacionesAPI.obtenerDonacionesListasParaRepartir()).thenReturn(donaciones(50));
@@ -89,6 +90,7 @@ class PlanificadorRutasServiceTest {
         assertEquals(50, captor.getValue().donaciones.size());
     }
 
+    // Para testear el particionado en lotes de maximo 100 (req. de implementacion 2)
     @Test
     void testPlanificarConMasDe100Donaciones_MandaVariosLotes() {
         when(donacionesAPI.obtenerDonacionesListasParaRepartir()).thenReturn(donaciones(250));

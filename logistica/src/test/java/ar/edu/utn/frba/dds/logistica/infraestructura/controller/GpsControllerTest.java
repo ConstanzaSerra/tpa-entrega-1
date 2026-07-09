@@ -5,6 +5,7 @@ import ar.edu.utn.frba.dds.logistica.dominio.PosicionCamion;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.PosicionCamionRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.repository.CamionRepository;
 import ar.edu.utn.frba.dds.logistica.infraestructura.repository.GpsRepository;
+import ar.edu.utn.frba.dds.logistica.infraestructura.repository.RutaRepository;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,6 +23,7 @@ class GpsControllerTest {
 
     private GpsRepository gpsRepository;
     private CamionRepository camionRepository;
+    private RutaRepository rutaRepository;
     private GpsController gpsController;
     private Context ctx;
 
@@ -28,7 +31,9 @@ class GpsControllerTest {
     void setUp() {
         gpsRepository = mock(GpsRepository.class);
         camionRepository = mock(CamionRepository.class);
-        gpsController = new GpsController(gpsRepository, camionRepository);
+        rutaRepository = mock(RutaRepository.class);
+        when(rutaRepository.buscarTodas()).thenReturn(List.of());
+        gpsController = new GpsController(gpsRepository, camionRepository, rutaRepository);
         ctx = mock(Context.class);
     }
 

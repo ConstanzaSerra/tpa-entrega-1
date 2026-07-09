@@ -17,6 +17,7 @@ public class InMemoryCamionRepositoryTest {
         repositorio = new InMemoryCamionRepository();
     }
 
+    // Para testear que guardar asigna un id y persiste los datos
     @Test
     void testGuardarCamion() {
         Camion camion = new Camion("AB123CD", 10.0, 3.5, 15000);
@@ -26,6 +27,7 @@ public class InMemoryCamionRepositoryTest {
         assertEquals("AB123CD", guardado.getPatente());
     }
 
+    // Para testear que un camion guardado se puede recuperar por su id
     @Test
     void testBuscarPorId() {
         Camion camion = new Camion("XYZ789", 15.0, 4.0, 20000);
@@ -37,6 +39,7 @@ public class InMemoryCamionRepositoryTest {
         assertEquals(guardado.getId(), encontrado.get().getId());
     }
 
+    // Para testear que buscarTodos devuelve todos los camiones guardados
     @Test
     void testBuscarTodos() {
         repositorio.guardar(new Camion("A", 1, 1, 1));
@@ -47,6 +50,7 @@ public class InMemoryCamionRepositoryTest {
         assertEquals(2, camiones.size());
     }
 
+    // Para testear que actualizar modifica el camion y el cambio queda persistido
     @Test
     void testActualizarCamion() {
         Camion camion = new Camion("A", 1, 1, 1);
@@ -62,6 +66,7 @@ public class InMemoryCamionRepositoryTest {
         assertEquals("NUEVA", verificado.get().getPatente());
     }
 
+    // Para testear que eliminar saca el camion del repositorio
     @Test
     void testEliminarCamion() {
         Camion camion = new Camion("A", 1, 1, 1);

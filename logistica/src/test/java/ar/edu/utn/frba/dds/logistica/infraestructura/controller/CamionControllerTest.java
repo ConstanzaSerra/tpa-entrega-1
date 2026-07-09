@@ -29,6 +29,7 @@ class CamionControllerTest {
         ctx = mock(Context.class);
     }
 
+    // Para testear que GET /camiones devuelve el listado de la flota
     @Test
     void testGetAll() {
         Camion c1 = new Camion("AAA", 1, 1, 1);
@@ -43,6 +44,7 @@ class CamionControllerTest {
         verify(ctx).json(any(Iterable.class));
     }
 
+    // Para testear que GET /camiones/{id} devuelve el camion pedido como DTO
     @Test
     void testGetByIdFound() {
         Camion c = new Camion("AAA", 1, 1, 1);
@@ -58,6 +60,7 @@ class CamionControllerTest {
         assertEquals("AAA", captor.getValue().patente());
     }
 
+    // Para testear que pedir un camion inexistente responde 404
     @Test
     void testGetByIdNotFound() {
         when(ctx.pathParam("id")).thenReturn("99");

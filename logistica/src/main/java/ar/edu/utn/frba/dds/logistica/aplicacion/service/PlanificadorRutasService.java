@@ -34,7 +34,6 @@ public class PlanificadorRutasService {
     private final String linkMapa;
 
     // Donaciones ya enviadas al planificador cuyo callback todavia no llego.
-    // Concurrente porque lo tocan el hilo del scheduler y el hilo HTTP del callback.
     private final Set<Long> donacionesEnPlanificacion = ConcurrentHashMap.newKeySet();
 
     public PlanificadorRutasService(DonacionesAPI donacionesAPI,

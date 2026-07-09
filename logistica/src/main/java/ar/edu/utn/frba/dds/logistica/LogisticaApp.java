@@ -21,32 +21,29 @@ import java.util.concurrent.TimeUnit;
 public class LogisticaApp {
     
     public static void main(String[] args) {
-        // 1. Inicializar persistencia en memoria
+        // persistencia en memoria
         CamionRepository camionRepository = new InMemoryCamionRepository();
         RutaRepository rutaRepository = new InMemoryRutaRepository();
         EntregaRepository entregaRepository = new InMemoryEntregaRepository();
         GpsRepository gpsRepository = new InMemoryGpsRepository();
         
-        // 2. Inicializar adaptadores (puertos salientes) leídos desde config
-        // Acuerdo entre equipos: Donaciones en :8080, Logística en :8081
+        // Inicializo adaptadores leidos desde el config
         String donacionesUrl = ConfigManager.getProperty("api.donaciones.url", "http://localhost:8080");
         String planificadorUrl = ConfigManager.getProperty("api.planificador.url", "http://localhost:8082");
 
         DonacionesAPI donacionesAPI = new DonacionesHttpAdapter(donacionesUrl);
         PlanificadorExternoAPI planificadorAPI = new PlanificadorHttpAdapter(planificadorUrl);
 
-        // 3. Inicializar servicios de dominio
+        //  Inicializo servicios de dominio
         int port = Integer.parseInt(ConfigManager.getProperty("server.port", "8081"));
         String publicUrl = ConfigManager.getProperty("server.public.url", "http://localhost:" + port);
         String callbackUrl = publicUrl + "/planificador/callback";
-git sta        // Enlace al mapa interactivo que viaja en la notificacion de inicio de ruta (enunciado TPA2)
+        // Enlace al mapa interactivo que viaja en la notificacion de inicio de ruta
         String linkMapa = publicUrl + "/dashboard.html";
         PlanificadorRutasService planificadorService = new PlanificadorRutasService(
                 donacionesAPI, planificadorAPI, camionRepository, rutaRepository, entregaRepository, callbackUrl, linkMapa);
 
-        // 4. Inicializar tareas en background (Scheduler)
-        // Con scheduler.period.minutes seteado corre en modo frecuencia (demo);
-        // si no, corre calendarizado a la hora de baja carga (scheduler.hora, default 02:00)
+        // Inicializo el Scheduler, corre a las 2 de la mañana
         PlanificacionScheduler scheduler = new PlanificacionScheduler(planificadorService);
         String periodMinutes = ConfigManager.getProperty("scheduler.period.minutes", "");
         if (!periodMinutes.isBlank()) {
@@ -57,25 +54,27 @@ git sta        // Enlace al mapa interactivo que viaja en la notificacion de ini
             scheduler.iniciarDiario(horaBajaCarga);
         }
 
-        // 5. Inicializar controladores (puertos entrantes)
+        // Inicializo controladores
         CamionController camionController = new CamionController(camionRepository);
         PlanificadorController planificadorController = new PlanificadorController(planificadorService);
         RutaController rutaController = new RutaController(rutaRepository, camionRepository, entregaRepository, donacionesAPI);
         EntregaController entregaController = new EntregaController(entregaRepository, camionRepository, donacionesAPI);
-        GpsController gpsController = new GpsController(gpsRepository, camionRepository);
+        GpsController gpsController = new GpsController(gpsRepository, camionRepository, rutaRepository);
         
-        // 6. Configurar e iniciar Javalin
+        // Configurar el javalin
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        
+
         Javalin app = Javalin.create(config -> {
             config.showJavalinBanner = false;
             config.jsonMapper(new JavalinJackson(mapper, false));
-            // Dashboard de monitoreo (src/main/resources/public/dashboard.html)
+            // Dashboard de monitoreo
             config.staticFiles.add("/public");
         }).start(port);
-        
+
+        //"comandos" del servidor
+
         // Rutas de Camiones (Gestión de Flota)
         app.get("/camiones", camionController::getAll);
         app.get("/camiones/{id}", camionController::getById);
@@ -87,18 +86,20 @@ git sta        // Enlace al mapa interactivo que viaja en la notificacion de ini
         app.get("/rutas", rutaController::getAll);
         app.get("/rutas/{id}", rutaController::getById);
         app.post("/rutas", rutaController::create);
+        app.put("/rutas/{id}", rutaController::update);
         app.delete("/rutas/{id}", rutaController::delete);
 
         // Rutas de Trazabilidad de Entregas
         app.get("/entregas", entregaController::getAll);
         app.get("/entregas/{id}", entregaController::getById);
         app.post("/entregas", entregaController::create);
+        app.put("/entregas/{id}", entregaController::update);
         app.delete("/entregas/{id}", entregaController::delete);
         
         // Rutas del Planificador
         app.post("/planificador/callback", planificadorController::recibirCallback);
         
-        // Rutas de Trazabilidad (Fases 1 y 2)
+        // Rutas de Trazabilidad
         app.post("/rutas/{id}/iniciar", rutaController::iniciarRuta);
         app.post("/entregas/{id}/confirmar", entregaController::confirmar);
         app.post("/entregas/{id}/rechazar", entregaController::rechazar);
@@ -108,8 +109,8 @@ git sta        // Enlace al mapa interactivo que viaja en la notificacion de ini
         // Rutas de Monitoreo GPS (Fase 3)
         app.post("/camiones/{id}/posicion", gpsController::reportarPosicion);
         app.get("/dashboard/camiones", gpsController::getDashboard);
-        
-        // Exception handling general (opcional)
+
+
         app.exception(Exception.class, (e, ctx) -> {
             ctx.status(500);
             ctx.result("Ocurrió un error interno en el servidor: " + e.getMessage());
@@ -118,7 +119,7 @@ git sta        // Enlace al mapa interactivo que viaja en la notificacion de ini
         
         System.out.println("Servidor Logistica iniciado en http://localhost:" + port);
         
-        // Hook para apagar el scheduler cuando se apaga la app
+        //apagar el scheduler cuando se apaga la app
         Runtime.getRuntime().addShutdownHook(new Thread(scheduler::detener));
     }
 }

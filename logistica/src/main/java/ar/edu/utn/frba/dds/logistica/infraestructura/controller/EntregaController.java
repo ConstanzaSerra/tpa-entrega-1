@@ -5,6 +5,7 @@ import ar.edu.utn.frba.dds.logistica.dominio.Entrega;
 import ar.edu.utn.frba.dds.logistica.dominio.EstadoEntrega;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.AgregarFotoRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.ConfirmarEntregaRequestDTO;
+import ar.edu.utn.frba.dds.logistica.infraestructura.dto.ActualizarEntregaRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.EntregaRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.RechazarEntregaRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.notificaciones.EventoEntregaConfirmadaDTO;
@@ -157,6 +158,29 @@ public class EntregaController {
 
         entregaRepository.eliminar(id);
         ctx.status(HttpStatus.NO_CONTENT);
+    }
+
+    public void update(Context ctx) {
+        Long id = Long.parseLong(ctx.pathParam("id"));
+        Optional<Entrega> entregaOpt = entregaRepository.buscarPorId(id);
+
+        if (entregaOpt.isEmpty()) {
+            ctx.status(HttpStatus.NOT_FOUND).result("Entrega no encontrada");
+            return;
+        }
+
+        Entrega entrega = entregaOpt.get();
+        if (entrega.getEstado() != EstadoEntrega.PENDIENTE) {
+            ctx.status(HttpStatus.BAD_REQUEST).result("Solo se puede modificar una entrega PENDIENTE");
+            return;
+        }
+
+        ActualizarEntregaRequestDTO dto = ctx.bodyAsClass(ActualizarEntregaRequestDTO.class);
+
+        if (dto.entidadBeneficiariaId != null) entrega.setEntidadBeneficiariaId(dto.entidadBeneficiariaId);
+        if (dto.direccionDestino != null) entrega.setDireccionDestino(dto.direccionDestino);
+
+        ctx.json(entrega);
     }
 
     public void getAll(Context ctx) {

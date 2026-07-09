@@ -5,6 +5,7 @@ import ar.edu.utn.frba.dds.logistica.dominio.Entrega;
 import ar.edu.utn.frba.dds.logistica.dominio.EstadoRuta;
 import ar.edu.utn.frba.dds.logistica.dominio.ParadaDeRuta;
 import ar.edu.utn.frba.dds.logistica.dominio.Ruta;
+import ar.edu.utn.frba.dds.logistica.infraestructura.dto.ActualizarRutaRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.RutaRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.notificaciones.EntregaAfectadaDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.notificaciones.EventoInicioRutaDTO;
@@ -128,6 +129,38 @@ public class RutaController {
         } catch (IllegalStateException e) {
             ctx.status(HttpStatus.BAD_REQUEST).result(e.getMessage());
         }
+    }
+
+    public void update(Context ctx) {
+        Long id = Long.parseLong(ctx.pathParam("id"));
+        Optional<Ruta> rutaOpt = rutaRepository.buscarPorId(id);
+
+        if (rutaOpt.isEmpty()) {
+            ctx.status(HttpStatus.NOT_FOUND).result("Ruta no encontrada");
+            return;
+        }
+
+        Ruta ruta = rutaOpt.get();
+        if (ruta.getEstado() != EstadoRuta.PLANIFICADA) {
+            ctx.status(HttpStatus.BAD_REQUEST).result("Solo se puede modificar el camion de una ruta PLANIFICADA");
+            return;
+        }
+
+        ActualizarRutaRequestDTO dto = ctx.bodyAsClass(ActualizarRutaRequestDTO.class);
+
+        if (dto.camionId == null) {
+            ctx.status(HttpStatus.BAD_REQUEST).result("Falta camionId");
+            return;
+        }
+
+        Optional<Camion> camionOpt = camionRepository.buscarPorId(dto.camionId);
+        if (camionOpt.isEmpty()) {
+            ctx.status(HttpStatus.NOT_FOUND).result("Camion no encontrado");
+            return;
+        }
+
+        ruta.setCamion(camionOpt.get());
+        ctx.json(ruta);
     }
 
     public void getAll(Context ctx) {

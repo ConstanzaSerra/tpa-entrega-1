@@ -1,19 +1,29 @@
 package ar.edu.utn.frba.dds.logistica.infraestructura.controller;
 
+import ar.edu.utn.frba.dds.logistica.dominio.EstadoRuta;
 import ar.edu.utn.frba.dds.logistica.dominio.PosicionCamion;
+import ar.edu.utn.frba.dds.logistica.dominio.Ruta;
+import ar.edu.utn.frba.dds.logistica.infraestructura.dto.DashboardCamionDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.PosicionCamionRequestDTO;
 import ar.edu.utn.frba.dds.logistica.infraestructura.repository.CamionRepository;
 import ar.edu.utn.frba.dds.logistica.infraestructura.repository.GpsRepository;
+import ar.edu.utn.frba.dds.logistica.infraestructura.repository.RutaRepository;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class GpsController {
     private final GpsRepository gpsRepository;
     private final CamionRepository camionRepository;
+    private final RutaRepository rutaRepository;
 
-    public GpsController(GpsRepository gpsRepository, CamionRepository camionRepository) {
+    public GpsController(GpsRepository gpsRepository, CamionRepository camionRepository, RutaRepository rutaRepository) {
         this.gpsRepository = gpsRepository;
         this.camionRepository = camionRepository;
+        this.rutaRepository = rutaRepository;
     }
 
     public void reportarPosicion(Context ctx) {
@@ -56,8 +66,20 @@ public class GpsController {
     }
 
     public void getDashboard(Context ctx) {
-        // En un caso de uso real esto devolveria quizas un DTO de Dashboard
-        // Pero devolver el mapa directamente sirve para exponerlo como JSON en esta entrega.
-        ctx.json(gpsRepository.obtenerTodasLasPosiciones());
+        Map<Long, PosicionCamion> posiciones = gpsRepository.obtenerTodasLasPosiciones();
+
+        List<DashboardCamionDTO> dashboard = camionRepository.buscarTodos().stream()
+                .map(camion -> {
+                    PosicionCamion pos = posiciones.get(camion.getId());
+                    Optional<Ruta> rutaActiva = rutaRepository.buscarTodas().stream()
+                            .filter(r -> r.getEstado() == EstadoRuta.EN_CURSO
+                                    && r.getCamion() != null
+                                    && r.getCamion().getId().equals(camion.getId()))
+                            .findFirst();
+                    return DashboardCamionDTO.build(camion, pos, rutaActiva.orElse(null));
+                })
+                .toList();
+
+        ctx.json(dashboard);
     }
 }

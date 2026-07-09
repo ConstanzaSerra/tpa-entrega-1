@@ -7,6 +7,8 @@ import ar.edu.utn.frba.dds.donaciones.dto.DonacionDTO;
 import ar.edu.utn.frba.dds.donaciones.dto.DonacionParaRutaDTO;
 import ar.edu.utn.frba.dds.donaciones.repository.DonacionRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.DonanteRepository;
+import ar.edu.utn.frba.dds.donaciones.notificaciones.EventoDeNotificacion;
+import ar.edu.utn.frba.dds.donaciones.notificaciones.GestorDeNotificaciones;
 import ar.edu.utn.frba.dds.donaciones.repository.EntidadRepository;
 import io.javalin.http.Context;
 
@@ -23,13 +25,16 @@ public class DonacionController {
   private final DonacionRepository donacionRepository;
   private final DonanteRepository donanteRepository;
   private final EntidadRepository entidadRepository;
+  private final GestorDeNotificaciones gestor;
 
   public DonacionController(DonacionRepository donacionRepository,
                             DonanteRepository donanteRepository,
-                            EntidadRepository entidadRepository) {
+                            EntidadRepository entidadRepository,
+                            GestorDeNotificaciones gestor) {
     this.donacionRepository = donacionRepository;
     this.donanteRepository = donanteRepository;
     this.entidadRepository = entidadRepository;
+    this.gestor = gestor;
   }
 
   /**
@@ -201,7 +206,19 @@ public class DonacionController {
       ctx.status(409).json(Map.of("error", e.getMessage()));
       return;
     }
-    ctx.json(aDTO(oDonacion.get()));
+
+    // Evento "Donacion asignada": se notifica a la entidad y al donante (mensajes distintos)
+    Donacion donacion = oDonacion.get();
+    gestor.publicar(new EventoDeNotificacion(
+        List.<Notificable>of(oEntidad.get()),
+        "Se te asignó una donación en base a tus necesidades."));
+    if (donacion.getDonante() != null) {
+      gestor.publicar(new EventoDeNotificacion(
+          List.<Notificable>of(donacion.getDonante()),
+          "Tu donación fue asignada a una entidad beneficiaria. ¡Gracias por tu aporte!"));
+    }
+
+    ctx.json(aDTO(donacion));
   }
 
   // ---------- mapeo dominio -> DTO ----------

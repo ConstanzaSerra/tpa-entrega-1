@@ -4,6 +4,7 @@ import ar.edu.utn.frba.dds.donaciones.controller.DonacionController;
 import ar.edu.utn.frba.dds.donaciones.controller.DonanteController;
 import ar.edu.utn.frba.dds.donaciones.controller.EntidadController;
 import ar.edu.utn.frba.dds.donaciones.controller.MatchmakingController;
+import ar.edu.utn.frba.dds.donaciones.controller.NecesidadController;
 import ar.edu.utn.frba.dds.donaciones.controller.NotificacionController;
 import ar.edu.utn.frba.dds.donaciones.matchmaking.ProcesadorMatchmaking;
 import ar.edu.utn.frba.dds.donaciones.notificaciones.EnviadorPorMedioPreferido;
@@ -13,6 +14,7 @@ import ar.edu.utn.frba.dds.donaciones.repository.DonanteRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.EntidadRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.PropuestaRepository;
 import ar.edu.utn.frba.dds.donaciones.service.TareaDeInactividad;
+import ar.edu.utn.frba.dds.donaciones.service.TareaNocturnaMatchmaking;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -38,17 +40,24 @@ public class DonacionesApp {
     PropuestaRepository propuestaRepository = new PropuestaRepository();
     ProcesadorMatchmaking procesadorMatchmaking = new ProcesadorMatchmaking();
 
-    // 2. Controllers
-    DonacionController donacionController = new DonacionController(donacionRepository, donanteRepository, entidadRepository);
-    DonanteController donanteController = new DonanteController(donanteRepository);
-    EntidadController entidadController = new EntidadController(entidadRepository);
+    // Gestor de notificaciones (Observer) con su enviador suscripto
     GestorDeNotificaciones gestorNotificaciones = new GestorDeNotificaciones();
     gestorNotificaciones.suscribir(new EnviadorPorMedioPreferido());
+
+    // 2. Controllers
+    DonacionController donacionController = new DonacionController(donacionRepository, donanteRepository, entidadRepository, gestorNotificaciones);
+    DonanteController donanteController = new DonanteController(donanteRepository);
+    EntidadController entidadController = new EntidadController(entidadRepository);
+    NecesidadController necesidadController = new NecesidadController(entidadRepository);
     NotificacionController notificacionController = new NotificacionController(donacionRepository, gestorNotificaciones);
     MatchmakingController matchmakingController = new MatchmakingController(donacionRepository, entidadRepository, propuestaRepository, procesadorMatchmaking);
 
     // Tarea calendarizada de inactividad (reusa el gestor de notificaciones)
     TareaDeInactividad tareaInactividad = new TareaDeInactividad(donanteRepository, gestorNotificaciones);
+
+    // Tarea calendarizada de matchmaking: genera propuestas para las donaciones en deposito
+    TareaNocturnaMatchmaking tareaNocturnaMatchmaking =
+        new TareaNocturnaMatchmaking(donacionRepository, entidadRepository, propuestaRepository, procesadorMatchmaking);
 
     // 3. Servidor (Jackson con soporte de fechas Java 8, igual que Logistica)
     ObjectMapper mapper = new ObjectMapper();
@@ -94,6 +103,12 @@ public class DonacionesApp {
     app.patch("/entidades/{id}", entidadController::actualizar);
     app.delete("/entidades/{id}", entidadController::eliminar);
 
+    // CRUD de necesidades materiales (anidadas en la entidad)
+    app.post("/entidades/{id}/necesidades", necesidadController::crear);
+    app.get("/entidades/{id}/necesidades", necesidadController::listar);
+    app.patch("/entidades/{id}/necesidades/{nid}", necesidadController::actualizar);
+    app.delete("/entidades/{id}/necesidades/{nid}", necesidadController::eliminar);
+
     // Eventos que invoca Logistica (trazabilidad + notificacion)
     app.post("/notificaciones/inicio-ruta", notificacionController::inicioRuta);
     app.post("/notificaciones/entrega-confirmada", notificacionController::entregaConfirmada);
@@ -105,9 +120,13 @@ public class DonacionesApp {
       ctx.json(Map.of("status", "ejecutado"));
     });
 
-    // Tarea calendarizada: corre una vez por dia
+    // Tareas calendarizadas: corren una vez por dia (horario de baja carga)
     tareaInactividad.iniciarDiario();
-    Runtime.getRuntime().addShutdownHook(new Thread(tareaInactividad::detener));
+    tareaNocturnaMatchmaking.iniciarShedulerProduccion();
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      tareaInactividad.detener();
+      tareaNocturnaMatchmaking.detener();
+    }));
 
     System.out.println("Servidor Donaciones iniciado en http://localhost:" + PUERTO);
   }

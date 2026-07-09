@@ -1,6 +1,7 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
 import java.util.List;
+import java.util.Optional;
 
 public class EntidadBeneficiaria implements Notificable {
   private Long id;
@@ -25,6 +26,14 @@ public class EntidadBeneficiaria implements Notificable {
 
   public List<Necesidad> getNecesidades() {
     return necesidades;
+  }
+
+  public Optional<Necesidad> buscarNecesidad(Long id) {
+    return necesidades.stream().filter(n -> id.equals(n.getId())).findFirst();
+  }
+
+  public boolean eliminarNecesidad(Long id) {
+    return necesidades.removeIf(n -> id.equals(n.getId()));
   }
 
   public Long getId() {

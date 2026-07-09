@@ -35,4 +35,12 @@ public class NecesidadExtraordinaria extends Necesidad {
       throw new IllegalArgumentException("La cantidad no puede ser negativa");
     }
   }
+
+  public Integer getCantidadRequerida() {
+    return cantidadRequerida;
+  }
+
+  public Integer getCantidadRecibida() {
+    return cantidadRecibida;
+  }
 }

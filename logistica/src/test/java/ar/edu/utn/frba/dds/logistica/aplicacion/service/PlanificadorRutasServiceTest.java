@@ -43,7 +43,7 @@ class PlanificadorRutasServiceTest {
         entregaRepository = new InMemoryEntregaRepository();
         planificadorService = new PlanificadorRutasService(
                 donacionesAPI, planificadorExternoAPI, camionRepository,
-                rutaRepository, entregaRepository, "http://callback"
+                rutaRepository, entregaRepository, "http://callback", "http://dashboard"
         );
         when(camionRepository.buscarTodos()).thenReturn(List.of(camionConId(1L)));
         when(camionRepository.buscarPorId(1L)).thenReturn(java.util.Optional.of(camionConId(1L)));

@@ -31,6 +31,7 @@ public class PlanificadorRutasService {
     private final RutaRepository rutaRepository;
     private final EntregaRepository entregaRepository;
     private final String callbackUrl;
+    private final String linkMapa;
 
     // Donaciones ya enviadas al planificador cuyo callback todavia no llego.
     // Concurrente porque lo tocan el hilo del scheduler y el hilo HTTP del callback.
@@ -41,13 +42,15 @@ public class PlanificadorRutasService {
                                     CamionRepository camionRepository,
                                     RutaRepository rutaRepository,
                                     EntregaRepository entregaRepository,
-                                    String callbackUrl) {
+                                    String callbackUrl,
+                                    String linkMapa) {
         this.donacionesAPI = donacionesAPI;
         this.planificadorExternoAPI = planificadorExternoAPI;
         this.camionRepository = camionRepository;
         this.rutaRepository = rutaRepository;
         this.entregaRepository = entregaRepository;
         this.callbackUrl = callbackUrl;
+        this.linkMapa = linkMapa;
     }
 
     public void planificar() {
@@ -102,6 +105,7 @@ public class PlanificadorRutasService {
             }
 
             Ruta nuevaRuta = new Ruta(camionOpt.get());
+            nuevaRuta.setLinkMapa(linkMapa);
 
             for (PlanificacionCallbackDTO.ParadaArmadaDTO paradaDTO : rutaDTO.paradas) {
                 ParadaDeRuta parada = new ParadaDeRuta(paradaDTO.entidadBeneficiariaId, paradaDTO.direccion);

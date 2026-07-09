@@ -39,8 +39,10 @@ public class LogisticaApp {
         int port = Integer.parseInt(ConfigManager.getProperty("server.port", "8081"));
         String publicUrl = ConfigManager.getProperty("server.public.url", "http://localhost:" + port);
         String callbackUrl = publicUrl + "/planificador/callback";
+git sta        // Enlace al mapa interactivo que viaja en la notificacion de inicio de ruta (enunciado TPA2)
+        String linkMapa = publicUrl + "/dashboard.html";
         PlanificadorRutasService planificadorService = new PlanificadorRutasService(
-                donacionesAPI, planificadorAPI, camionRepository, rutaRepository, entregaRepository, callbackUrl);
+                donacionesAPI, planificadorAPI, camionRepository, rutaRepository, entregaRepository, callbackUrl, linkMapa);
 
         // 4. Inicializar tareas en background (Scheduler)
         // Con scheduler.period.minutes seteado corre en modo frecuencia (demo);
@@ -70,6 +72,8 @@ public class LogisticaApp {
         Javalin app = Javalin.create(config -> {
             config.showJavalinBanner = false;
             config.jsonMapper(new JavalinJackson(mapper, false));
+            // Dashboard de monitoreo (src/main/resources/public/dashboard.html)
+            config.staticFiles.add("/public");
         }).start(port);
         
         // Rutas de Camiones (Gestión de Flota)

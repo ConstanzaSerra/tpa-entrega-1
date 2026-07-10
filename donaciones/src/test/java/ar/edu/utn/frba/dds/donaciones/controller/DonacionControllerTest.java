@@ -12,6 +12,7 @@ import ar.edu.utn.frba.dds.donaciones.domain.Subcategoria;
 import ar.edu.utn.frba.dds.donaciones.domain.Telefono;
 import ar.edu.utn.frba.dds.donaciones.dto.AsignarEntidadDTO;
 import ar.edu.utn.frba.dds.donaciones.dto.DonacionDTO;
+import ar.edu.utn.frba.dds.donaciones.notificaciones.GestorDeNotificaciones;
 import ar.edu.utn.frba.dds.donaciones.repository.DonacionRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.DonanteRepository;
 import ar.edu.utn.frba.dds.donaciones.repository.EntidadRepository;
@@ -37,6 +38,7 @@ class DonacionControllerTest {
   private DonacionRepository donacionRepository;
   private DonanteRepository donanteRepository;
   private EntidadRepository entidadRepository;
+  private GestorDeNotificaciones gestor;
   private DonacionController controller;
   private Context ctx;
 
@@ -45,7 +47,8 @@ class DonacionControllerTest {
     donacionRepository = mock(DonacionRepository.class);
     donanteRepository = mock(DonanteRepository.class);
     entidadRepository = mock(EntidadRepository.class);
-    controller = new DonacionController(donacionRepository, donanteRepository, entidadRepository);
+    gestor = mock(GestorDeNotificaciones.class);
+    controller = new DonacionController(donacionRepository, donanteRepository, entidadRepository, gestor);
     ctx = mock(Context.class);
     when(ctx.status(anyInt())).thenReturn(ctx); // permite el encadenado ctx.status(..).json(..)
   }

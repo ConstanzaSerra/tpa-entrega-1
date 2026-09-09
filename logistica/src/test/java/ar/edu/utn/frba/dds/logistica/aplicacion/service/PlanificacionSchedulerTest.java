@@ -17,7 +17,7 @@ class PlanificacionSchedulerTest {
         assertEquals(2 * 3600, segundos);
     }
 
-    // Si la hora ya paso, la proxima ejecucion es maniana a esa hora
+    // Si la hora ya paso, la proxima ejecucion es mañana a esa hora
     @Test
     void testHoraPasada_EjecutaManiana() {
         LocalDateTime ahora = LocalDateTime.of(2026, 7, 2, 10, 0);

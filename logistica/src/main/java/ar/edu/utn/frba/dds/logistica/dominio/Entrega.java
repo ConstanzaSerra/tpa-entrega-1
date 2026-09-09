@@ -36,7 +36,7 @@ public class Entrega {
     }
     this.estado = EstadoEntrega.EN_TRASLADO;
   }
-
+ // ver la logica repetida en el chequeo de estados (ver patron state)
   public void confirmar(Camion camion, LocalDateTime fechaHora) {
     if (estado != EstadoEntrega.EN_TRASLADO) {
       throw new IllegalStateException("Solo se puede confirmar una entrega EN_TRASLADO. Estado: " + estado);
@@ -60,7 +60,7 @@ public class Entrega {
     this.estado = EstadoEntrega.PENDIENTE;
     this.camionQueEntrego = null;
     this.fechaHoraEntrega = null;
-  }
+  } // analizar que hacer en el caso de retorno
 
   public void agregarFoto(String url) {
     this.fotosUrl.add(url);

@@ -90,7 +90,7 @@ class PlanificadorRutasServiceTest {
         assertEquals(50, captor.getValue().donaciones.size());
     }
 
-    // Para testear el particionado en lotes de maximo 100 (req. de implementacion 2)
+    // Para testear el particionado en lotes de maximo 100
     @Test
     void testPlanificarConMasDe100Donaciones_MandaVariosLotes() {
         when(donacionesAPI.obtenerDonacionesListasParaRepartir()).thenReturn(donaciones(250));
@@ -130,8 +130,7 @@ class PlanificadorRutasServiceTest {
         verify(donacionesAPI).informarDonacionPlanificada(2L);
     }
 
-    // Una donacion ya asignada (con entrega registrada) no vuelve a planificarse
-    // aunque Donaciones todavia la devuelva en el GET
+    // Una donacion ya asignada (con entrega registrada) no vuelve a planificarse, aunque Donaciones todavia la devuelva en el GET
     @Test
     void testDonacionYaAsignada_NoSeVuelveAPlanificar() {
         when(donacionesAPI.obtenerDonacionesListasParaRepartir()).thenReturn(donaciones(1)); // donacionId 0

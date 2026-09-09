@@ -31,7 +31,7 @@ public class EntregaController {
         this.camionRepository = camionRepository;
         this.donacionesAPI = donacionesAPI;
     }
-
+    //ver logica repetida entre confirmar y rechazar
     public void confirmar(Context ctx) {
         Long id = Long.parseLong(ctx.pathParam("id"));
         ConfirmarEntregaRequestDTO request = ctx.bodyAsClass(ConfirmarEntregaRequestDTO.class);

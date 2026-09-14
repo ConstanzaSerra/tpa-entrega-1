@@ -1,15 +1,39 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
+import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Entity
+@Table(name = "entidad_beneficiaria")
 public class EntidadBeneficiaria implements Notificable {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
+  @Column(name = "razon_social", nullable = false)
   private String razonSocial;
+
+  @Column(name = "direccion")
   private String direccion;
+
+  @Column(name = "telefono")
   private String telefono;
-  private List<String> emailsRepresentantes;
-  private List<Necesidad> necesidades;
+
+  // Lista de valores simples: @ElementCollection, no una entidad aparte.
+  @ElementCollection
+  @CollectionTable(name = "email_representante", joinColumns = @JoinColumn(name = "entidad_id"))
+  @Column(name = "email")
+  private List<String> emailsRepresentantes = new ArrayList<>();
+
+  // Composicion: las necesidades no viven fuera de su entidad, por eso cascade
+  // total y orphanRemoval (eliminarNecesidad debe borrarla tambien en la base).
+  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "entidad_id")
+  private List<Necesidad> necesidades = new ArrayList<>();
+
+  protected EntidadBeneficiaria() {}
 
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono,
                              List<String> emailsRepresentantes, List<Necesidad> necesidades) {

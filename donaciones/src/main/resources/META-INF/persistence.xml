@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
+                                 http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd"
+             version="2.2">
+
+  <!--
+    Unidad de TESTING: HSQLDB en memoria. Se llama simple-persistence-unit
+    porque es el nombre que espera jpa-extras (SimplePersistenceTest y
+    WithSimplePersistenceUnit lo toman por defecto).
+    create-drop: cada corrida arranca con el esquema limpio.
+  -->
+  <persistence-unit name="simple-persistence-unit" transaction-type="RESOURCE_LOCAL">
+    <properties>
+      <property name="javax.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
+      <property name="javax.persistence.jdbc.url" value="jdbc:hsqldb:mem:donaciones;sql.syntax_pgs=true"/>
+      <property name="javax.persistence.jdbc.user" value="sa"/>
+      <property name="javax.persistence.jdbc.password" value=""/>
+
+      <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
+      <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.show_sql" value="false"/>
+      <property name="hibernate.format_sql" value="true"/>
+    </properties>
+  </persistence-unit>
+
+  <!--
+    Unidad de DESPLIEGUE LOCAL: PostgreSQL levantado con docker compose.
+    update: conserva los datos entre corridas de la app.
+  -->
+  <persistence-unit name="postgres-persistence-unit" transaction-type="RESOURCE_LOCAL">
+    <properties>
+      <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+      <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/donatrack_donaciones"/>
+      <property name="javax.persistence.jdbc.user" value="donatrack"/>
+      <property name="javax.persistence.jdbc.password" value="donatrack"/>
+
+      <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL10Dialect"/>
+      <property name="hibernate.hbm2ddl.auto" value="update"/>
+      <property name="hibernate.show_sql" value="false"/>
+      <property name="hibernate.format_sql" value="true"/>
+    </properties>
+  </persistence-unit>
+
+</persistence>

@@ -2,8 +2,18 @@ package ar.edu.utn.frba.dds.donaciones.domain;
 
 import ar.edu.utn.frba.dds.donaciones.exceptions.PeriodoConsumoException;
 
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("RECURRENTE")
 public class NecesidadRecurrente extends Necesidad {
+
+  @Embedded
   private PeriodoConsumo periodoConsumo;
+
+  protected NecesidadRecurrente() {}
 
   public NecesidadRecurrente(Subcategoria subcategoria, String descripcion, PeriodoConsumo periodoConsumo) {
     super(subcategoria, descripcion);

@@ -15,7 +15,7 @@ public class PrioridadSubatendidos implements AlgoritmoDonacion{
             contarAsignaciones(e1, todasLasDonaciones),
             contarAsignaciones(e2, todasLasDonaciones)
         ))
-        .limit(10)
+        .limit(10) //logica duplicada con CompatibilidadSemantica, habría que poner en algun lugar
         .collect(Collectors.toList());
   }
 

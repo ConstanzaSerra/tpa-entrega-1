@@ -1,20 +1,37 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
+import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "persona_donante")
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class PersonaDonante implements Notificable {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  private List<MedioDeContacto> medioDeContactos;
+
+  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "donante_id")
+  private List<MedioDeContacto> medioDeContactos = new ArrayList<>();
+
+  @ManyToOne(cascade = CascadeType.ALL)
+  @JoinColumn(name = "medio_predeterminado_id")
   private MedioDeContacto medioDeContactoPredeterminado;
+
+  @Column(name = "ultima_interaccion")
   private LocalDate ultimaInteraccion = LocalDate.now();
+
+  protected PersonaDonante() {}
 
   public PersonaDonante(List<MedioDeContacto> medioDeContactos, MedioDeContacto medioDeContactoPredeterminado) {
     this.medioDeContactos = medioDeContactos;
     this.medioDeContactoPredeterminado = medioDeContactoPredeterminado;
   }
 
-  public void agregarMedio(MedioDeContacto medio){
+  public void agregarMedio(MedioDeContacto medio) {
     this.medioDeContactos.add(medio);
   }
 

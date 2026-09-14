@@ -109,7 +109,8 @@ public class DonacionesApp {
     app.patch("/entidades/{id}/necesidades/{nid}", necesidadController::actualizar);
     app.delete("/entidades/{id}/necesidades/{nid}", necesidadController::eliminar);
 
-    // Eventos que invoca Logistica (trazabilidad + notificacion)
+    // Eventos que invoca Logistica (trazabilidad + notificacion) //REVISAR
+    //donaciones/{id}/estado
     app.post("/notificaciones/inicio-ruta", notificacionController::inicioRuta);
     app.post("/notificaciones/entrega-confirmada", notificacionController::entregaConfirmada);
     app.post("/notificaciones/entrega-fallida", notificacionController::entregaFallida);

@@ -47,7 +47,7 @@ public class TareaDeInactividad {
     LocalDate hoy = LocalDate.now();
     List<PersonaDonante> donantes = donanteRepository.obtenerTodos();
     for (PersonaDonante donante : donantes) {
-      if (donante.getUltimaInteraccion() == null) {
+      if (donante.getUltimaInteraccion() == null) { //existe algun caso en que realmente sea null?
         continue;
       }
       long dias = ChronoUnit.DAYS.between(donante.getUltimaInteraccion(), hoy);

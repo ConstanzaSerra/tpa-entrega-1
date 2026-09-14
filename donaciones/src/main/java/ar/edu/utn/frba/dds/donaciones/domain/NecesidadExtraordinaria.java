@@ -1,8 +1,20 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
+import javax.persistence.Column;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("EXTRAORDINARIA")
 public class NecesidadExtraordinaria extends Necesidad {
+
+  @Column(name = "cantidad_requerida")
   private Integer cantidadRequerida;
+
+  @Column(name = "cantidad_recibida")
   private Integer cantidadRecibida;
+
+  protected NecesidadExtraordinaria() {}
 
   public NecesidadExtraordinaria(Subcategoria subcategoria, String descripcion, Integer cantidadRequerida, Integer cantidadRecibida) {
     super(subcategoria, descripcion);

@@ -2,12 +2,18 @@ package ar.edu.utn.frba.dds.donaciones.domain;
 
 import ar.edu.utn.frba.dds.donaciones.adaptadores.EmailSender;
 
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
 import java.util.regex.Pattern;
 
+@Entity
+@DiscriminatorValue("EMAIL")
 public class Email extends MedioDeContacto {
   private static final Pattern FORMATO_EMAIL = Pattern.compile(
       "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
   );
+
+  protected Email() {}
 
   public Email(String valor) {
     super(validar(valor));

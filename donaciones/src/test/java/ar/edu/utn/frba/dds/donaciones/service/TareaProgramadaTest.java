@@ -19,10 +19,16 @@ public class TareaProgramadaTest {
   public void testTareaProgramadaTest() throws InterruptedException {
     DonacionRepository repoDonaciones = new DonacionRepository();
     EntidadRepository repoEntidades = new EntidadRepository();
+    SubcategoriaRepository repoSubcategorias = new SubcategoriaRepository();
     PropuestaRepository repoPropuestas = new PropuestaRepository();
     ProcesadorMatchmaking procesador = new ProcesadorMatchmaking();
 
-    Subcategoria fideos = new Subcategoria("Fideos",Categoria.ALIMENTOS, false, true);
+    // Subcategoria es una entidad compartida: se guarda por si misma antes de
+    // que la referencien la donacion y la necesidad. No se cascadea desde
+    // Donacion a proposito, para no duplicar la misma subcategoria por donacion.
+    Subcategoria fideos = new Subcategoria("Fideos", Categoria.ALIMENTOS, false, true);
+    repoSubcategorias.guardar(fideos);
+
     Donacion donacionPendiente = new Donacion(fideos, 50, "Kg", null, LocalDate.now());
     repoDonaciones.guardar(donacionPendiente);
 

@@ -57,11 +57,6 @@ node "Servicios de notificación" <<device>> {
  artifact "Email / SMS / WhatsApp" as canales
 }
 
-note top of donaciones
-  Cada servidor despliega un
-  proyecto Maven independiente
-  integración solo por HTTP/REST
-end note
 
 ' --- Conexiones ---
 csv      --> donaciones  : HTTPS\n(importación CSV)

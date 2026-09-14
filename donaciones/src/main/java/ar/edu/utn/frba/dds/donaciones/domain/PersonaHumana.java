@@ -1,14 +1,35 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.PrimaryKeyJoinColumn;
+import javax.persistence.Table;
 import java.util.List;
 
+@Entity
+@Table(name = "persona_humana")
+@PrimaryKeyJoinColumn(name = "persona_donante_id")
 public class PersonaHumana extends PersonaDonante {
+
+  @Column(name = "nombre", nullable = false)
   private String nombre;
+
+  @Column(name = "apellido", nullable = false)
   private String apellido;
+
+  @Column(name = "edad")
   private Integer edad;
+
+  @Column(name = "dni", nullable = false)
   private Integer dni;
+
+  @Column(name = "genero")
   private String genero;
+
+  @Column(name = "direccion")
   private String direccion;
+
+  protected PersonaHumana() {}
 
   public PersonaHumana(List<MedioDeContacto> medioDeContactos, MedioDeContacto medioDeContactoPredeterminado,
                        String nombre, String apellido, Integer edad, Integer dni, String genero, String direccion) {

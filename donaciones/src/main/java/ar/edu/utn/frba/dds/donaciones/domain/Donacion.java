@@ -1,21 +1,56 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
+import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "donacion")
 public class Donacion {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
+  @ManyToOne
+  @JoinColumn(name = "subcategoria_id")
   private Subcategoria subcategoria;
+
+  @Column(name = "cantidad", nullable = false)
   private int cantidad;
+
+  @Column(name = "unidad_medida")
   private String unidadMedida;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "estado", nullable = false)
   private EstadoDonacion estado;
+
+  @Column(name = "fecha_registro")
   private LocalDate fechaRegistro;
+
+  @ManyToOne
+  @JoinColumn(name = "donante_id")
   private PersonaDonante donante;
+
+  // Nullable a proposito: la donacion existe en deposito antes de tener entidad
+  // asignada, y vuelve a quedar sin entidad tras una entrega fallida.
+  @ManyToOne
+  @JoinColumn(name = "entidad_asignada_id")
   private EntidadBeneficiaria entidadAsignada;
+
+  @Column(name = "justificacion_fallida")
   private String justificacionFallida;
-  private final List<CambioDeEstado> historial = new ArrayList<>();
+
+  // El historial es una lista de valores, no de entidades: se persiste como
+  // coleccion de embebibles en su propia tabla, vinculada por donacion_id.
+  @ElementCollection
+  @CollectionTable(name = "cambio_de_estado", joinColumns = @JoinColumn(name = "donacion_id"))
+  @OrderColumn(name = "orden")
+  private List<CambioDeEstado> historial = new ArrayList<>();
+
+  protected Donacion() {}
 
   public Donacion(Subcategoria subcategoria, int cantidad, String unidadMedida,
                   PersonaDonante donante, LocalDate fechaRegistro) {

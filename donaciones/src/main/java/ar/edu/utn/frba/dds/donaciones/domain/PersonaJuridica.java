@@ -1,12 +1,29 @@
 package ar.edu.utn.frba.dds.donaciones.domain;
 
+import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "persona_juridica")
+@PrimaryKeyJoinColumn(name = "persona_donante_id")
 public class PersonaJuridica extends PersonaDonante {
+
+  @Column(name = "razon_social", nullable = false)
   private String razonSocial;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "tipo")
   private TipoJuridico tipo;
+
+  @Column(name = "rubro")
   private String rubro;
-  private List<Representante> representantes;
+
+  @ElementCollection
+  @CollectionTable(name = "representante", joinColumns = @JoinColumn(name = "persona_juridica_id"))
+  private List<Representante> representantes = new ArrayList<>();
+
+  protected PersonaJuridica() {}
 
   public PersonaJuridica(List<MedioDeContacto> medioDeContactos, MedioDeContacto medioDeContactoPredeterminado,
                          String razonSocial, TipoJuridico tipo, String rubro, List<Representante> representantes) {
@@ -17,7 +34,7 @@ public class PersonaJuridica extends PersonaDonante {
     this.representantes = representantes;
   }
 
-  public void agregarRepresentante(Representante representante){
+  public void agregarRepresentante(Representante representante) {
     this.representantes.add(representante);
   }
 

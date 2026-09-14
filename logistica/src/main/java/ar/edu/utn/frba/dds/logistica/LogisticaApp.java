@@ -99,14 +99,14 @@ public class LogisticaApp {
         // Rutas del Planificador
         app.post("/planificador/callback", planificadorController::recibirCallback);
         
-        // Rutas de Trazabilidad
+        // Rutas de Trazabilidad (ver, logica repetida)
         app.post("/rutas/{id}/iniciar", rutaController::iniciarRuta);
         app.post("/entregas/{id}/confirmar", entregaController::confirmar);
         app.post("/entregas/{id}/rechazar", entregaController::rechazar);
         app.post("/entregas/{id}/retornar", entregaController::retornar);
         app.post("/entregas/{id}/fotos", entregaController::fotos);
         
-        // Rutas de Monitoreo GPS (Fase 3)
+        // Rutas de Monitoreo GPS
         app.post("/camiones/{id}/posicion", gpsController::reportarPosicion);
         app.get("/dashboard/camiones", gpsController::getDashboard);
 

@@ -6,7 +6,7 @@ import java.time.LocalTime;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
+  // cambiar por la planificacion en clase (que sea externo)
 public class PlanificacionScheduler {
     private final ScheduledExecutorService scheduler;
     private final PlanificadorRutasService planificadorService;

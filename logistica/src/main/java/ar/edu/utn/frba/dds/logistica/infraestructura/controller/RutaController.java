@@ -98,6 +98,7 @@ public class RutaController {
         Ruta ruta = rutaOpt.get();
         
         try {
+          //deberia ser un metodo de la ruta
             ruta.iniciar();
             
             List<EntregaAfectadaDTO> entregasAfectadas = new ArrayList<>();
@@ -114,6 +115,7 @@ public class RutaController {
                     ));
                 }
             }
+          // hasta aca
 
             // Disparar notificacion
             EventoInicioRutaDTO evento = new EventoInicioRutaDTO(

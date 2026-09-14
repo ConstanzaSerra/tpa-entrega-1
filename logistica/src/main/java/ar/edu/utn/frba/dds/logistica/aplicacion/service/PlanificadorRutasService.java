@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+// planificadorRutas (sin service) delegar responsabilidades, metodos muy grandes
 
 public class PlanificadorRutasService {
     private static final int TAMANIO_LOTE = 100; // restriccion del proveedor por enunciado, max 100 donaciones por ejecucion
@@ -51,7 +52,7 @@ public class PlanificadorRutasService {
         this.callbackUrl = callbackUrl;
         this.linkMapa = linkMapa;
     }
-
+  // metodo muy largo, tiene muchas responsabilidades (dividir en más clases)
     public void planificar() {
         System.out.println("Iniciando tarea de planificacion de rutas...");
 
@@ -92,7 +93,7 @@ public class PlanificadorRutasService {
             System.out.println("Lote " + (i + 1) + " de " + lotes + " enviado al planificador.");
         }
     }
-
+ //reducir el tamaño del metodo
     public void registrarResultado(PlanificacionCallbackDTO callback) { //eventualmente cuando el servicio externo me responda, llamo a este metodo en el controller
         System.out.println("Recibido callback del planificador con " + callback.rutas.size() + " rutas armadas.");
 
@@ -127,8 +128,6 @@ public class PlanificadorRutasService {
         }
 
         if (callback.donacionesNoAsignadas != null && !callback.donacionesNoAsignadas.isEmpty()) {
-            // Al soltarlas del set, siguen en ASIGNACION_REALIZADA en Donaciones y el
-            // proximo ciclo del scheduler las vuelve a incluir: esa es la replanificacion.
             callback.donacionesNoAsignadas.forEach(donacionesEnPlanificacion::remove);
             System.out.println("Quedaron " + callback.donacionesNoAsignadas.size()
                     + " donaciones sin asignar; se replanificaran en el proximo ciclo.");

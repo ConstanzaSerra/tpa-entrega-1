@@ -7,7 +7,7 @@ import ar.edu.utn.frba.dds.logistica.aplicacion.puertos.DonacionesAPI;
 import ar.edu.utn.frba.dds.logistica.aplicacion.puertos.PlanificadorExternoAPI;
 import ar.edu.utn.frba.dds.logistica.infraestructura.repository.*;
 import ar.edu.utn.frba.dds.logistica.aplicacion.service.PlanificacionScheduler;
-import ar.edu.utn.frba.dds.logistica.aplicacion.service.PlanificadorRutasService;
+import ar.edu.utn.frba.dds.logistica.aplicacion.service.PlanificadorRutas;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
 
@@ -21,11 +21,11 @@ import java.util.concurrent.TimeUnit;
 public class LogisticaApp {
     
     public static void main(String[] args) {
-        // persistencia en memoria
-        CamionRepository camionRepository = new InMemoryCamionRepository();
-        RutaRepository rutaRepository = new InMemoryRutaRepository();
-        EntregaRepository entregaRepository = new InMemoryEntregaRepository();
-        GpsRepository gpsRepository = new InMemoryGpsRepository();
+        // persistencia con JPA
+        CamionRepository camionRepository = new JpaCamionRepository();
+        RutaRepository rutaRepository = new JpaRutaRepository();
+        EntregaRepository entregaRepository = new JpaEntregaRepository();
+        GpsRepository gpsRepository = new JpaGpsRepository();
         
         // Inicializo adaptadores leidos desde el config
         String donacionesUrl = ConfigManager.getProperty("api.donaciones.url", "http://localhost:8080");
@@ -40,7 +40,7 @@ public class LogisticaApp {
         String callbackUrl = publicUrl + "/planificador/callback";
         // Enlace al mapa interactivo que viaja en la notificacion de inicio de ruta
         String linkMapa = publicUrl + "/dashboard.html";
-        PlanificadorRutasService planificadorService = new PlanificadorRutasService(
+        PlanificadorRutas planificadorService = new PlanificadorRutas(
                 donacionesAPI, planificadorAPI, camionRepository, rutaRepository, entregaRepository, callbackUrl, linkMapa);
 
         // Inicializo el Scheduler, corre a las 2 de la mañana

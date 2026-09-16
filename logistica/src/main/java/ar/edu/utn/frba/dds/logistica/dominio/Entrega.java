@@ -4,14 +4,32 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
+import javax.persistence.ElementCollection;
+import javax.persistence.ManyToOne;
+
+@Entity
 public class Entrega {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
   private Long donacionId;
   private Long entidadBeneficiariaId;
   private String direccionDestino;
+  
+  @Enumerated(EnumType.STRING)
   private EstadoEntrega estado;
+  
+  @ManyToOne
   private Camion camionQueEntrego;
   private LocalDateTime fechaHoraEntrega;
+  
+  @ElementCollection
   private List<String> fotosUrl;
 
   public Entrega() {

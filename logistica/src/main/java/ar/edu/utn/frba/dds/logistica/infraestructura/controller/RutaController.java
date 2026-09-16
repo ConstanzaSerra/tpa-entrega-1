@@ -99,21 +99,17 @@ public class RutaController {
         
         try {
           //deberia ser un metodo de la ruta
-            ruta.iniciar();
+            List<Entrega> entregas = ruta.iniciar();
             
             List<EntregaAfectadaDTO> entregasAfectadas = new ArrayList<>();
             
             // Iniciar traslado de cada entrega asociada a la ruta
-            for (ParadaDeRuta parada : ruta.getParadas()) {
-                for (Entrega entrega : parada.getEntregas()) {
-                    entrega.iniciarTraslado();
-                    
-                    entregasAfectadas.add(new EntregaAfectadaDTO(
-                            entrega.getId(),
-                            entrega.getDonacionId(),
-                            entrega.getEntidadBeneficiariaId()
-                    ));
-                }
+            for (Entrega entrega : entregas) {
+                entregasAfectadas.add(new EntregaAfectadaDTO(
+                        entrega.getId(),
+                        entrega.getDonacionId(),
+                        entrega.getEntidadBeneficiariaId()
+                ));
             }
           // hasta aca
 

@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit;
   // cambiar por la planificacion en clase (que sea externo)
 public class PlanificacionScheduler {
     private final ScheduledExecutorService scheduler;
-    private final PlanificadorRutasService planificadorService;
+    private final PlanificadorRutas planificadorService;
 
-    public PlanificacionScheduler(PlanificadorRutasService planificadorService) {
+    public PlanificacionScheduler(PlanificadorRutas planificadorService) {
         this.scheduler = Executors.newScheduledThreadPool(1);
         this.planificadorService = planificadorService;
     }

@@ -6,13 +6,24 @@ import java.time.Instant;
  * Posición reportada por la app móvil del conductor mientras la ruta está activa
  * (alternativa elegida para el monitoreo en tiempo real — ver entrega2-plan-diseño.md).
  */
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
+@Entity
 public class PosicionCamion {
-  private final Long camionId;
-  private final double latitud;
-  private final double longitud;
-  private final Double velocidad; // null si el dispositivo no la reporta
-  private final Instant timestamp;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+  
+  private Long camionId;
+  private double latitud;
+  private double longitud;
+  private Double velocidad; // null si el dispositivo no la reporta
+  private Instant timestamp;
+  
+  public PosicionCamion() {}
 
   public PosicionCamion(Long camionId, double latitud, double longitud, Double velocidad, Instant timestamp) {
     this.camionId = camionId;

@@ -3,11 +3,31 @@ package ar.edu.utn.frba.dds.logistica.dominio;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.CascadeType;
+
+@Entity
 public class Ruta {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+  
+  @ManyToOne
   private Camion camion;
+  
+  @OneToMany(cascade = CascadeType.ALL)
   private List<ParadaDeRuta> paradas;
+  
+  @Enumerated(EnumType.STRING)
   private EstadoRuta estado;
+  
   private String linkMapa;
 
   public Ruta() {
@@ -20,11 +40,19 @@ public class Ruta {
     this.camion = camion;
   }
 
-  public void iniciar() {
+  public List<Entrega> iniciar() {
     if (estado != EstadoRuta.PLANIFICADA) {
       throw new IllegalStateException("Solo se puede iniciar una ruta PLANIFICADA. Estado: " + estado);
     }
     this.estado = EstadoRuta.EN_CURSO;
+    List<Entrega> entregasIniciadas = new ArrayList<>();
+    for (ParadaDeRuta parada : this.paradas) {
+        for (Entrega entrega : parada.getEntregas()) {
+            entrega.iniciarTraslado();
+            entregasIniciadas.add(entrega);
+        }
+    }
+    return entregasIniciadas;
   }
 
   public void completar() {

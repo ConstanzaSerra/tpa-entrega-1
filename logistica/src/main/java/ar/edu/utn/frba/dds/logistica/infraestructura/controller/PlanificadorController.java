@@ -1,14 +1,14 @@
 package ar.edu.utn.frba.dds.logistica.infraestructura.controller;
 
-import ar.edu.utn.frba.dds.logistica.aplicacion.service.PlanificadorRutasService;
+import ar.edu.utn.frba.dds.logistica.aplicacion.service.PlanificadorRutas;
 import ar.edu.utn.frba.dds.logistica.infraestructura.dto.PlanificacionCallbackDTO;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 
 public class PlanificadorController {
-    private final PlanificadorRutasService planificadorService;
+    private final PlanificadorRutas planificadorService;
 
-    public PlanificadorController(PlanificadorRutasService planificadorService) {
+    public PlanificadorController(PlanificadorRutas planificadorService) {
         this.planificadorService = planificadorService;
     }
 

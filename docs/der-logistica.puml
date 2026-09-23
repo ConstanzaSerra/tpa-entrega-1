@@ -1,0 +1,98 @@
+@startuml der-logistica
+' DER físico del esquema "logistica" (Entrega 3 - Persistencia)
+' Refleja el mapeo JPA real: dominio anotado (Opción A), IDs IDENTITY, enums STRING.
+' Los nombres de tabla/columna son los que genera Hibernate por defecto (no hay @Table/@Column).
+
+hide circle
+skinparam linetype ortho
+skinparam roundcorner 6
+
+entity "Camion" as camion {
+  * id : BIGINT <<PK, identity>>
+  --
+  patente : VARCHAR
+  volumenM3 : DOUBLE
+  alturaM : DOUBLE
+  capacidadKg : DOUBLE
+}
+
+entity "Ruta" as ruta {
+  * id : BIGINT <<PK, identity>>
+  --
+  estado : VARCHAR  <<enum STRING: PLANIFICADA|EN_CURSO|COMPLETADA>>
+  linkMapa : VARCHAR
+  camion_id : BIGINT <<FK -> Camion, nullable>>
+}
+
+entity "ParadaDeRuta" as parada {
+  * id : BIGINT <<PK, identity>>
+  --
+  entidadBeneficiariaId : BIGINT  <<id opaco de Donaciones, sin FK>>
+  direccion : VARCHAR
+}
+
+entity "Entrega" as entrega {
+  * id : BIGINT <<PK, identity>>
+  --
+  donacionId : BIGINT  <<id opaco de Donaciones, sin FK>>
+  entidadBeneficiariaId : BIGINT  <<id opaco de Donaciones, sin FK>>
+  direccionDestino : VARCHAR
+  estado : VARCHAR  <<enum STRING: PENDIENTE|EN_TRASLADO|ENTREGADA|NO_RECIBIDA>>
+  fechaHoraEntrega : TIMESTAMP <<nullable>>
+  camionQueEntrego_id : BIGINT <<FK -> Camion, nullable>>
+}
+
+entity "PosicionCamion" as posicion {
+  * id : BIGINT <<PK, identity>>
+  --
+  camionId : BIGINT  <<referencia por id, SIN FK (telemetría append-only)>>
+  latitud : DOUBLE
+  longitud : DOUBLE
+  velocidad : DOUBLE <<nullable>>
+  timestamp : TIMESTAMP
+}
+
+' --- Tablas de colección / join generadas por JPA ---
+
+entity "Entrega_fotosUrl" as fotos {
+  * Entrega_id : BIGINT <<FK -> Entrega>>
+  fotosUrl : VARCHAR
+}
+
+entity "Ruta_ParadaDeRuta" as ruta_parada {
+  * Ruta_id : BIGINT <<FK -> Ruta>>
+  * paradas_id : BIGINT <<FK -> ParadaDeRuta, UNIQUE>>
+}
+
+entity "ParadaDeRuta_Entrega" as parada_entrega {
+  * ParadaDeRuta_id : BIGINT <<FK -> ParadaDeRuta>>
+  * entregas_id : BIGINT <<FK -> Entrega, UNIQUE>>
+}
+
+' --- Relaciones con FK real (mismo esquema) ---
+ruta }o--|| camion : camion_id
+entrega }o--o| camion : camionQueEntrego_id
+
+' --- Composición vía tabla de join (unidireccional @OneToMany, cascade ALL) ---
+ruta ||--o{ ruta_parada
+ruta_parada }o--|| parada
+parada ||--o{ parada_entrega
+parada_entrega }o--|| entrega
+
+' --- @ElementCollection ---
+entrega ||--o{ fotos
+
+note bottom of posicion
+  camionId NO es FK: se guarda como id opaco.
+  PosicionCamion es telemetría (muchas filas por camión),
+  no navega a Camion desde el dominio.
+end note
+
+note top of parada
+  entidadBeneficiariaId y donacionId son ids de OTRO
+  microservicio (Donaciones). No hay FK entre esquemas:
+  la integridad referencial cruzada es responsabilidad
+  de la capa de aplicación / HTTP, no de la base.
+end note
+
+@enduml

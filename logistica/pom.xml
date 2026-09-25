@@ -38,6 +38,26 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- ===== Entrega 3: persistencia ===== -->
+    <!-- JPA + Hibernate + utilidades de la catedra (trae hibernate-entitymanager) -->
+    <dependency>
+      <groupId>io.github.flbulgarelli</groupId>
+      <artifactId>jpa-extras</artifactId>
+      <version>1.0.0-rc1</version>
+    </dependency>
+    <!-- Base en memoria para los tests -->
+    <dependency>
+      <groupId>org.hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <version>2.7.2</version>
+    </dependency>
+    <!-- Base cliente-servidor para el despliegue local (docker compose) -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.7.3</version>
+    </dependency>
+
     <!-- Servidor web / API REST -->
     <dependency>
       <groupId>io.javalin</groupId>
@@ -69,6 +89,13 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
+        <configuration>
+          <systemPropertyVariables>
+            <!-- Los tests corren SIEMPRE contra HSQLDB en memoria, nunca contra
+                 la base de despliegue. -->
+            <persistence.unit>simple-persistence-unit</persistence.unit>
+          </systemPropertyVariables>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

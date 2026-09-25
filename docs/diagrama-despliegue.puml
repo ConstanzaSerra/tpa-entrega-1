@@ -1,11 +1,8 @@
 @startuml DonaTrack_Despliegue
 
-' Diagrama de despliegue - TPA2 DonaTrack
-' Refleja la division en DOS microservicios independientes (enunciado TPA2:
-' "se solicita que se divida al sistema en, inicialmente, dos microservicios",
-' integracion via HTTP/REST). Cada servidor corre un proyecto Maven autocontenido.
-
 skinparam backgroundColor #FFFFFF
+skinparam nodesep 60
+skinparam ranksep 70
 skinparam node {
  BackgroundColor #EEEDFE
  BorderColor #7F77DD
@@ -21,55 +18,50 @@ skinparam database {
  BorderColor #BA7517
  FontColor #000000
 }
-skinparam note {
- BackgroundColor #FFF9E6
- BorderColor #BA7517
-}
 
-' --- Actores / dispositivos externos ---
-node "Cliente\n(administrador / entidad)" <<device>> {
- artifact "Web Browser\n(dashboard de monitoreo)" as browser
+node "Cliente\n(administrador / entidad)" as nCliente {
  artifact "donantes.csv" as csv
+ artifact "Web Browser\n(dashboard de monitoreo)" as browser
 }
 
-node "Celular del chofer" <<device>> {
+node "Celular del chofer" as nCelular {
  artifact "App móvil\n(reporte de posición)" as appMovil
 }
 
-' --- Microservicio 1 ---
-node "Servidor Donaciones" <<device>> {
- artifact "tpa-donaciones.jar\n(Java 17 + Javalin)\n:8080" as donaciones
- database "Repositorios\nen memoria" as dbDonaciones
-}
-
-' --- Microservicio 2 ---
-node "Servidor Logística" <<device>> {
- artifact "tpa-logistica.jar\n(Java 17 + Javalin)\n:8081" as logistica
- database "Repositorios\nen memoria" as dbLogistica
-}
-
-' --- Terceros ---
-node "Proveedor externo" <<device>> {
- artifact "Planificador de Rutas\n:8082" as planificador
-}
-
-node "Servicios de notificación" <<device>> {
+node "Servicios de notificación" as nNotif {
  artifact "Email / SMS / WhatsApp" as canales
 }
 
+node "Servidor Donaciones" as nDonaciones {
+ artifact "tpa-donaciones.jar\nJava 17 + Javalin + JPA/Hibernate\n:8080" as donaciones
+}
 
-' --- Conexiones ---
-csv      --> donaciones  : HTTPS\n(importación CSV)
-browser  --> logistica   : HTTPS\n(dashboard tiempo real)
-appMovil --> logistica   : HTTPS\n(POST /camiones/{id}/posicion)
+node "Servidor Logística" as nLogistica {
+ artifact "tpa-logistica.jar\nJava 17 + Javalin + JPA/Hibernate\n:8081" as logistica
+}
 
-logistica --> donaciones  : HTTP/REST\n(consulta donaciones asignadas\n+ notifica eventos de entrega)
-logistica --> planificador : HTTP async\n(lotes de ≤100)
-planificador --> logistica : HTTP\n(POST /planificador/callback)
+node "Proveedor externo" as nPlanif {
+ artifact "Planificador de Rutas\n:8082" as planificador
+}
 
-donaciones --> canales : envío real de\nnotificaciones
+node "Servidor de Base de Datos" as nDb {
+ node "PostgreSQL 16 :5432" {
+  database "donatrack_donaciones" as dbDonaciones
+  database "donatrack_logistica" as dbLogistica
+ }
+}
 
-donaciones --> dbDonaciones
-logistica  --> dbLogistica
+csv      -down-> donaciones : HTTPS\n(importación CSV)
+browser  -down-> logistica  : HTTPS\n(dashboard)
+appMovil -down-> logistica  : HTTPS\n(posición GPS)
+
+logistica -left-> donaciones : HTTP/REST\n(donaciones asignadas\n+ eventos de entrega)
+donaciones -left-> canales   : notificaciones
+
+logistica -right-> planificador : HTTP async\n(lotes ≤100)
+planificador ..> logistica      : callback
+
+donaciones -down-> dbDonaciones : JDBC
+logistica  -down-> dbLogistica  : JDBC
 
 @enduml

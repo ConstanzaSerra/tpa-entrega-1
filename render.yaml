@@ -1,0 +1,37 @@
+# Blueprint de Despliegue Cloud para Render.com / Railway (Entrega 4 - Requerimiento 4)
+services:
+  - type: web
+    name: donatrack-donaciones
+    runtime: docker
+    rootDir: donaciones
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: JDBC_DATABASE_URL
+        sync: false # Configurar con la URL JDBC de Neon.tech / Render PostgreSQL
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: LOGISTICA_URL
+        sync: false # URL del servicio donatrack-logistica
+
+  - type: web
+    name: donatrack-logistica
+    runtime: docker
+    rootDir: logistica
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: "8081"
+      - key: JDBC_DATABASE_URL
+        sync: false # Configurar con la URL JDBC de Neon.tech / Render PostgreSQL
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DONACIONES_URL
+        sync: false # URL del servicio donatrack-donaciones

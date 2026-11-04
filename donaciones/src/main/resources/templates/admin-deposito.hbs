@@ -1,0 +1,202 @@
+{{#partial "contenido"}}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="bi bi-box-seam text-primary me-2"></i>Gestión de Depósito Central</h2>
+    <p class="text-muted mb-0">Registrá personas donantes y cargas de donaciones recibidas en el depósito, y actualizá el estado de donaciones vencidas.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/admin/matchmaking" class="btn btn-primary btn-sm"><i class="bi bi-diagram-3 me-1"></i>Ir a Matchmaking</a>
+    <a href="/admin/camiones" class="btn btn-outline-primary btn-sm"><i class="bi bi-truck me-1"></i>Flota de Camiones</a>
+    <a href="/admin/importar-csv" class="btn btn-outline-dark btn-sm"><i class="bi bi-filetype-csv me-1"></i>Importar CSV</a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- 13.a Registrar Persona Donante en Depósito -->
+  <div class="col-lg-5">
+    <div class="card card-donatrack p-4 bg-white h-100">
+      <h5 class="fw-bold mb-1"><i class="bi bi-person-plus text-primary me-1"></i>1. Registrar Persona Donante</h5>
+      <p class="small text-muted mb-3">Da de alta al donante y le otorga automáticamente su usuario de acceso.</p>
+
+      <form method="post" action="/admin/donantes">
+        <div class="row g-2">
+          <div class="col-md-5">
+            <label class="form-label small fw-semibold">Tipo</label>
+            <select name="tipo" id="adminTipoDonante" class="form-select form-select-sm" onchange="toggleAdminDonante()">
+              <option value="HUMANA">HUMANA</option>
+              <option value="JURIDICA">JURIDICA</option>
+            </select>
+          </div>
+          <div class="col-md-7">
+            <label class="form-label small fw-semibold">Correo Electrónico *</label>
+            <input type="email" name="email" class="form-control form-control-sm" required placeholder="donante@correo.com">
+          </div>
+
+          <div class="col-md-6 adm-hum">
+            <label class="form-label small">Nombre</label>
+            <input type="text" name="nombre" class="form-control form-control-sm" placeholder="Carlos">
+          </div>
+          <div class="col-md-6 adm-hum">
+            <label class="form-label small">Apellido</label>
+            <input type="text" name="apellido" class="form-control form-control-sm" placeholder="López">
+          </div>
+          <div class="col-md-6 adm-hum">
+            <label class="form-label small">DNI</label>
+            <input type="number" name="dni" class="form-control form-control-sm" placeholder="32000111">
+          </div>
+
+          <div class="col-md-8 adm-jur d-none">
+            <label class="form-label small">Razón Social</label>
+            <input type="text" name="razonSocial" class="form-control form-control-sm" placeholder="Fundación Sur">
+          </div>
+          <div class="col-md-4 adm-jur d-none">
+            <label class="form-label small">Tipo Jurídico</label>
+            <select name="tipoJuridico" class="form-select form-select-sm">
+              <option value="EMPRESA">EMPRESA</option>
+              <option value="ONG">ONG</option>
+              <option value="INSTITUCION">INSTITUCION</option>
+              <option value="GUBERNAMENTAL">GUBERNAMENTAL</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label small">Teléfono</label>
+            <input type="text" name="telefono" class="form-control form-control-sm" placeholder="+54 11 5555-0000">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-outline-primary btn-sm w-100 mt-3 fw-semibold">
+          <i class="bi bi-person-check me-1"></i>Registrar Donante en Depósito
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 13.b Registrar Carga de Donación recibida en Depósito -->
+  <div class="col-lg-7">
+    <div class="card card-donatrack p-4 bg-white h-100">
+      <h5 class="fw-bold mb-1"><i class="bi bi-box-arrow-in-down text-success me-1"></i>2. Registrar Donación Recibida en Depósito</h5>
+      <p class="small text-muted mb-3">Asociá los bienes recibidos a la persona donante; el sistema segmenta y registra la donación en estado <code>EN_DEPOSITO</code>.</p>
+
+      <form method="post" action="/admin/donaciones">
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Persona Donante *</label>
+            <select name="donanteId" class="form-select form-select-sm" required>
+              {{#each donantes}}
+              <option value="{{id}}">#{{id}} - {{nombre}} ({{email}})</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Descripción General de la Carga</label>
+            <input type="text" name="descripcionGeneral" class="form-control form-control-sm" value="Recepción en depósito Medrano" required>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Categoría *</label>
+            <select name="categoria" class="form-select form-select-sm">
+              <option value="ALIMENTOS">ALIMENTOS</option>
+              <option value="VESTIMENTA">VESTIMENTA</option>
+              <option value="MOBILIARIO">MOBILIARIO</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Subcategoría *</label>
+            <input type="text" name="subcategoriaNombre" list="admSubcat" class="form-control form-control-sm" required placeholder="Ej: Arroz, Sillas...">
+            <datalist id="admSubcat">
+              {{#each subcategorias}}
+              <option value="{{nombre}}">{{categoria}}</option>
+              {{/each}}
+            </datalist>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Cantidad *</label>
+            <input type="number" name="cantidad" class="form-control form-control-sm" min="1" value="25" required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Unidad *</label>
+            <input type="text" name="unidadMedida" class="form-control form-control-sm" value="unidades" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label small">Estado del bien (Mobiliario / Vestimenta)</label>
+            <select name="esNuevo" class="form-select form-select-sm">
+              <option value="true">Artículo Nuevo</option>
+              <option value="false">Artículo Usado en buen estado</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small">Fecha de Vencimiento (Si es perecedero)</label>
+            <input type="date" name="fechaVencimiento" class="form-control form-control-sm">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-success btn-sm w-100 mt-3 fw-semibold">
+          <i class="bi bi-plus-circle me-1"></i>Ingresar y Segmentar Donación en Depósito
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 14. Inventario de Donaciones y actualización a Vencida -->
+<div class="card card-donatrack p-4 bg-white">
+  <h5 class="fw-bold mb-3"><i class="bi bi-list-ul text-primary me-1"></i>Inventario de Donaciones y Control de Vencimientos</h5>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Categoría / Subcategoría</th>
+          <th>Cantidad</th>
+          <th>Donante</th>
+          <th>Estado Actual</th>
+          <th>Entidad Destino</th>
+          <th class="text-end">Acciones de Depósito</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each donaciones}}
+        <tr>
+          <td><strong>#{{id}}</strong></td>
+          <td>
+            <span class="badge bg-secondary me-1">{{categoriaNombre}}</span>
+            <strong>{{subcategoriaNombre}}</strong>
+          </td>
+          <td>{{cantidad}} {{unidadMedida}}</td>
+          <td>{{donanteNombre}}</td>
+          <td><span class="badge bg-primary">{{estado}}</span></td>
+          <td>{{entidadNombre}}</td>
+          <td class="text-end">
+            {{#if esEnDeposito}}
+            <div class="d-inline-flex gap-1">
+              <a href="/admin/matchmaking" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-diagram-3 me-1"></i>Asignar
+              </a>
+              <form method="post" action="/admin/donaciones/{{id}}/vencer" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-calendar-x me-1"></i>Marcar Vencida
+                </button>
+              </form>
+            </div>
+            {{else}}
+            <small class="text-muted">{{fechaRegistro}}</small>
+            {{/if}}
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{/partial}}
+
+{{#partial "scripts"}}
+<script>
+  function toggleAdminDonante() {
+    const esJur = document.getElementById('adminTipoDonante').value === 'JURIDICA';
+    document.querySelectorAll('.adm-hum').forEach(e => e.classList.toggle('d-none', esJur));
+    document.querySelectorAll('.adm-jur').forEach(e => e.classList.toggle('d-none', !esJur));
+  }
+</script>
+{{/partial}}
+{{> layout}}

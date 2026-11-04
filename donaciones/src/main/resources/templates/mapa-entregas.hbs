@@ -1,0 +1,66 @@
+{{#partial "contenido"}}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Mapa Interactivo de Donaciones Entregadas</h2>
+    <p class="text-muted mb-0">Hacé clic en cada marcador del mapa para inspeccionar el detalle de los bienes entregados, la entidad beneficiaria y su comprobante fotográfico.</p>
+  </div>
+  <a href="/galeria" class="btn btn-outline-primary"><i class="bi bi-images me-1"></i>Ver en Galería</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div id="mapaPublico" class="map-container shadow-sm"></div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card card-donatrack p-3 h-100">
+      <h6 class="fw-bold text-uppercase text-muted small mb-3"><i class="bi bi-list-check me-1"></i>Entregas Registradas en el Mapa</h6>
+      <div class="d-flex flex-column gap-3 overflow-auto" style="max-height: 420px;">
+        {{#each entregas}}
+        <div class="border rounded-3 p-3 bg-light">
+          <div class="d-flex justify-content-between">
+            <span class="badge bg-success">Donación #{{id}}</span>
+            <small class="text-muted">{{fechaEntrega}}</small>
+          </div>
+          <div class="fw-bold mt-1">{{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</div>
+          <div class="small text-muted">
+            <i class="bi bi-building me-1"></i>{{entidadNombre}}<br>
+            <i class="bi bi-geo-alt me-1"></i>{{entidadDireccion}}<br>
+            <i class="bi bi-person me-1"></i>Donó: {{donanteNombre}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+</div>
+{{/partial}}
+
+{{#partial "scripts"}}
+<script>
+  const marcadores = {{{marcadoresJson}}};
+  const map = L.map('mapaPublico').setView([-34.62, -58.42], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  marcadores.forEach((m, index) => {
+    const lat = m.latitud || (-34.60 - index * 0.02);
+    const lon = m.longitud || (-58.41 - index * 0.02);
+    const popupHtml = `
+      <div style="min-width:220px">
+        <img src="${m.fotoPrincipal}" style="width:100%;height:110px;object-fit:cover;border-radius:6px;margin-bottom:6px;" alt="Foto entrega"/>
+        <div class="badge bg-success mb-1">ENTREGADA · #${m.id}</div>
+        <h6 class="fw-bold mb-1">${m.cantidad} ${m.unidadMedida} de ${m.subcategoriaNombre}</h6>
+        <div class="small">
+          <strong>Entidad:</strong> ${m.entidadNombre}<br/>
+          <strong>Dirección:</strong> ${m.entidadDireccion}<br/>
+          <strong>Donante:</strong> ${m.donanteNombre}<br/>
+          <strong>Camión:</strong> ${m.patenteCamion}
+        </div>
+      </div>
+    `;
+    L.marker([lat, lon]).addTo(map).bindPopup(popupHtml);
+  });
+</script>
+{{/partial}}
+{{> layout}}

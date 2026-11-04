@@ -1,0 +1,55 @@
+{{#partial "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card card-donatrack p-4 p-md-5 bg-white">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <h2 class="fw-bold mb-1"><i class="bi bi-filetype-csv text-primary me-2"></i>Importación Masiva de Donantes CSV</h2>
+          <p class="text-muted mb-0">Migración histórica de personas donantes desde archivos CSV de más de 10.000 filas, otorgándoles automáticamente su usuario en la plataforma (Requerimiento 17).</p>
+        </div>
+        <span class="badge bg-primary px-3 py-2">{{totalDonantesActuales}} Donantes · {{totalUsuariosActuales}} Usuarios</span>
+      </div>
+
+      <div class="bg-light border rounded-3 p-3 mb-4 small">
+        <div class="fw-bold mb-1"><i class="bi bi-table me-1"></i>Formato oficial esperado del archivo CSV:</div>
+        <code>TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono</code><br>
+        <code>HUMANA,DNI,12345678,Ana Pérez,ana@mail.com,+54 11 5555-5555</code><br>
+        <code>JURIDICA,CUIT,30-12345678-9,Arcos Plateados S.A.,contacto@empresa.com,+54 11 4444-4444</code>
+      </div>
+
+      <!-- Opción 1: Subir un archivo CSV desde la computadora -->
+      <form method="post" action="/admin/importar-csv" enctype="multipart/form-data" class="mb-4">
+        <label class="form-label fw-semibold">Seleccionar archivo <code>.csv</code> desde tu equipo</label>
+        <div class="input-group">
+          <input type="file" name="archivoCsv" accept=".csv,text/csv" class="form-control" required>
+          <button type="submit" class="btn btn-primary fw-semibold px-4">
+            <i class="bi bi-cloud-arrow-up-fill me-1"></i>Importar y Otorgar Usuarios
+          </button>
+        </div>
+      </form>
+
+      <hr class="my-4">
+
+      <!-- Opción 2: Descargar o ejecutar en 1 clic un lote de prueba de 10.500 filas -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center bg-light p-3 rounded-3">
+        <div class="mb-2 mb-md-0">
+          <h6 class="fw-bold mb-1"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Prueba de Estrés (+10.000 Filas)</h6>
+          <p class="small text-muted mb-0">Podés descargar un archivo CSV de 10.500 filas o ejecutar su importación directa en lote.</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/admin/importar-csv/ejemplo-10000.csv" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i>Descargar CSV (10.500 filas)
+          </a>
+          <form method="post" action="/admin/importar-csv">
+            <input type="hidden" name="generarDemo10k" value="true">
+            <button type="submit" class="btn btn-success btn-sm fw-semibold">
+              <i class="bi bi-play-fill me-1"></i>Ejecutar Importación de 10.500 Filas Ahora
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{/partial}}
+{{> layout}}

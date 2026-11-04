@@ -9,11 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Faltaba: Subcategoria es una entidad compartida (donaciones, bienes y
+ * Subcategoria es una entidad compartida (donaciones, bienes y
  * necesidades la referencian) y por lo tanto necesita guardarse por si misma.
- * No se cascadea su persistencia desde Donacion a proposito: si cada donacion
- * cascadeara el persist, la misma subcategoria se duplicaria una vez por
- * donacion, que es justo lo que el modelo relacional viene a evitar.
  */
 public class SubcategoriaRepository {
   private final EntityManager entityManager;
@@ -27,7 +24,21 @@ public class SubcategoriaRepository {
   }
 
   public void guardar(Subcategoria subcategoria) {
-    enTransaccion(() -> entityManager.persist(subcategoria));
+    enTransaccion(() -> {
+      if (subcategoria.getId() == null) {
+        entityManager.persist(subcategoria);
+      } else {
+        entityManager.merge(subcategoria);
+      }
+    });
+  }
+
+  public Subcategoria obtenerOCrear(String nombre, Categoria categoria, boolean requiereEstado, boolean esPerecedero) {
+    return buscarPorNombre(nombre).orElseGet(() -> {
+      Subcategoria nueva = new Subcategoria(nombre, categoria, requiereEstado, esPerecedero);
+      guardar(nueva);
+      return nueva;
+    });
   }
 
   public Optional<Subcategoria> buscarPorId(Long id) {
@@ -36,7 +47,7 @@ public class SubcategoriaRepository {
 
   public Optional<Subcategoria> buscarPorNombre(String nombre) {
     return entityManager
-        .createQuery("SELECT s FROM Subcategoria s WHERE s.nombre = :nombre", Subcategoria.class)
+        .createQuery("SELECT s FROM Subcategoria s WHERE LOWER(s.nombre) = LOWER(:nombre)", Subcategoria.class)
         .setParameter("nombre", nombre)
         .getResultList()
         .stream()

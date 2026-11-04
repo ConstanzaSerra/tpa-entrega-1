@@ -39,6 +39,7 @@ public class NotificacionController {
       for (EntregaAfectadaDTO entrega : evento.entregasAfectadas) {
         donacionRepository.buscarPorId(entrega.donacionId).ifPresent(d -> {
           transicionar(d, EstadoDonacion.EN_TRASLADO);
+          donacionRepository.guardar(d);
           notificarPartes(d, "Tu entrega inició su recorrido. Seguila en el mapa: " + evento.linkMapa);
         });
       }
@@ -51,6 +52,7 @@ public class NotificacionController {
     EventoEntregaConfirmadaDTO evento = ctx.bodyAsClass(EventoEntregaConfirmadaDTO.class);
     donacionRepository.buscarPorId(evento.donacionId).ifPresent(d -> {
       transicionar(d, EstadoDonacion.ENTREGADA);
+      donacionRepository.guardar(d);
       notificarPartes(d, "Entrega confirmada. Fecha: " + evento.fechaHora + " | camión: " + evento.patenteCamion);
     });
     ctx.status(200).json(Map.of("status", "ok"));
@@ -62,6 +64,7 @@ public class NotificacionController {
     donacionRepository.buscarPorId(evento.donacionId).ifPresent(d -> {
       try {
         d.marcarEntregaFallida(evento.motivo);
+        donacionRepository.guardar(d);
       } catch (IllegalStateException e) {
         System.err.println("No se pudo marcar fallida la donacion " + d.getId() + ": " + e.getMessage());
       }

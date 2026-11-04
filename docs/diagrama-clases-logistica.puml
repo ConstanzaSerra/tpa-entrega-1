@@ -1,4 +1,4 @@
-@startuml DonaTrack - Diagrama de Clases - Logistica
+@startuml DonaTrack - Diagrama de Clases - Logistica (Entrega 4)
 
 skinparam classAttributeIconSize 0
 skinparam classFontStyle bold
@@ -15,6 +15,7 @@ skinparam noteBorderColor #BA7517
 ' ─────────────────────────────────────────
 
 class Camion {
+  - Long id
   - String patente
   - double volumenM3
   - double alturaM
@@ -24,6 +25,7 @@ class Camion {
 }
 
 class PosicionCamion {
+  - Long id
   - Long camionId
   - double latitud
   - double longitud
@@ -36,6 +38,7 @@ class PosicionCamion {
 ' ─────────────────────────────────────────
 
 class Ruta {
+  - Long id
   - Camion camion
   - List<ParadaDeRuta> paradas
   - EstadoRuta estado
@@ -53,6 +56,7 @@ enum EstadoRuta {
 }
 
 class ParadaDeRuta {
+  - Long id
   - Long entidadBeneficiariaId
   - String direccion
   - List<Entrega> entregas
@@ -64,6 +68,7 @@ class ParadaDeRuta {
 ' ─────────────────────────────────────────
 
 class Entrega {
+  - Long id
   - Long donacionId
   - Long entidadBeneficiariaId
   - String direccionDestino
@@ -87,10 +92,30 @@ enum EstadoEntrega {
 }
 
 ' ─────────────────────────────────────────
-'  PLANIFICACION DE RUTAS
+'  PLANIFICACION E INTEGRACION GRAPHQL (Entrega 4)
 ' ─────────────────────────────────────────
 
-class PlanificadorRutasService {
+interface DonacionesAPI <<puerto>> {
+  + obtenerDonacionesAsignadas(): List<DonacionAsignadaDTO>
+  + notificarInicioRuta(EventoInicioRutaDTO): void
+  + notificarEntregaConfirmada(EventoEntregaConfirmadaDTO): void
+  + notificarEntregaFallida(EventoEntregaFallidaDTO): void
+}
+
+class DonacionesGraphQLAdapter <<adaptador>> {
+  - String graphqlEndpoint
+  + obtenerDonacionesAsignadas(): List<DonacionAsignadaDTO>
+  + notificarInicioRuta(EventoInicioRutaDTO): void
+  + notificarEntregaConfirmada(EventoEntregaConfirmadaDTO): void
+  + notificarEntregaFallida(EventoEntregaFallidaDTO): void
+}
+
+class LogisticaGraphQLController <<graphql>> {
+  - GraphQL graphQL
+  + ejecutar(Context): void
+}
+
+class PlanificadorRutas {
   - Set<Long> donacionesEnPlanificacion
   - String callbackUrl
   + planificar(): void
@@ -118,8 +143,16 @@ Entrega --> "0..1" Camion : camionQueEntrego
 
 PosicionCamion --> Camion : camionId
 
-PlanificacionScheduler --> PlanificadorRutasService
-PlanificadorRutasService ..> Ruta : <<genera>>
-PlanificadorRutasService ..> Entrega : <<genera>>
+DonacionesAPI <|.. DonacionesGraphQLAdapter
+PlanificadorRutas --> DonacionesAPI
+LogisticaGraphQLController --> Camion
+LogisticaGraphQLController --> Entrega
+LogisticaGraphQLController --> Ruta
+LogisticaGraphQLController --> PosicionCamion
+LogisticaGraphQLController --> DonacionesAPI
+
+PlanificacionScheduler --> PlanificadorRutas
+PlanificadorRutas ..> Ruta : <<genera>>
+PlanificadorRutas ..> Entrega : <<genera>>
 
 @enduml

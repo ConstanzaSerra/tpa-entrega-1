@@ -154,6 +154,7 @@ public class DonacionController {
       ctx.status(400).json(Map.of("error", "Categoria invalida: " + dto.categoria));
       return;
     }
+    donacionRepository.guardar(d);
     ctx.json(aDTO(d));
   }
 
@@ -201,6 +202,7 @@ public class DonacionController {
     }
     try {
       oDonacion.get().asignarEntidad(oEntidad.get());
+      donacionRepository.guardar(oDonacion.get());
     } catch (IllegalStateException e) {
       // La donacion no estaba en un estado que permita la asignacion
       ctx.status(409).json(Map.of("error", e.getMessage()));

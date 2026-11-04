@@ -64,6 +64,22 @@
       <artifactId>javalin</artifactId>
       <version>6.1.6</version>
     </dependency>
+    <!-- Entrega 4: Motor de plantillas (Handlebars) + GraphQL -->
+    <dependency>
+      <groupId>io.javalin</groupId>
+      <artifactId>javalin-rendering</artifactId>
+      <version>6.1.6</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jknack</groupId>
+      <artifactId>handlebars</artifactId>
+      <version>4.3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.graphql-java</groupId>
+      <artifactId>graphql-java</artifactId>
+      <version>21.5</version>
+    </dependency>
     <!-- Serialización JSON -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

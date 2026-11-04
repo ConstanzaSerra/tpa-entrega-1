@@ -3,28 +3,17 @@ package ar.edu.utn.frba.dds.logistica.persistencia;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Punto unico donde se decide contra que base corre la aplicacion.
- *
- * El orden de resolucion de la unidad es deliberado:
- *   1. la system property persistence.unit  -> la fija surefire, de modo que
- *      TODOS los tests van a HSQLDB sin que haya que acordarse en cada uno;
- *   2. la variable de entorno PERSISTENCE_UNIT -> para levantar la app contra
- *      otra base sin recompilar;
- *   3. postgres-persistence-unit -> el despliegue local por defecto.
- *
- * Ademas mantiene UN EntityManager por hilo. Sin esto, cada repositorio creado
- * con new se armaba su propio contexto de persistencia, y una entidad guardada
- * por un repositorio quedaba detached para los demas: guardabas la Subcategoria
- * con un repo y al guardar la Donacion con otro, Hibernate la veia como una
- * instancia transitoria. El EntityManager no es thread-safe, por eso es uno por
- * hilo y no uno global.
+ * Punto unico donde se decide contra que base corre la aplicacion de Logistica.
  */
 public class EntityManagerProvider {
   public static final String PROPIEDAD_UNIDAD = "persistence.unit";
   public static final String VARIABLE_UNIDAD = "PERSISTENCE_UNIT";
   private static final String UNIDAD_POR_DEFECTO = "postgres-persistence-unit";
+  private static final String UNIDAD_MEMORIA = "simple-persistence-unit";
 
   private static EntityManagerFactory factory;
   private static final ThreadLocal<EntityManager> ENTITY_MANAGER_DEL_HILO = new ThreadLocal<>();
@@ -45,7 +34,34 @@ public class EntityManagerProvider {
 
   public static synchronized EntityManagerFactory getFactory() {
     if (factory == null) {
-      factory = Persistence.createEntityManagerFactory(unidadDePersistencia());
+      String unidad = unidadDePersistencia();
+      Map<String, String> overrides = new HashMap<>();
+      String jdbcUrl = System.getenv("JDBC_DATABASE_URL");
+      if (jdbcUrl != null && !jdbcUrl.isBlank()) {
+        overrides.put("javax.persistence.jdbc.url", jdbcUrl);
+      }
+      String dbUser = System.getenv("DB_USER");
+      if (dbUser != null && !dbUser.isBlank()) {
+        overrides.put("javax.persistence.jdbc.user", dbUser);
+      }
+      String dbPassword = System.getenv("DB_PASSWORD");
+      if (dbPassword != null && !dbPassword.isBlank()) {
+        overrides.put("javax.persistence.jdbc.password", dbPassword);
+      }
+
+      try {
+        factory = overrides.isEmpty()
+            ? Persistence.createEntityManagerFactory(unidad)
+            : Persistence.createEntityManagerFactory(unidad, overrides);
+      } catch (Exception e) {
+        if (!UNIDAD_MEMORIA.equals(unidad)) {
+          System.out.println("[EntityManagerProvider-Logistica] PostgreSQL no disponible (" + e.getMessage()
+              + "). Usando HSQLDB en memoria (" + UNIDAD_MEMORIA + ").");
+          factory = Persistence.createEntityManagerFactory(UNIDAD_MEMORIA);
+        } else {
+          throw e;
+        }
+      }
     }
     return factory;
   }

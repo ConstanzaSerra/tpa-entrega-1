@@ -5,12 +5,20 @@ import ar.edu.utn.frba.dds.donaciones.domain.MedioDeContacto;
 import ar.edu.utn.frba.dds.donaciones.domain.PersonaDonante;
 import ar.edu.utn.frba.dds.donaciones.domain.PersonaHumana;
 import ar.edu.utn.frba.dds.donaciones.domain.PersonaJuridica;
+import ar.edu.utn.frba.dds.donaciones.domain.RolUsuario;
 import ar.edu.utn.frba.dds.donaciones.domain.Telefono;
+import ar.edu.utn.frba.dds.donaciones.domain.Usuario;
 import ar.edu.utn.frba.dds.donaciones.repository.DonanteRepository;
+import ar.edu.utn.frba.dds.donaciones.repository.UsuarioRepository;
 
+import java.io.Reader;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Procesa filas de donantes ya parseadas: crea los nuevos y actualiza los existentes
@@ -51,6 +59,76 @@ public class ImportadorDonantesCSV {
     return procesados;
   }
 
+  /**
+   * Requerimiento 17 (Entrega 4): Importación masiva desde CSV (>10.000 filas)
+   * otorgando un Usuario de acceso a cada persona donante importada.
+   * Optimizado en memoria y una única transacción para procesar +10.000 filas en segundos.
+   */
+  public ResultadoImportacion importarMasivoConUsuarios(Reader reader, UsuarioRepository usuarioRepository) {
+    List<FilaDonanteCSV> filas = lector.leer(reader);
+
+    Map<String, PersonaDonante> donantesPorEmail = new HashMap<>();
+    for (PersonaDonante d : repo.obtenerTodos()) {
+      if (d.getMedioDeContactoPredeterminado() != null && d.getMedioDeContactoPredeterminado().getValor() != null) {
+        donantesPorEmail.put(d.getMedioDeContactoPredeterminado().getValor().trim().toLowerCase(), d);
+      }
+    }
+
+    Set<String> emailsConUsuario = new HashSet<>();
+    if (usuarioRepository != null) {
+      for (Usuario u : usuarioRepository.obtenerTodos()) {
+        if (u.getEmail() != null) {
+          emailsConUsuario.add(u.getEmail().trim().toLowerCase());
+        }
+      }
+    }
+
+    int[] contadores = new int[3]; // [0]=creados, [1]=actualizados, [2]=usuariosOtorgados
+
+    repo.ejecutarEnTransaccion(() -> {
+      for (FilaDonanteCSV fila : filas) {
+        if (fila.email() == null || fila.email().isBlank()) {
+          continue;
+        }
+        String emailKey = fila.email().trim().toLowerCase();
+        PersonaDonante donante = donantesPorEmail.get(emailKey);
+
+        if (donante != null) {
+          actualizar(donante, fila);
+          contadores[1]++;
+        } else {
+          donante = crear(fila);
+          if (donante != null) {
+            repo.guardar(donante);
+            donantesPorEmail.put(emailKey, donante);
+            contadores[0]++;
+          }
+        }
+
+        if (donante != null && usuarioRepository != null && !emailsConUsuario.contains(emailKey)) {
+          String passInicial = (fila.documento() != null && !fila.documento().isBlank())
+              ? fila.documento().trim()
+              : "donatrack123";
+          Usuario nuevoUsuario = new Usuario(
+              emailKey,
+              passInicial,
+              fila.nombre(),
+              RolUsuario.DONANTE,
+              donante,
+              null
+          );
+          usuarioRepository.guardar(nuevoUsuario);
+          emailsConUsuario.add(emailKey);
+          contadores[2]++;
+        }
+      }
+    });
+
+    return new ResultadoImportacion(filas.size(), contadores[0], contadores[1], contadores[2]);
+  }
+
+  public record ResultadoImportacion(int filasLeidas, int donantesCreados, int donantesActualizados, int usuariosOtorgados) {}
+
   private PersonaDonante actualizar(PersonaDonante donante, FilaDonanteCSV fila) {
     donante.actualizarEmail(fila.email());
     donante.actualizarTelefono(fila.telefono());
@@ -85,7 +163,8 @@ public class ImportadorDonantesCSV {
     String[] partes = fila.nombre().split(" ", 2);
     String nombre   = partes[0];
     String apellido = partes.length > 1 ? partes[1] : "";
-    Integer dni     = Integer.parseInt(fila.documento());
+    String soloDigitos = fila.documento() != null ? fila.documento().replaceAll("[^0-9]", "") : "0";
+    Integer dni     = soloDigitos.isEmpty() ? 0 : Integer.parseInt(soloDigitos.substring(0, Math.min(soloDigitos.length(), 9)));
 
     return new PersonaHumana(
         medios, email,

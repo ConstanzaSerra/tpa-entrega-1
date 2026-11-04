@@ -19,7 +19,20 @@ public class EntidadRepository {
   }
 
   public void guardar(EntidadBeneficiaria entidad) {
-    enTransaccion(() -> entityManager.persist(entidad));
+    enTransaccion(() -> {
+      if (entidad.getNecesidades() != null) {
+        for (Necesidad n : entidad.getNecesidades()) {
+          if (n.getSubcategoria() != null && n.getSubcategoria().getId() == null) {
+            entityManager.persist(n.getSubcategoria());
+          }
+        }
+      }
+      if (entidad.getId() == null) {
+        entityManager.persist(entidad);
+      } else {
+        entityManager.merge(entidad);
+      }
+    });
   }
 
   public Optional<EntidadBeneficiaria> buscarPorId(Long id) {

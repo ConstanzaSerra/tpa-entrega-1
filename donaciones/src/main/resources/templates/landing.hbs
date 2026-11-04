@@ -1,0 +1,138 @@
+{{#partial "contenido"}}
+<div class="hero-banner mb-4">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <span class="badge bg-warning text-dark mb-2 px-3 py-2 fw-semibold">
+        <i class="bi bi-stars me-1"></i>Iniciativa UTN Solidaria · Subsecretaría de Asuntos Estudiantiles
+      </span>
+      <h1 class="display-5 fw-bold mb-3">Trazabilidad transparente para cada donación solidaria</h1>
+      <p class="lead mb-4 opacity-90">
+        <strong>DonaTrack</strong> conecta a personas donantes y organizaciones con comedores, escuelas rurales y hospitales comunitarios,
+        garantizando el seguimiento en tiempo real desde la recepción en depósito hasta la entrega final.
+      </p>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/registro" class="btn btn-warning btn-lg fw-semibold text-dark px-4">
+          <i class="bi bi-heart-fill me-2 text-danger"></i>Quiero Donar o Registrar Entidad
+        </a>
+        <a href="/mapa-entregas" class="btn btn-light btn-lg px-4">
+          <i class="bi bi-geo-alt-fill me-2 text-primary"></i>Mapa de Entregas Realizadas
+        </a>
+        <a href="/galeria" class="btn btn-outline-light btn-lg px-4">
+          <i class="bi bi-camera-fill me-2"></i>Ver Fotos de Entregas (Sin Login)
+        </a>
+      </div>
+    </div>
+    <div class="col-lg-4 mt-4 mt-lg-0">
+      <div class="card bg-white text-dark border-0 shadow p-3 rounded-4">
+        <h6 class="fw-bold text-uppercase text-muted small mb-3"><i class="bi bi-graph-up-arrow me-1"></i>Impacto en Tiempo Real</h6>
+        <div class="row g-2 text-center">
+          <div class="col-6">
+            <div class="p-3 bg-light rounded-3">
+              <div class="fs-2 fw-bold text-primary">{{totalDonaciones}}</div>
+              <div class="small text-muted">Donaciones Registradas</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 bg-light rounded-3">
+              <div class="fs-2 fw-bold text-success">{{totalEntregadas}}</div>
+              <div class="small text-muted">Entregas Confirmadas</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 bg-light rounded-3">
+              <div class="fs-2 fw-bold text-indigo">{{totalDonantes}}</div>
+              <div class="small text-muted">Personas Donantes</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 bg-light rounded-3">
+              <div class="fs-2 fw-bold text-warning">{{totalEntidades}}</div>
+              <div class="small text-muted">Entidades Beneficiarias</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Propósito y Objetivos de DonaTrack (Req. 1) -->
+<div class="row g-4 mb-5">
+  <div class="col-md-4">
+    <div class="card card-donatrack h-100 p-4">
+      <div class="fs-2 text-primary mb-2"><i class="bi bi-shield-check"></i></div>
+      <h5 class="fw-bold">1. Recepción y Segmentación</h5>
+      <p class="text-muted small mb-0">
+        Cada carga recibida en el depósito de UTN Solidaria se segmenta automáticamente por subcategoría, estado y fecha de vencimiento para asegurar una asignación precisa.
+      </p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-donatrack h-100 p-4">
+      <div class="fs-2 text-success mb-2"><i class="bi bi-cpu"></i></div>
+      <h5 class="fw-bold">2. Matchmaking Inteligente</h5>
+      <p class="text-muted small mb-0">
+        Nuestros algoritmos de <em>Compatibilidad Semántica</em> y <em>Prioridad a Sub-atendidos</em> evalúan necesidades recurrentes y extraordinarias para priorizar a quienes más lo necesitan.
+      </p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-donatrack h-100 p-4">
+      <div class="fs-2 text-danger mb-2"><i class="bi bi-truck"></i></div>
+      <h5 class="fw-bold">3. Logística GPS y Evidencia</h5>
+      <p class="text-muted small mb-0">
+        Seguimiento satelital en vivo de los camiones de reparto y confirmación de recepción con respaldo fotográfico por parte de cada entidad beneficiaria.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Vista previa de fotos de donaciones entregadas sin login (Req. 1.i) -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="fw-bold mb-0"><i class="bi bi-camera-fill text-primary me-2"></i>Últimas Donaciones Entregadas</h4>
+    <p class="text-muted small mb-0">Acceso público sin necesidad de iniciar sesión para garantizar transparencia total.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/galeria" class="btn btn-outline-primary btn-sm">Ver Galería Completa</a>
+    <a href="/mapa-entregas" class="btn btn-primary btn-sm"><i class="bi bi-map me-1"></i>Ver en Mapa Interactivo</a>
+  </div>
+</div>
+
+<div class="row g-4 mb-5">
+  {{#each entregasDestacadas}}
+  <div class="col-md-4">
+    <div class="card card-donatrack h-100 overflow-hidden">
+      <img src="{{fotoPrincipal}}" class="card-img-top" alt="Foto donación entregada" style="height: 200px; object-fit: cover;">
+      <div class="card-body">
+        <span class="badge bg-success mb-2"><i class="bi bi-check2-circle me-1"></i>ENTREGADA</span>
+        <span class="badge bg-secondary mb-2">{{categoriaNombre}}</span>
+        <h6 class="fw-bold mb-1">{{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</h6>
+        <p class="small text-muted mb-2">
+          <i class="bi bi-building me-1"></i><strong>Destino:</strong> {{entidadNombre}}<br>
+          <i class="bi bi-geo-alt me-1"></i>{{entidadDireccion}}<br>
+          <i class="bi bi-person-heart me-1"></i><strong>Donante:</strong> {{donanteNombre}}<br>
+          <i class="bi bi-truck me-1"></i><strong>Camión:</strong> {{patenteCamion}} ({{fechaEntrega}})
+        </p>
+      </div>
+    </div>
+  </div>
+  {{/each}}
+</div>
+
+<!-- Accesos rápidos requeridos en la Landing Page (Req. 1.i, 1.ii, 1.iii) -->
+<div class="card card-donatrack bg-white p-4">
+  <div class="row align-items-center">
+    <div class="col-md-8">
+      <h5 class="fw-bold mb-1">Accesos Directos de la Plataforma</h5>
+      <p class="text-muted small mb-0">Explorá la trazabilidad pública, registrate como donante o entidad beneficiaria, o consultá nuestra política de privacidad.</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0 d-flex flex-wrap justify-content-md-end gap-2">
+      <a href="/login" class="btn btn-primary btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión</a>
+      <a href="/registro" class="btn btn-outline-primary btn-sm"><i class="bi bi-person-plus me-1"></i>Registro</a>
+      <a href="/legal" class="btn btn-outline-secondary btn-sm"><i class="bi bi-file-earmark-lock2 me-1"></i>Legal y Privacidad</a>
+    </div>
+  </div>
+</div>
+{{/partial}}
+{{> layout}}

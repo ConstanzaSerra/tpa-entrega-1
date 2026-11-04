@@ -1,0 +1,70 @@
+{{#partial "contenido"}}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="bi bi-box-seam-fill text-primary me-2"></i>Donaciones Asignadas a {{entidadNombre}}</h2>
+    <p class="text-muted mb-0">Consultá el estado de cada donación asignada y confirmá su recepción cargando fotos de los bienes recibidos.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/entidad/seguimiento" class="btn btn-primary"><i class="bi bi-truck me-1"></i>Seguir Entregas en Mapa</a>
+    <a href="/entidad/notificaciones" class="btn btn-outline-primary"><i class="bi bi-bell me-1"></i>Notificaciones</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  {{#each donaciones}}
+  <div class="col-12">
+    <div class="card card-donatrack p-4 bg-white">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge bg-dark">Donación #{{id}}</span>
+            <span class="badge bg-primary badge-estado">{{estado}}</span>
+            <span class="badge bg-secondary">{{categoriaNombre}}</span>
+          </div>
+          <h4 class="fw-bold mb-1">{{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</h4>
+          <p class="small text-muted mb-2">
+            <i class="bi bi-person-heart me-1"></i><strong>Donante:</strong> {{donanteNombre}} ·
+            <i class="bi bi-calendar-event ms-1 me-1"></i>Fecha: {{fechaRegistro}}
+          </p>
+        </div>
+
+        <!-- Formulario para confirmar recepción cargando fotos (Requerimiento 10) -->
+        <div class="col-lg-6 mt-3 mt-lg-0">
+          {{#if puedeConfirmar}}
+          <div class="border rounded-3 p-3 bg-light">
+            <h6 class="fw-bold small mb-2"><i class="bi bi-camera-fill text-success me-1"></i>Confirmar Recepción de Entrega con Fotos</h6>
+            <form method="post" action="/entidad/donaciones/{{id}}/confirmar" enctype="multipart/form-data">
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label small mb-1">Subir foto desde tu dispositivo</label>
+                  <input type="file" name="fotoArchivo" accept="image/*" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small mb-1">O pegar URL de foto</label>
+                  <input type="url" name="fotoUrl" class="form-control form-control-sm" placeholder="https://...">
+                </div>
+                <div class="col-12 text-end mt-2">
+                  <button type="submit" class="btn btn-success btn-sm fw-semibold">
+                    <i class="bi bi-check2-circle me-1"></i>Confirmar Recepción y Publicar Foto
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+          {{else}}
+          <div class="alert alert-success mb-0 py-2 small">
+            <i class="bi bi-check-circle-fill me-1"></i>Recepción confirmada y registrada en la galería y mapa público.
+          </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+  {{else}}
+  <div class="col-12">
+    <div class="alert alert-info">Aún no hay donaciones asignadas a esta entidad.</div>
+  </div>
+  {{/each}}
+</div>
+{{/partial}}
+{{> layout}}

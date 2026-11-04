@@ -1,0 +1,54 @@
+{{#partial "contenido"}}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="bi bi-building-heart text-primary me-2"></i>Entidades Beneficiarias Registradas</h2>
+    <p class="text-muted mb-0">Navegá por las organizaciones comunitarias registradas y conocé sus necesidades recurrentes y extraordinarias.</p>
+  </div>
+  <form method="get" action="/donante/entidades" class="d-flex gap-2">
+    <input type="text" name="q" value="{{busqueda}}" class="form-control" placeholder="Buscar por nombre o dirección...">
+    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+  </form>
+</div>
+
+<div class="row g-4">
+  {{#each entidades}}
+  <div class="col-md-6">
+    <div class="card card-donatrack h-100 p-4 bg-white">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h4 class="fw-bold mb-0">{{razonSocial}}</h4>
+        <span class="badge bg-primary">Entidad #{{id}}</span>
+      </div>
+      <p class="small text-muted mb-3">
+        <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{direccion}}<br>
+        <i class="bi bi-telephone-fill text-success me-1"></i>{{telefono}} ·
+        <i class="bi bi-envelope-fill text-primary ms-1 me-1"></i>{{emailPrincipal}}
+      </p>
+
+      <h6 class="fw-bold small text-uppercase text-muted border-bottom pb-2 mb-2">
+        <i class="bi bi-clipboard2-pulse me-1"></i>Necesidades Materiales Declaradas
+      </h6>
+      {{#each necesidades}}
+      <div class="p-2 mb-2 rounded-3 bg-light border">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="badge bg-secondary me-1">{{tipo}}</span>
+            <strong>{{subcategoriaNombre}}</strong>
+            <small class="text-muted">({{detallePeriodo}})</small>
+          </div>
+          {{#if satisfecha}}
+          <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i>Satisfecha</span>
+          {{else}}
+          <span class="badge bg-warning text-dark">Recibido: {{recibida}} / {{objetivo}}</span>
+          {{/if}}
+        </div>
+        <div class="small text-muted mt-1">{{descripcion}}</div>
+      </div>
+      {{else}}
+      <p class="small text-muted fst-italic mb-0">Sin necesidades activas registradas.</p>
+      {{/each}}
+    </div>
+  </div>
+  {{/each}}
+</div>
+{{/partial}}
+{{> layout}}

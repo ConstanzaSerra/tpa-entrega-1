@@ -1,0 +1,59 @@
+{{#partial "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card card-donatrack p-4 bg-white">
+      <div class="text-center mb-4">
+        <i class="bi bi-box2-heart-fill text-primary display-5"></i>
+        <h3 class="fw-bold mt-2 mb-1">Iniciar Sesión</h3>
+        <p class="text-muted small">Ingresá como Persona Donante, Entidad Beneficiaria o Persona Administradora</p>
+      </div>
+
+      <form method="post" action="/login" id="formLogin">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Correo Electrónico</label>
+          <input type="email" name="email" id="inputEmail" class="form-control" required placeholder="usuario@donatrack.org">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Contraseña</label>
+          <input type="password" name="password" id="inputPass" class="form-control" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Ingresar con Cookie de Sesión
+        </button>
+      </form>
+
+      <hr class="my-4">
+
+      <div class="bg-light p-3 rounded-3">
+        <div class="small fw-bold text-muted mb-2"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Acceso Rápido Demo (1 Clic por Rol):</div>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-outline-primary btn-sm text-start" onclick="loginDemo('ana@mail.com','donante123')">
+            <i class="bi bi-person-heart me-1"></i><strong>Rol Persona Donante:</strong> ana@mail.com
+          </button>
+          <button type="button" class="btn btn-outline-success btn-sm text-start" onclick="loginDemo('comedor@sonrisas.org','entidad123')">
+            <i class="bi bi-building-heart me-1"></i><strong>Rol Entidad Beneficiaria:</strong> comedor@sonrisas.org
+          </button>
+          <button type="button" class="btn btn-outline-dark btn-sm text-start" onclick="loginDemo('admin@donatrack.org','admin123')">
+            <i class="bi bi-shield-lock me-1"></i><strong>Rol Persona Administradora:</strong> admin@donatrack.org
+          </button>
+        </div>
+      </div>
+
+      <div class="text-center mt-3 small">
+        ¿No tenés cuenta? <a href="/registro" class="fw-semibold">Registrate acá</a>
+      </div>
+    </div>
+  </div>
+</div>
+{{/partial}}
+
+{{#partial "scripts"}}
+<script>
+  function loginDemo(email, pass) {
+    document.getElementById('inputEmail').value = email;
+    document.getElementById('inputPass').value = pass;
+    document.getElementById('formLogin').submit();
+  }
+</script>
+{{/partial}}
+{{> layout}}

@@ -36,6 +36,42 @@ services:
     volumes:
       - pgadmin-data:/var/lib/pgadmin
 
+  donaciones:
+    build:
+      context: ./donaciones
+      dockerfile: Dockerfile
+    container_name: donatrack-donaciones
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      JDBC_DATABASE_URL: "jdbc:postgresql://db:5432/donatrack_donaciones"
+      DB_USER: "donatrack"
+      DB_PASSWORD: "donatrack"
+      LOGISTICA_URL: "http://logistica:8081"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  logistica:
+    build:
+      context: ./logistica
+      dockerfile: Dockerfile
+    container_name: donatrack-logistica
+    restart: unless-stopped
+    environment:
+      PORT: "8081"
+      JDBC_DATABASE_URL: "jdbc:postgresql://db:5432/donatrack_logistica"
+      DB_USER: "donatrack"
+      DB_PASSWORD: "donatrack"
+      DONACIONES_URL: "http://donaciones:8080"
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   db-data:
   pgadmin-data:

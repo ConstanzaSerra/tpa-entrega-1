@@ -1,9 +1,11 @@
 @startuml DonaTrack_Despliegue
 
-' Diagrama de despliegue - TPA2 DonaTrack
-' Refleja la division en DOS microservicios independientes (enunciado TPA2:
-' "se solicita que se divida al sistema en, inicialmente, dos microservicios",
-' integracion via HTTP/REST). Cada servidor corre un proyecto Maven autocontenido.
+' Diagrama de despliegue - TPA4 DonaTrack (Presentación, GraphQL y Despliegue Cloud)
+' Refleja:
+' 1. Cliente Liviano MVC con motor de plantillas Handlebars y Cookies HTTP en Donaciones (:8080)
+' 2. Reemplazo de HTTP/REST por GraphQL (POST /graphql) para la integración entre Donaciones y Logística
+' 3. Persistencia relacional PostgreSQL independiente por microservicio (Database-per-Service)
+' 4. Despliegue en contenedores Docker / PaaS Cloud (Render / Railway + Neon PostgreSQL)
 
 skinparam backgroundColor #FFFFFF
 skinparam node {
@@ -27,25 +29,27 @@ skinparam note {
 }
 
 ' --- Actores / dispositivos externos ---
-node "Cliente\n(administrador / entidad)" <<device>> {
- artifact "Web Browser\n(dashboard de monitoreo)" as browser
- artifact "donantes.csv" as csv
+node "Dispositivo de Usuario\n(Público / Donante / Entidad / Admin)" <<device>> {
+ artifact "Web Browser\n(HTML5 + Leaflet Maps +\nCookie HTTP donatrack_session)" as browser
+ artifact "donantes_10000.csv" as csv
 }
 
-node "Celular del chofer" <<device>> {
- artifact "App móvil\n(reporte de posición)" as appMovil
+node "Celular del Chofer" <<device>> {
+ artifact "App móvil GPS\n(reporte de posición)" as appMovil
 }
 
-' --- Microservicio 1 ---
-node "Servidor Donaciones" <<device>> {
- artifact "tpa-donaciones.jar\n(Java 17 + Javalin)\n:8080" as donaciones
- database "Repositorios\nen memoria" as dbDonaciones
+' --- Nube / Entorno Contenerizado (Render / Railway / Docker) ---
+node "Cloud PaaS / Host Docker (Servicio Donaciones)" <<cloud>> {
+ artifact "tpa-donaciones.jar\n(Java 17 + Javalin 6 + Handlebars MVC +\ngraphql-java + Hibernate JPA)\n:8080" as donaciones
 }
 
-' --- Microservicio 2 ---
-node "Servidor Logística" <<device>> {
- artifact "tpa-logistica.jar\n(Java 17 + Javalin)\n:8081" as logistica
- database "Repositorios\nen memoria" as dbLogistica
+node "Cloud PaaS / Host Docker (Servicio Logística)" <<cloud>> {
+ artifact "tpa-logistica.jar\n(Java 17 + Javalin 6 +\ngraphql-java + Hibernate JPA)\n:8081" as logistica
+}
+
+node "Cluster PostgreSQL Cloud (Neon / Render DB)" <<cloud>> {
+ database "PostgreSQL\ndonatrack_donaciones" as dbDonaciones
+ database "PostgreSQL\ndonatrack_logistica" as dbLogistica
 }
 
 ' --- Terceros ---
@@ -54,22 +58,22 @@ node "Proveedor externo" <<device>> {
 }
 
 node "Servicios de notificación" <<device>> {
- artifact "Email / SMS / WhatsApp" as canales
+ artifact "SMTP Email / Twilio SMS & WhatsApp" as canales
 }
 
-
 ' --- Conexiones ---
-csv      --> donaciones  : HTTPS\n(importación CSV)
-browser  --> logistica   : HTTPS\n(dashboard tiempo real)
+browser  --> donaciones  : HTTPS (GET/POST Vistas MVC Handlebars\n+ Cookie HTTP donatrack_session)
+csv      --> donaciones  : HTTPS POST /admin/importar-csv\n(multipart/form-data >10.000 filas)
 appMovil --> logistica   : HTTPS\n(POST /camiones/{id}/posicion)
 
-logistica --> donaciones  : HTTP/REST\n(consulta donaciones asignadas\n+ notifica eventos de entrega)
+logistica <--> donaciones : GraphQL sobre HTTP (POST /graphql)\n- Logística consulta donacionesAsignadas y muta eventos de ruta/entrega\n- Donaciones consulta flota, rutas, entregas y GPS y muta camiones/entregas
+
 logistica --> planificador : HTTP async\n(lotes de ≤100)
 planificador --> logistica : HTTP\n(POST /planificador/callback)
 
-donaciones --> canales : envío real de\nnotificaciones
+donaciones --> canales : envío externo de\nnotificaciones (Observer)
 
-donaciones --> dbDonaciones
-logistica  --> dbLogistica
+donaciones --> dbDonaciones : JDBC / TCP :5432
+logistica  --> dbLogistica  : JDBC / TCP :5432
 
 @enduml

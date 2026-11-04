@@ -169,10 +169,9 @@ class PlanificadorRutasTest {
         planificadorService.planificar();
         planificadorService.registrarResultado(callbackConRuta(List.of(0L), List.of()));
 
-        // La ruta sale, la entrega falla y la donacion vuelve al deposito
+        // La ruta sale (iniciar() ya pasa sus entregas a EN_TRASLADO), la entrega falla y vuelve al deposito
         rutaRepository.buscarTodas().get(0).iniciar();
         Entrega entrega = entregaRepository.buscarTodas().get(0);
-        entrega.iniciarTraslado();
         entrega.rechazar();
         entrega.retornarADeposito();
 

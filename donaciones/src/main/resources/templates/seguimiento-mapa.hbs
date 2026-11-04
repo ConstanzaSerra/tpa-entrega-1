@@ -1,0 +1,82 @@
+{{#partial "contenido"}}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="bi bi-truck text-primary me-2"></i>Seguimiento en Tiempo Real de Entregas Activas</h2>
+    <p class="text-muted mb-0">Visualización en vivo del camión asignado, ubicación GPS actual, velocidad y última actualización reportada (vía GraphQL con Logística).</p>
+  </div>
+  <button class="btn btn-outline-primary btn-sm" onclick="window.location.reload()">
+    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar Posición
+  </button>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div id="mapaSeguimiento" class="map-container shadow-sm"></div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card card-donatrack p-3 bg-white h-100">
+      <h6 class="fw-bold text-uppercase text-muted small mb-3">
+        <i class="bi bi-broadcast-pin text-danger me-1"></i>Entregas Activas y Camiones Asociados
+      </h6>
+      <div class="d-flex flex-column gap-3">
+        {{#each entregasActivas}}
+        <div class="border rounded-3 p-3 bg-light">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="badge bg-primary">{{estado}}</span>
+            <span class="badge bg-dark"><i class="bi bi-truck me-1"></i>Camión {{patenteCamion}}</span>
+          </div>
+          <h6 class="fw-bold mb-1">Donación #{{id}}: {{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</h6>
+          <div class="small text-muted">
+            <i class="bi bi-building me-1"></i><strong>Destino:</strong> {{entidadNombre}}<br>
+            <i class="bi bi-geo-alt me-1"></i>{{entidadDireccion}}<br>
+            <i class="bi bi-compass me-1"></i><strong>Ubicación Camión:</strong> {{latitudCamion}}, {{longitudCamion}}<br>
+            <i class="bi bi-speedometer2 me-1"></i><strong>Velocidad:</strong> {{velocidadCamion}} km/h<br>
+            <i class="bi bi-clock me-1"></i><strong>Última actualización:</strong> {{ultimaActualizacion}}
+          </div>
+          <div class="progress mt-2" style="height: 8px;">
+            <div class="progress-bar bg-primary" style="width: {{avancePorcentaje}}%"></div>
+          </div>
+        </div>
+        {{else}}
+        <div class="alert alert-secondary small mb-0">No hay entregas activas en traslado en este momento.</div>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+</div>
+{{/partial}}
+
+{{#partial "scripts"}}
+<script>
+  const activas = {{{entregasActivasJson}}};
+  const map = L.map('mapaSeguimiento').setView([-34.605, -58.425], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  activas.forEach((e, idx) => {
+    const latCamion = e.latitudCamion || -34.5986;
+    const lonCamion = e.longitudCamion || -58.4199;
+    const latDest = e.latitudDestino || -34.62;
+    const lonDest = e.longitudDestino || -58.44;
+
+    const popupCamion = `
+      <div>
+        <span class="badge bg-primary mb-1">CAMIÓN ${e.patenteCamion}</span>
+        <h6 class="fw-bold mb-1">Donación #${e.id} (${e.subcategoriaNombre})</h6>
+        <div class="small">
+          <strong>Hacia:</strong> ${e.entidadNombre}<br/>
+          <strong>Velocidad:</strong> ${e.velocidadCamion} km/h<br/>
+          <strong>Última act.:</strong> ${e.ultimaActualizacion}
+        </div>
+      </div>
+    `;
+    L.marker([latCamion, lonCamion]).addTo(map).bindPopup(popupCamion).openPopup();
+    L.circleMarker([latDest, lonDest], { radius: 8, color: '#16a34a' })
+      .addTo(map)
+      .bindPopup(`<strong>Destino:</strong> ${e.entidadNombre}<br/>${e.entidadDireccion}`);
+    L.polyline([[latCamion, lonCamion], [latDest, lonDest]], { color: '#4f46e5', dashArray: '6, 6' }).addTo(map);
+  });
+</script>
+{{/partial}}
+{{> layout}}

@@ -34,7 +34,17 @@ public class DonanteRepository {
   }
 
   public void guardar(PersonaDonante donante) {
-    enTransaccion(() -> entityManager.persist(donante));
+    enTransaccion(() -> {
+      if (donante.getId() == null) {
+        entityManager.persist(donante);
+      } else {
+        entityManager.merge(donante);
+      }
+    });
+  }
+
+  public void ejecutarEnTransaccion(Runnable accion) {
+    enTransaccion(accion);
   }
 
   public Optional<PersonaDonante> buscarPorId(Long id) {

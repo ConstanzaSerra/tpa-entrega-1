@@ -1,0 +1,158 @@
+{{#partial "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <div class="card card-donatrack p-4 bg-white">
+      <h2 class="fw-bold mb-1"><i class="bi bi-person-plus-fill text-primary me-2"></i>Registro en DonaTrack</h2>
+      <p class="text-muted mb-4">Seleccioná tu perfil para crear una cuenta como <strong>Persona Donante</strong> o como <strong>Entidad Beneficiaria</strong>.</p>
+
+      <ul class="nav nav-pills mb-4" id="registroTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active fw-semibold" id="donante-tab" data-bs-toggle="pill" data-bs-target="#tabDonante" type="button">
+            <i class="bi bi-heart-fill me-1"></i>Soy Persona Donante (Humana / Jurídica)
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link fw-semibold" id="entidad-tab" data-bs-toggle="pill" data-bs-target="#tabEntidad" type="button">
+            <i class="bi bi-building-heart me-1"></i>Soy Entidad Beneficiaria
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <!-- TAB 1: PERSONA DONANTE -->
+        <div class="tab-pane fade show active" id="tabDonante" role="tabpanel">
+          <form method="post" action="/registro/donante">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Tipo de Persona Donante</label>
+                <select name="tipo" id="selectTipoDonante" class="form-select" onchange="toggleCamposDonante()">
+                  <option value="HUMANA">Persona Humana</option>
+                  <option value="JURIDICA">Persona Jurídica (ONG, Empresa, Institución, Gubernamental)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Medio de Contacto Predeterminado</label>
+                <select name="medioPreferido" class="form-select">
+                  <option value="EMAIL">Correo Electrónico</option>
+                  <option value="TELEFONO">Teléfono / SMS</option>
+                  <option value="WHATSAPP">WhatsApp</option>
+                </select>
+              </div>
+
+              <!-- Campos Persona Humana -->
+              <div class="col-md-4 campo-humana">
+                <label class="form-label">Nombre *</label>
+                <input type="text" name="nombre" class="form-control" placeholder="Ej: Juan">
+              </div>
+              <div class="col-md-4 campo-humana">
+                <label class="form-label">Apellido *</label>
+                <input type="text" name="apellido" class="form-control" placeholder="Ej: Gómez">
+              </div>
+              <div class="col-md-2 campo-humana">
+                <label class="form-label">Edad</label>
+                <input type="number" name="edad" class="form-control" value="30">
+              </div>
+              <div class="col-md-2 campo-humana">
+                <label class="form-label">DNI</label>
+                <input type="number" name="dni" class="form-control" placeholder="35111222">
+              </div>
+              <div class="col-md-4 campo-humana">
+                <label class="form-label">Género</label>
+                <input type="text" name="genero" class="form-control" placeholder="Femenino / Masculino / X">
+              </div>
+              <div class="col-md-8 campo-humana">
+                <label class="form-label">Dirección</label>
+                <input type="text" name="direccion" class="form-control" placeholder="Av. Corrientes 1800, CABA">
+              </div>
+
+              <!-- Campos Persona Jurídica -->
+              <div class="col-md-6 campo-juridica d-none">
+                <label class="form-label">Razón Social *</label>
+                <input type="text" name="razonSocial" class="form-control" placeholder="Ej: Alimentos del Sur S.A.">
+              </div>
+              <div class="col-md-3 campo-juridica d-none">
+                <label class="form-label">Tipo de Organización</label>
+                <select name="tipoJuridico" class="form-select">
+                  <option value="EMPRESA">Empresa</option>
+                  <option value="ONG">ONG</option>
+                  <option value="INSTITUCION">Institución</option>
+                  <option value="GUBERNAMENTAL">Gubernamental</option>
+                </select>
+              </div>
+              <div class="col-md-3 campo-juridica d-none">
+                <label class="form-label">Rubro</label>
+                <input type="text" name="rubro" class="form-control" placeholder="Ej: Alimenticio">
+              </div>
+
+              <!-- Medios de contacto y credenciales -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Correo Electrónico (Obligatorio) *</label>
+                <input type="email" name="email" class="form-control" required placeholder="tu@correo.com">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Teléfono (Opcional)</label>
+                <input type="text" name="telefono" class="form-control" placeholder="+54 11 5555-5555">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">WhatsApp (Opcional)</label>
+                <input type="text" name="whatsapp" class="form-control" placeholder="+54 9 11 5555-5555">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Contraseña de acceso *</label>
+                <input type="password" name="password" class="form-control" required placeholder="Mínimo 6 caracteres">
+              </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-between align-items-center">
+              <a href="/login" class="text-decoration-none small">¿Ya tenés cuenta? Iniciá sesión</a>
+              <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check2-circle me-1"></i>Registrarme como Donante</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- TAB 2: ENTIDAD BENEFICIARIA -->
+        <div class="tab-pane fade" id="tabEntidad" role="tabpanel">
+          <form method="post" action="/registro/entidad">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Razón Social de la Entidad *</label>
+                <input type="text" name="razonSocial" class="form-control" required placeholder="Ej: Comedor Comunitario Esperanza">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Dirección Completa (Sede de recepción) *</label>
+                <input type="text" name="direccion" class="form-control" required placeholder="Ej: Av. Rivadavia 4500, CABA">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Teléfono de Contacto *</label>
+                <input type="text" name="telefono" class="form-control" required placeholder="+54 11 4444-5555">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Correo del Representante *</label>
+                <input type="email" name="email" class="form-control" required placeholder="contacto@entidad.org">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Contraseña *</label>
+                <input type="password" name="password" class="form-control" required placeholder="Contraseña">
+              </div>
+            </div>
+            <div class="mt-4 text-end">
+              <button type="submit" class="btn btn-success px-4"><i class="bi bi-building-add me-1"></i>Registrar Entidad Beneficiaria</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{/partial}}
+
+{{#partial "scripts"}}
+<script>
+  function toggleCamposDonante() {
+    const esJuridica = document.getElementById('selectTipoDonante').value === 'JURIDICA';
+    document.querySelectorAll('.campo-humana').forEach(el => el.classList.toggle('d-none', esJuridica));
+    document.querySelectorAll('.campo-juridica').forEach(el => el.classList.toggle('d-none', !esJuridica));
+  }
+</script>
+{{/partial}}
+{{> layout}}

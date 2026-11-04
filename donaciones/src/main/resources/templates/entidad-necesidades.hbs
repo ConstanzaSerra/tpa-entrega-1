@@ -1,0 +1,113 @@
+{{#partial "contenido"}}
+<div class="row g-4">
+  <!-- Formulario de registro de necesidad material (Requerimiento 8) -->
+  <div class="col-lg-5">
+    <div class="card card-donatrack p-4 bg-white">
+      <h4 class="fw-bold mb-1"><i class="bi bi-clipboard2-plus-fill text-primary me-2"></i>Registrar Necesidad Material</h4>
+      <p class="text-muted small mb-3">Declarar necesidades recurrentes (consumos periódicos) o extraordinarias (emergencias) para el algoritmo de matchmaking.</p>
+
+      <form method="post" action="/entidad/necesidades">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Tipo de Necesidad</label>
+          <select name="tipoNecesidad" id="tipoNecesidad" class="form-select" onchange="togglePeriodo()">
+            <option value="EXTRAORDINARIA">Extraordinaria (Emergencia / Situación puntual)</option>
+            <option value="RECURRENTE">Recurrente (Funcionamiento habitual por período)</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Categoría</label>
+          <select name="categoria" class="form-select">
+            <option value="ALIMENTOS">ALIMENTOS</option>
+            <option value="VESTIMENTA">VESTIMENTA</option>
+            <option value="MOBILIARIO">MOBILIARIO</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Subcategoría *</label>
+          <input type="text" name="subcategoriaNombre" list="subcatList" class="form-control" required placeholder="Ej: Fideos secos, Sillas, Ropa de abrigo">
+          <datalist id="subcatList">
+            {{#each subcategorias}}
+            <option value="{{nombre}}">{{categoria}}</option>
+            {{/each}}
+          </datalist>
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label fw-semibold">Cantidad Objetivo *</label>
+            <input type="number" name="cantidad" class="form-control" min="1" value="30" required>
+          </div>
+          <div class="col-6 d-none" id="divPeriodo">
+            <label class="form-label fw-semibold">Período de Consumo</label>
+            <select name="periodo" class="form-select">
+              <option value="SEMANAL">SEMANAL</option>
+              <option value="MENSUAL">MENSUAL</option>
+              <option value="ANUAL">ANUAL</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Breve Descripción *</label>
+          <textarea name="descripcion" class="form-control" rows="2" required placeholder="Ej: Reposición de bancos y sillas para el comedor"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 fw-semibold">
+          <i class="bi bi-plus-circle me-1"></i>Guardar Necesidad Material
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Listado de necesidades actuales de la entidad -->
+  <div class="col-lg-7">
+    <div class="card card-donatrack p-4 bg-white h-100">
+      {{#if entidad}}
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h4 class="fw-bold mb-0">{{entidad.razonSocial}}</h4>
+          <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{entidad.direccion}}</small>
+        </div>
+        <a href="/entidad/donaciones" class="btn btn-outline-primary btn-sm">Ver Donaciones Asignadas</a>
+      </div>
+
+      <h6 class="fw-bold text-uppercase text-muted small mb-3">Necesidades Materiales Activas</h6>
+      <div class="d-flex flex-column gap-3">
+        {{#each entidad.necesidades}}
+        <div class="border rounded-3 p-3 bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <span class="badge bg-primary me-1">{{tipo}}</span>
+              <span class="badge bg-secondary me-1">{{categoriaNombre}}</span>
+              <strong>{{subcategoriaNombre}}</strong>
+            </div>
+            {{#if satisfecha}}
+            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Satisfecha</span>
+            {{else}}
+            <span class="badge bg-warning text-dark">Progreso: {{recibida}} / {{objetivo}}</span>
+            {{/if}}
+          </div>
+          <p class="small text-muted mb-1 mt-2">{{descripcion}}</p>
+          <small class="text-muted">Modalidad: {{detallePeriodo}}</small>
+        </div>
+        {{else}}
+        <div class="alert alert-info mb-0">Aún no registraste necesidades materiales.</div>
+        {{/each}}
+      </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+{{/partial}}
+
+{{#partial "scripts"}}
+<script>
+  function togglePeriodo() {
+    const esRecurrente = document.getElementById('tipoNecesidad').value === 'RECURRENTE';
+    document.getElementById('divPeriodo').classList.toggle('d-none', !esRecurrente);
+  }
+</script>
+{{/partial}}
+{{> layout}}

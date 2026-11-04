@@ -1,0 +1,25 @@
+{{#partial "contenido"}}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="bi bi-bell-fill text-warning me-2"></i>Bandeja de Notificaciones Recibidas</h2>
+    <p class="text-muted mb-0">Avisos automáticos emitidos ante asignación de donaciones, inicio de ruta y confirmación de recepción de entrega.</p>
+  </div>
+</div>
+
+<div class="card card-donatrack p-4 bg-white">
+  <div class="d-flex flex-column gap-3">
+    {{#each notificaciones}}
+    <div class="border-start border-4 border-primary bg-light p-3 rounded-end">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span class="badge bg-primary"><i class="bi bi-envelope-check me-1"></i>Notificación Enviada ({{destinatarioContacto}})</span>
+        <small class="text-muted"><i class="bi bi-clock me-1"></i>{{fechaHoraFormateada}}</small>
+      </div>
+      <div class="fw-semibold text-dark mt-1">{{mensaje}}</div>
+    </div>
+    {{else}}
+    <div class="alert alert-secondary mb-0">No tenés notificaciones registradas por el momento.</div>
+    {{/each}}
+  </div>
+</div>
+{{/partial}}
+{{> layout}}

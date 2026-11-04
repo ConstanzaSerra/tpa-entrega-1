@@ -24,13 +24,36 @@ public class DonacionRepository {
   }
 
   public void guardar(Donacion donacion) {
-    enTransaccion(() -> entityManager.persist(donacion));
+    enTransaccion(() -> {
+      if (donacion.getSubcategoria() != null && donacion.getSubcategoria().getId() == null) {
+        entityManager.persist(donacion.getSubcategoria());
+      }
+      if (donacion.getId() == null) {
+        entityManager.persist(donacion);
+      } else {
+        entityManager.merge(donacion);
+      }
+    });
   }
 
   public List<Donacion> buscarPorEstado(EstadoDonacion estado) {
     return entityManager
         .createQuery("SELECT d FROM Donacion d WHERE d.estado = :estado", Donacion.class)
         .setParameter("estado", estado)
+        .getResultList();
+  }
+
+  public List<Donacion> buscarPorDonante(Long donanteId) {
+    return entityManager
+        .createQuery("SELECT d FROM Donacion d WHERE d.donante.id = :donanteId ORDER BY d.id DESC", Donacion.class)
+        .setParameter("donanteId", donanteId)
+        .getResultList();
+  }
+
+  public List<Donacion> buscarPorEntidadAsignada(Long entidadId) {
+    return entityManager
+        .createQuery("SELECT d FROM Donacion d WHERE d.entidadAsignada.id = :entidadId ORDER BY d.id DESC", Donacion.class)
+        .setParameter("entidadId", entidadId)
         .getResultList();
   }
 

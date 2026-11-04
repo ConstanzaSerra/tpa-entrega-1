@@ -126,7 +126,7 @@ public class PlanificadorRutas {
                 .flatMap(p -> p.getEntregas().stream())
                 .anyMatch(e -> e.getId() != null && e.getId().equals(entrega.getId()));
     }
-}
+
     private Optional<Entrega> entregaPendienteExistente(Long donacionId) {
         return entregaRepository.buscarPorDonacionId(donacionId).stream()
                 .filter(e -> e.getEstado() == EstadoEntrega.PENDIENTE)

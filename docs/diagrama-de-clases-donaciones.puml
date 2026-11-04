@@ -1,4 +1,4 @@
-@startuml DonaTrack - Diagrama de Clases (Donaciones)
+@startuml DonaTrack - Diagrama de Clases (Donaciones - Entrega 4)
 
 skinparam classAttributeIconSize 0
 skinparam classFontStyle bold
@@ -9,6 +9,78 @@ skinparam stereotypeCBackgroundColor #E1F5EE
 skinparam stereotypeABackgroundColor #FAEEDA
 skinparam noteBackgroundColor #FAEEDA
 skinparam noteBorderColor #BA7517
+
+' ─────────────────────────────────────────
+'  USUARIOS Y AUTENTICACIÓN WEB (Entrega 4)
+' ─────────────────────────────────────────
+
+class Usuario {
+  - Long id
+  - String email
+  - String passwordHash
+  - String nombreMostrar
+  - RolUsuario rol
+  - PersonaDonante donante
+  - EntidadBeneficiaria entidadBeneficiaria
+  + verificarPassword(String): boolean
+  + {static} hashear(String): String
+}
+
+enum RolUsuario {
+  ADMIN
+  DONANTE
+  ENTIDAD
+}
+
+class SesionManager <<web>> {
+  + iniciarSesion(Context, Usuario): void
+  + cerrarSesion(Context): void
+  + obtenerUsuarioAutenticado(Context): Optional<Usuario>
+  + exigirRol(Context, RolUsuario...): Usuario
+}
+
+class WebPortalController <<mvc>> {
+  + landing(Context): void
+  + mapaEntregasPublico(Context): void
+  + mostrarRegistro(Context): void
+  + mostrarLogin(Context): void
+  + donanteDonaciones(Context): void
+  + donanteEntidades(Context): void
+  + donanteSeguimiento(Context): void
+  + entidadNecesidades(Context): void
+  + entidadDonaciones(Context): void
+  + confirmarRecepcionEntidad(Context): void
+  + entidadNotificaciones(Context): void
+  + entidadSeguimiento(Context): void
+  + adminDeposito(Context): void
+  + adminMatchmaking(Context): void
+  + adminCamiones(Context): void
+  + adminImportarCsv(Context): void
+}
+
+' ─────────────────────────────────────────
+'  COMUNICACIÓN GRAPHQL ENTRE SERVICIOS (Entrega 4)
+' ─────────────────────────────────────────
+
+interface LogisticaPort <<puerto>> {
+  + listarCamiones(): List<CamionVistaDTO>
+  + crearCamion(String, double, double, double): CamionVistaDTO
+  + eliminarCamion(Long): boolean
+  + listarEntregas(): List<EntregaVistaDTO>
+  + listarRutas(): List<RutaVistaDTO>
+  + listarUltimasPosiciones(): List<PosicionCamionVistaDTO>
+  + confirmarEntregaConFotos(Long, Long, List<String>): boolean
+}
+
+class LogisticaGraphQLAdapter <<adaptador>> {
+  - String graphqlEndpoint
+  + ejecutarGraphQL(String, Map): JsonNode
+}
+
+class DonacionesGraphQLController <<graphql>> {
+  - GraphQL graphQL
+  + ejecutar(Context): void
+}
 
 ' ─────────────────────────────────────────
 '  DONANTES
@@ -44,7 +116,7 @@ class PersonaJuridica {
 class Representante {
   - String nombre
   - String apellido
-  - String dni
+  - Integer dni
   - String email
 }
 
@@ -81,17 +153,12 @@ class EmailSender <<infraestructura>> {
   + {static} enviar(destino: String, cuerpo: String): void
 }
 
-note right of MedioDeContacto
-  <b>Strategy</b>: cada medio sabe
-  enviar por su canal. Email delega
-  el envio real (SMTP) en EmailSender.
-end note
-
 ' ─────────────────────────────────────────
 '  BIENES Y CATEGORIAS
 ' ─────────────────────────────────────────
 
 class Subcategoria {
+  - Long id
   - String nombre
   - Categoria categoria
   - boolean requiereEstado
@@ -107,6 +174,7 @@ enum Categoria {
 }
 
 abstract class Bien {
+  - Long id
   - String descripcion
   - Subcategoria subcategoria
   - int cantidad
@@ -126,6 +194,7 @@ class BienPerecible {
 ' ─────────────────────────────────────────
 
 class CargaDeDonacion {
+  - Long id
   - LocalDate fecha
   - PersonaDonante donante
   - List<Bien> bienes
@@ -182,20 +251,26 @@ class EntidadBeneficiaria {
 }
 
 abstract class Necesidad {
+  - Long id
   - Subcategoria subcategoria
   - String descripcion
-  + estaSatisfecha(): boolean
-  + registrarRecepcion(int): void
+  + estaSatisfecha(): Boolean
+  + registrarRecepcion(Integer): void
 }
 
 class NecesidadExtraordinaria {
-  - int cantidadRequerida
-  - int cantidadRecibida
+  - Integer cantidadRequerida
+  - Integer cantidadRecibida
 }
 
 class NecesidadRecurrente {
-  - int cantidadObjetivoPorPeriodo
-  - int cantidadRecibidaEnPeriodo
+  - PeriodoConsumo periodoConsumo
+}
+
+class PeriodoConsumo <<embeddable>> {
+  - Integer cantidadObjetivo
+  - String descripcion
+  - Integer cantidadRecibida
 }
 
 ' ─────────────────────────────────────────
@@ -214,13 +289,14 @@ class ProcesadorMatchmaking {
 }
 
 class PropuestaMatchmaking {
+  - Long id
   - Donacion donacion
   - List<EntidadBeneficiaria> entidadesSugeridas
   - boolean esCoincidenciaExacta
 }
 
 ' ─────────────────────────────────────────
-'  NOTIFICACIONES  (Observer)
+'  NOTIFICACIONES  (Observer + Bandeja Web)
 ' ─────────────────────────────────────────
 
 interface Notificable {
@@ -246,22 +322,33 @@ class EnviadorPorMedioPreferido {
   + notificar(EventoDeNotificacion): void
 }
 
-class Notificacion {
-  - String mensaje
-  - MedioDeContacto medio
-  - boolean completada
-  + enviar(): void
+class RegistradorNotificacionesWeb {
+  + notificar(EventoDeNotificacion): void
 }
 
-note right of GestorDeNotificaciones
-  <b>Observer</b>: el gestor (sujeto) publica
-  eventos; los observadores reaccionan.
-  Desacopla "ocurrio un evento" de "como se notifica".
-end note
+class NotificacionWeb {
+  - Long id
+  - String mensaje
+  - LocalDateTime fechaHora
+  - boolean leida
+  - String destinatarioContacto
+  - Long entidadId
+  - Long donanteId
+  + marcarLeida(): void
+}
 
 ' ─────────────────────────────────────────
 '  RELACIONES
 ' ─────────────────────────────────────────
+
+Usuario --> RolUsuario
+Usuario --> "0..1" PersonaDonante
+Usuario --> "0..1" EntidadBeneficiaria
+SesionManager ..> Usuario : autentica por Cookie HTTP
+WebPortalController --> SesionManager
+WebPortalController --> LogisticaPort
+LogisticaPort <|.. LogisticaGraphQLAdapter
+DonacionesGraphQLController --> Donacion
 
 PersonaDonante <|-- PersonaHumana
 PersonaDonante <|-- PersonaJuridica
@@ -295,6 +382,7 @@ EntidadBeneficiaria "1" *-- "0..*" Necesidad
 EntidadBeneficiaria ..|> Notificable
 Necesidad <|-- NecesidadExtraordinaria
 Necesidad <|-- NecesidadRecurrente
+NecesidadRecurrente *-- PeriodoConsumo
 Necesidad --> Subcategoria
 
 AlgoritmoDonacion <|.. CompatibilidadSemantica
@@ -305,10 +393,11 @@ PropuestaMatchmaking --> Donacion
 PropuestaMatchmaking --> EntidadBeneficiaria
 
 ObservadorDeNotificaciones <|.. EnviadorPorMedioPreferido
+ObservadorDeNotificaciones <|.. RegistradorNotificacionesWeb
+RegistradorNotificacionesWeb ..> NotificacionWeb : persiste
 GestorDeNotificaciones o-- "0..*" ObservadorDeNotificaciones
 GestorDeNotificaciones ..> EventoDeNotificacion : publica
 EventoDeNotificacion --> "0..*" Notificable : destinatarios
 EnviadorPorMedioPreferido ..> MedioDeContacto : enviarMensaje
-Notificacion --> MedioDeContacto
 
 @enduml

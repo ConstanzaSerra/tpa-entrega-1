@@ -1,0 +1,242 @@
+@startuml DonaTrack - DER Fisico (Entrega 3)
+
+skinparam linetype ortho
+skinparam backgroundColor #FFFFFF
+skinparam entity {
+  BackgroundColor #EEEDFE
+  BorderColor #7F77DD
+  FontColor #000000
+}
+skinparam shadowing false
+
+package "Base de Datos: donatrack_donaciones" {
+
+  entity "persona_donante" as persona_donante {
+    * id : BIGINT <<PK>>
+    --
+    ultima_interaccion : DATE
+    medio_predeterminado_id : BIGINT <<FK>>
+  }
+
+  entity "persona_humana" as persona_humana {
+    * persona_donante_id : BIGINT <<PK>> <<FK>>
+    --
+    * nombre : VARCHAR(255)
+    * apellido : VARCHAR(255)
+    * dni : INTEGER
+    edad : INTEGER
+    genero : VARCHAR(255)
+    direccion : VARCHAR(255)
+  }
+
+  entity "persona_juridica" as persona_juridica {
+    * persona_donante_id : BIGINT <<PK>> <<FK>>
+    --
+    * razon_social : VARCHAR(255)
+    tipo : VARCHAR(50)
+    rubro : VARCHAR(255)
+  }
+
+  entity "representante" as representante {
+    persona_juridica_id : BIGINT <<FK>>
+    --
+    nombre : VARCHAR(255)
+    apellido : VARCHAR(255)
+    dni : INTEGER
+    email : VARCHAR(255)
+  }
+
+  entity "medio_de_contacto" as medio_de_contacto {
+    * id : BIGINT <<PK>>
+    --
+    * tipo_medio : VARCHAR(31) <<DISC>>
+    * valor : VARCHAR(255)
+    donante_id : BIGINT <<FK>>
+  }
+
+  entity "bien" as bien {
+    * id : BIGINT <<PK>>
+    --
+    * tipo_bien : VARCHAR(31) <<DISC>>
+    descripcion : VARCHAR(255)
+    foto : VARCHAR(255)
+    cantidad : INTEGER
+    unidad_de_medida : VARCHAR(255)
+    es_nuevo : BOOLEAN
+    fecha_vencimiento : DATE
+    subcategoria_id : BIGINT <<FK>>
+    carga_id : BIGINT <<FK>>
+  }
+
+  entity "necesidad" as necesidad {
+    * id : BIGINT <<PK>>
+    --
+    * tipo_necesidad : VARCHAR(31) <<DISC>>
+    descripcion : VARCHAR(255)
+    cantidad_requerida : INTEGER
+    cantidad_recibida : INTEGER
+    periodo_cantidad_objetivo : INTEGER
+    periodo_descripcion : VARCHAR(255)
+    periodo_cantidad_recibida : INTEGER
+    subcategoria_id : BIGINT <<FK>>
+    entidad_id : BIGINT <<FK>>
+  }
+
+  entity "subcategoria" as subcategoria {
+    * id : BIGINT <<PK>>
+    --
+    * nombre : VARCHAR(255)
+    * categoria : VARCHAR(50)
+    requiere_estado : BOOLEAN
+    es_perecedero : BOOLEAN
+  }
+
+  entity "carga_de_donacion" as carga_de_donacion {
+    * id : BIGINT <<PK>>
+    --
+    descripcion_general : VARCHAR(255)
+    fecha : DATE
+    donante_id : BIGINT <<FK>>
+  }
+
+  entity "donacion" as donacion {
+    * id : BIGINT <<PK>>
+    --
+    * cantidad : INTEGER
+    unidad_medida : VARCHAR(255)
+    * estado : VARCHAR(50)
+    fecha_registro : DATE
+    justificacion_fallida : VARCHAR(255)
+    subcategoria_id : BIGINT <<FK>>
+    donante_id : BIGINT <<FK>>
+    entidad_asignada_id : BIGINT <<FK>>
+  }
+
+  entity "cambio_de_estado" as cambio_de_estado {
+    donacion_id : BIGINT <<FK>>
+    orden : INTEGER
+    --
+    * estado : VARCHAR(50)
+    * fecha_hora : TIMESTAMP
+  }
+
+  entity "entidad_beneficiaria" as entidad_beneficiaria {
+    * id : BIGINT <<PK>>
+    --
+    * razon_social : VARCHAR(255)
+    direccion : VARCHAR(255)
+    telefono : VARCHAR(255)
+  }
+
+  entity "email_representante" as email_representante {
+    entidad_id : BIGINT <<FK>>
+    --
+    email : VARCHAR(255)
+  }
+
+  entity "usuario" as usuario {
+    * id : BIGINT <<PK>>
+    --
+    * email : VARCHAR(255) <<UQ>>
+    * password_hash : VARCHAR(255)
+    nombre_mostrar : VARCHAR(255)
+    * rol : VARCHAR(50)
+    donante_id : BIGINT <<FK>>
+    entidad_id : BIGINT <<FK>>
+  }
+
+  entity "notificacion_web" as notificacion_web {
+    * id : BIGINT <<PK>>
+    --
+    * mensaje : VARCHAR(1000)
+    * fecha_hora : TIMESTAMP
+    * leida : BOOLEAN
+    destinatario_contacto : VARCHAR(255)
+    entidad_id : BIGINT
+    donante_id : BIGINT
+  }
+}
+
+package "Base de Datos: donatrack_logistica" {
+
+  entity "camion" as camion {
+    * id : BIGINT <<PK>>
+    --
+    patente : VARCHAR(40)
+    volumen_m3 : DOUBLE
+    altura_m : DOUBLE
+    capacidad_kg : DOUBLE
+  }
+
+  entity "posicion_camion" as posicion_camion {
+    * id : BIGINT <<PK>>
+    --
+    camion_id : BIGINT
+    latitud : DOUBLE
+    longitud : DOUBLE
+    velocidad : DOUBLE
+    timestamp : TIMESTAMP
+  }
+
+  entity "ruta" as ruta {
+    * id : BIGINT <<PK>>
+    --
+    camion_id : BIGINT <<FK>>
+    estado : VARCHAR(50)
+    link_mapa : VARCHAR(500)
+  }
+
+  entity "parada_de_ruta" as parada {
+    * id : BIGINT <<PK>>
+    --
+    entidad_beneficiaria_id : BIGINT
+    direccion : VARCHAR(255)
+    ruta_id : BIGINT <<FK>>
+    orden_parada : INTEGER
+  }
+
+  entity "entrega" as entrega {
+    * id : BIGINT <<PK>>
+    --
+    donacion_id : BIGINT
+    entidad_beneficiaria_id : BIGINT
+    direccion_destino : VARCHAR(255)
+    estado : VARCHAR(50)
+    camion_id : BIGINT <<FK>>
+    fecha_hora_entrega : TIMESTAMP
+    parada_id : BIGINT <<FK>>
+  }
+
+  entity "entrega_fotos" as entrega_fotos {
+    * entrega_id : BIGINT <<FK>>
+    --
+    foto_url : VARCHAR(500)
+  }
+}
+
+persona_donante ||--o| persona_humana
+persona_donante ||--o| persona_juridica
+persona_juridica ||--o{ representante
+persona_donante ||--o{ medio_de_contacto
+persona_donante }o--o| medio_de_contacto : predeterminado
+carga_de_donacion }o--|| persona_donante
+carga_de_donacion ||--o{ bien
+bien }o--|| subcategoria
+donacion }o--|| subcategoria
+donacion }o--|| persona_donante
+donacion }o--o| entidad_beneficiaria
+donacion ||--o{ cambio_de_estado
+entidad_beneficiaria ||--o{ email_representante
+entidad_beneficiaria ||--o{ necesidad
+necesidad }o--|| subcategoria
+usuario }o--o| persona_donante
+usuario }o--o| entidad_beneficiaria
+
+ruta }o--|| camion
+ruta ||--o{ parada
+parada ||--o{ entrega
+entrega }o--o| camion
+entrega ||--o{ entrega_fotos
+posicion_camion }o--|| camion
+
+@enduml

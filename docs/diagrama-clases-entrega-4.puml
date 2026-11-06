@@ -1,0 +1,355 @@
+@startuml DonaTrack - Modelo del Dominio (Donaciones - Entrega 4)
+
+' Dos decisiones para que las flechas no se enreden:
+'  1. linetype ortho: las lineas van en angulo recto y no en diagonal.
+'  2. Los enums NO llevan flecha. El atributo tipado ya dice que se usan,
+'     y dibujarlas agregaba seis cruces sin aportar informacion.
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam classBackgroundColor #EEEDFE
+skinparam classBorderColor #7F77DD
+skinparam classArrowColor #534AB7
+skinparam stereotypeCBackgroundColor #E1F5EE
+skinparam stereotypeABackgroundColor #FAEEDA
+skinparam noteBackgroundColor #FAEEDA
+skinparam noteBorderColor #BA7517
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "Donantes" {
+
+  abstract class PersonaDonante {
+    - Long id
+    - List<MedioDeContacto> medioDeContactos
+    - MedioDeContacto medioDeContactoPredeterminado
+    - LocalDate ultimaInteraccion
+    + agregarMedio(MedioDeContacto): void
+    + setPredeterminado(MedioDeContacto): void
+    + medioDePreferencia(): MedioDeContacto
+    + registrarInteraccion(): void
+    + actualizarEmail(String): void
+    + actualizarTelefono(String): void
+  }
+
+  class PersonaHumana {
+    - String nombre
+    - String apellido
+    - Integer edad
+    - Integer dni
+    - String genero
+    - String direccion
+  }
+
+  class PersonaJuridica {
+    - String razonSocial
+    - TipoJuridico tipo
+    - String rubro
+    - List<Representante> representantes
+    + agregarRepresentante(Representante): void
+  }
+
+  class Representante <<valor>> {
+    - String nombre
+    - String apellido
+    - Integer dni
+    - String email
+  }
+
+  enum TipoJuridico {
+    GUBERNAMENTAL
+    ONG
+    EMPRESA
+    INSTITUCION
+  }
+}
+
+package "Medios de contacto" {
+
+  abstract class MedioDeContacto {
+    - Long id
+    - String valor
+    + getValor(): String
+    + {abstract} enviarMensaje(String): void
+  }
+
+  class Email {
+    + enviarMensaje(String): void
+  }
+  class Telefono {
+    + enviarMensaje(String): void
+  }
+  class WhatsApp {
+    + enviarMensaje(String): void
+  }
+}
+
+package "Bienes y categorias" {
+
+  class Subcategoria {
+    - Long id
+    - String nombre
+    - Categoria categoria
+    - Boolean requiereEstado
+    - Boolean esPeredecedero
+    + getNombre(): String
+    + getCategoria(): Categoria
+  }
+
+  enum Categoria {
+    MOBILIARIO
+    ALIMENTOS
+    VESTIMENTA
+  }
+
+  abstract class Bien {
+    - Long id
+    - String descripcion
+    - String foto
+    - Subcategoria subcategoria
+    - Integer cantidad
+    - String unidadDeMedida
+  }
+
+  class BienSimple
+  class BienConEstado {
+    - Boolean esNuevo
+    + esNuevo(): Boolean
+  }
+  class BienPercibible {
+    - LocalDate fechaVencimiento
+  }
+}
+
+package "Donaciones y trazabilidad" {
+
+  class CargaDeDonacion {
+    - Long id
+    - String descripcionGeneral
+    - LocalDate fecha
+    - PersonaDonante donante
+    - List<Bien> bienes
+    + agregarBien(Bien): void
+    + segmentar(): List<Donacion>
+  }
+
+  class Donacion {
+    - Long id
+    - Subcategoria subcategoria
+    - int cantidad
+    - String unidadMedida
+    - EstadoDonacion estado
+    - LocalDate fechaRegistro
+    - PersonaDonante donante
+    - EntidadBeneficiaria entidadAsignada
+    - String justificacionFallida
+    - List<CambioDeEstado> historial
+    + asignarEntidad(EntidadBeneficiaria): void
+    + avanzarEstado(): void
+    + avanzarHacia(EstadoDonacion): void
+    + marcarEntregaFallida(String): void
+    + marcarVencida(): void
+    + getHistorial(): List<CambioDeEstado>
+  }
+
+  class CambioDeEstado <<valor>> {
+    - EstadoDonacion estado
+    - LocalDateTime fechaHora
+  }
+
+  enum EstadoDonacion {
+    EN_DEPOSITO
+    ASIGNACION_REALIZADA
+    LISTA_PARA_ENTREGAR
+    EN_TRASLADO
+    ENTREGADA
+    ENTREGA_FALLIDA
+    VENCIDA
+  }
+}
+
+package "Entidades beneficiarias" {
+
+  class EntidadBeneficiaria {
+    - Long id
+    - String razonSocial
+    - String direccion
+    - String telefono
+    - List<String> emailsRepresentantes
+    - List<Necesidad> necesidades
+    + agregarNecesidad(Necesidad): void
+    + buscarNecesidad(Long): Optional<Necesidad>
+    + eliminarNecesidad(Long): boolean
+    + medioDePreferencia(): MedioDeContacto
+  }
+
+  abstract class Necesidad {
+    - Long id
+    - Subcategoria subcategoria
+    - String descripcion
+    + {abstract} estaSatisfecha(): Boolean
+    + {abstract} registrarRecepcion(Integer): void
+  }
+
+  class NecesidadExtraordinaria {
+    - Integer cantidadRequerida
+    - Integer cantidadRecibida
+  }
+
+  class NecesidadRecurrente {
+    - PeriodoConsumo periodoConsumo
+    + reiniciarPeriodo(): void
+  }
+
+  class PeriodoConsumo <<valor>> {
+    - Integer cantidadObjetivo
+    - String descripcion
+    - Integer cantidadRecibida
+    + estaSatisfecha(): Boolean
+    + registrarCantidad(Integer): void
+    + reiniciar(): void
+  }
+}
+
+package "Matchmaking" {
+
+  interface AlgoritmoDonacion {
+    + calcularSugerencias(Donacion, List<EntidadBeneficiaria>, List<Donacion>): List<EntidadBeneficiaria>
+  }
+
+  class CompatibilidadSemantica
+  class PrioridadSubatendidos
+
+  class ProcesadorMatchmaking {
+    + procesar(Donacion, List<EntidadBeneficiaria>, List<Donacion>): PropuestaMatchmaking
+  }
+
+  class PropuestaMatchmaking {
+    - Donacion donacion
+    - List<EntidadBeneficiaria> entidadesSugeridas
+    - boolean esCoincidenciaExacta
+  }
+}
+
+package "Notificaciones (Observer)" {
+
+  interface Notificable {
+    + medioDePreferencia(): MedioDeContacto
+  }
+
+  interface ObservadorDeNotificaciones {
+    + notificar(EventoDeNotificacion): void
+  }
+
+  class EventoDeNotificacion {
+    - List<Notificable> destinatarios
+    - String mensaje
+  }
+
+  class GestorDeNotificaciones {
+    - List<ObservadorDeNotificaciones> observadores
+    + suscribir(ObservadorDeNotificaciones): void
+    + publicar(EventoDeNotificacion): void
+  }
+
+  class EnviadorPorMedioPreferido {
+    + notificar(EventoDeNotificacion): void
+  }
+
+  class RegistradorNotificacionesWeb {
+    + notificar(EventoDeNotificacion): void
+  }
+
+  class NotificacionWeb {
+    - Long id
+    - String mensaje
+    - LocalDateTime fechaHora
+    - boolean leida
+    - String destinatarioContacto
+    - Long entidadId
+    - Long donanteId
+    + marcarLeida(): void
+  }
+}
+
+package "Acceso (Entrega 4)" {
+
+  class Usuario {
+    - Long id
+    - String email
+    - String passwordHash
+    - String nombreMostrar
+    - RolUsuario rol
+    + verificarPassword(String): boolean
+    + {static} hashear(String): String
+  }
+
+  enum RolUsuario {
+    ADMIN
+    DONANTE
+    ENTIDAD
+  }
+}
+
+' ─────────────────────────────────────────
+'  HERENCIA
+' ─────────────────────────────────────────
+PersonaDonante <|-- PersonaHumana
+PersonaDonante <|-- PersonaJuridica
+MedioDeContacto <|-- Email
+MedioDeContacto <|-- Telefono
+MedioDeContacto <|-- WhatsApp
+Bien <|-- BienSimple
+Bien <|-- BienConEstado
+Bien <|-- BienPercibible
+Necesidad <|-- NecesidadExtraordinaria
+Necesidad <|-- NecesidadRecurrente
+
+' ─────────────────────────────────────────
+'  REALIZACION DE INTERFACES
+' ─────────────────────────────────────────
+PersonaDonante ..|> Notificable
+EntidadBeneficiaria ..|> Notificable
+AlgoritmoDonacion <|.. CompatibilidadSemantica
+AlgoritmoDonacion <|.. PrioridadSubatendidos
+ObservadorDeNotificaciones <|.. EnviadorPorMedioPreferido
+ObservadorDeNotificaciones <|.. RegistradorNotificacionesWeb
+
+' ─────────────────────────────────────────
+'  COMPOSICION (el todo manda sobre la parte: cascade + orphanRemoval)
+' ─────────────────────────────────────────
+PersonaDonante "1" *-- "0..*" MedioDeContacto
+PersonaJuridica "1" *-- "0..*" Representante
+CargaDeDonacion "1" *-- "0..*" Bien
+Donacion "1" *-- "0..*" CambioDeEstado : historial
+EntidadBeneficiaria "1" *-- "0..*" Necesidad
+NecesidadRecurrente "1" *-- "1" PeriodoConsumo
+
+' ─────────────────────────────────────────
+'  ASOCIACION (entidades compartidas, ciclo de vida propio)
+' ─────────────────────────────────────────
+Bien "0..*" --> "1" Subcategoria
+Donacion "0..*" --> "1" Subcategoria
+Necesidad "0..*" --> "1" Subcategoria
+Donacion "0..*" --> "1" PersonaDonante
+Donacion "0..*" --> "0..1" EntidadBeneficiaria
+CargaDeDonacion "0..*" --> "1" PersonaDonante
+Usuario "0..1" --> "0..1" PersonaDonante
+Usuario "0..1" --> "0..1" EntidadBeneficiaria
+
+' ─────────────────────────────────────────
+'  DEPENDENCIA
+' ─────────────────────────────────────────
+CargaDeDonacion ..> Donacion : <<genera>>
+ProcesadorMatchmaking ..> AlgoritmoDonacion : usa
+ProcesadorMatchmaking ..> PropuestaMatchmaking : produce
+PropuestaMatchmaking --> Donacion
+GestorDeNotificaciones o-- "0..*" ObservadorDeNotificaciones
+GestorDeNotificaciones ..> EventoDeNotificacion : publica
+EventoDeNotificacion --> "0..*" Notificable : destinatarios
+EnviadorPorMedioPreferido ..> MedioDeContacto : enviarMensaje
+RegistradorNotificacionesWeb ..> NotificacionWeb : persiste
+
+
+
+@enduml

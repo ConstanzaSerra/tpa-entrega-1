@@ -65,7 +65,7 @@ Se incluye el blueprint [`render.yaml`](render.yaml) y los `Dockerfile` multi-st
 ## Documentación y Diagramas (`docs/`)
 
 - [`docs/justificaciones-entrega-4.md`](docs/justificaciones-entrega-4.md): Justificaciones de arquitectura MVC + Handlebars, sesiones por Cookies HTTP, reemplazo de HTTP por GraphQL, bandeja de notificaciones web, importación CSV >10.000 filas y despliegue.
-- [`docs/diagrama-de-clases-donaciones.puml`](docs/diagrama-de-clases-donaciones.puml): Diagrama de clases actualizado del servicio de Donaciones.
+- [`docs/diagrama-de-clases-donaciones.puml`](docs/diagrama-clases-entrega-4.puml): Diagrama de clases actualizado del servicio de Donaciones.
 - [`docs/diagrama-clases-logistica.puml`](docs/diagrama-clases-logistica.puml): Diagrama de clases actualizado del servicio de Logística.
 - [`docs/diagrama-despliegue.puml`](docs/diagrama-despliegue.puml): Diagrama de despliegue actualizado con cliente liviano MVC, GraphQL y PostgreSQL cloud.
 - [`docs/der-fisico.puml`](docs/der-fisico.puml): Modelo de datos físico (DER) de ambas bases relacionales.

@@ -55,6 +55,13 @@ public class DatosInicialesSeeder {
         new ArrayList<>(List.of(new Representante("Martín", "Gómez", 28999111, "martin@arcosplateados.com")))
     );
     donanteRepo.guardar(arcos);
+    Email emailPedro = new Email("pedro@mail.com");
+    Telefono telPedro= new Telefono("+54 11 5555-5555");
+    PersonaHumana pedro = new PersonaHumana(new ArrayList<>(List.of(emailPedro, telPedro)),
+        emailPedro, "Pedro", "Ramirez", 33, 35123098,"Masculino", "Lima 1234, CABA");
+    pedro.setUltimaInteraccion(LocalDate.now().minusDays(21L));
+
+    donanteRepo.guardar(pedro);
 
     // 3. Entidades Beneficiarias
     NecesidadRecurrente necFideos = new NecesidadRecurrente(
@@ -136,6 +143,10 @@ public class DatosInicialesSeeder {
     d6.avanzarHacia(EstadoDonacion.ENTREGADA);
     donacionRepo.guardar(d6);
 
+    // Donación #7: Pendiente de asignación. Ejecutar con tarea programada matchmaking
+    Donacion donacionPendiente = new Donacion(fideos, 50, "Kg", arcos, LocalDate.now());
+    donacionRepo.guardar(donacionPendiente);
+
     // 5. Usuarios de acceso para los 3 roles (Admin, Donante, Entidad Beneficiaria)
     usuarioRepo.guardar(new Usuario(
         "admin@donatrack.org", "admin123", "Administración Depósito UTN",
@@ -173,5 +184,15 @@ public class DatosInicialesSeeder {
           "¡Tu donación #" + d1.getId() + " (60 paquetes de Fideos secos) fue recibida con éxito por Comedor Infantil Escobar Sonrisas!"
       ));
     }
+
+    // 7. Necesidades
+    List<String> emailRepresentante = new ArrayList<>();
+    emailRepresentante.add("carasucias@comedor.com");
+
+    NecesidadExtraordinaria n = new NecesidadExtraordinaria(fideos, "Se necesitan fideos para el comedor", 2, 1);
+    EntidadBeneficiaria comedor = new EntidadBeneficiaria("Comedor Los Carasucias",
+        "Pilar 1838, CABA", "", emailRepresentante, new ArrayList<>(List.of(n)));
+
+    entidadRepo.guardar(comedor);
   }
 }

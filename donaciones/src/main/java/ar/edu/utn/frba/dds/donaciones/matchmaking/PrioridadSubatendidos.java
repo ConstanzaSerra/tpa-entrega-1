@@ -1,7 +1,7 @@
 package ar.edu.utn.frba.dds.donaciones.matchmaking;
 
 import ar.edu.utn.frba.dds.donaciones.domain.*;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -10,7 +10,11 @@ public class PrioridadSubatendidos implements AlgoritmoDonacion{
   public List<EntidadBeneficiaria> calcularSugerencias(Donacion donacion,
                                                        List<EntidadBeneficiaria> entidades,
                                                        List<Donacion> todasLasDonaciones) {
-    return entidades.stream()
+
+    CompatibilidadSemantica cs = new CompatibilidadSemantica();
+    List<EntidadBeneficiaria> eb = cs.calcularSugerencias(donacion, entidades, todasLasDonaciones);
+
+    return eb.stream()
         .sorted((e1, e2) -> Integer.compare(
             contarAsignaciones(e1, todasLasDonaciones),
             contarAsignaciones(e2, todasLasDonaciones)

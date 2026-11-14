@@ -13,6 +13,7 @@ public class CompatibilidadSemantica implements AlgoritmoDonacion {
                                                        List<Donacion> historialDonaciones) {
     Subcategoria subcategoriaDonada = donacion.getSubcategoria();
 
+
     return entidades.stream()
         .filter(entidad -> entidad.getNecesidades().stream()
             .anyMatch(n -> n.getSubcategoria().equals(subcategoriaDonada)))

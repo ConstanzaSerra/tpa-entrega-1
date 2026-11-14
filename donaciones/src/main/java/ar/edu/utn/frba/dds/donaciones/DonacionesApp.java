@@ -1,13 +1,10 @@
 package ar.edu.utn.frba.dds.donaciones;
 
 import ar.edu.utn.frba.dds.donaciones.adaptadores.LogisticaGraphQLAdapter;
-import ar.edu.utn.frba.dds.donaciones.controller.DonacionController;
-import ar.edu.utn.frba.dds.donaciones.controller.DonacionesGraphQLController;
-import ar.edu.utn.frba.dds.donaciones.controller.DonanteController;
-import ar.edu.utn.frba.dds.donaciones.controller.EntidadController;
-import ar.edu.utn.frba.dds.donaciones.controller.MatchmakingController;
-import ar.edu.utn.frba.dds.donaciones.controller.NecesidadController;
-import ar.edu.utn.frba.dds.donaciones.controller.NotificacionController;
+import ar.edu.utn.frba.dds.donaciones.controller.*;
+import ar.edu.utn.frba.dds.donaciones.matchmaking.AlgoritmoDonacion;
+import ar.edu.utn.frba.dds.donaciones.matchmaking.CompatibilidadSemantica;
+import ar.edu.utn.frba.dds.donaciones.matchmaking.PrioridadSubatendidos;
 import ar.edu.utn.frba.dds.donaciones.matchmaking.ProcesadorMatchmaking;
 import ar.edu.utn.frba.dds.donaciones.notificaciones.EnviadorPorMedioPreferido;
 import ar.edu.utn.frba.dds.donaciones.notificaciones.GestorDeNotificaciones;
@@ -32,7 +29,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
-
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,7 +51,13 @@ public class DonacionesApp {
     CargaDonacionRepository cargaDonacionRepository = new CargaDonacionRepository();
     UsuarioRepository usuarioRepository = new UsuarioRepository();
     NotificacionWebRepository notificacionWebRepository = new NotificacionWebRepository();
-    ProcesadorMatchmaking procesadorMatchmaking = new ProcesadorMatchmaking();
+    //Refactor: se cambia para que sea más facil agregar nuevos algoritmos de matcheo
+    List<AlgoritmoDonacion> algoritmosActivos = List.of(
+        new CompatibilidadSemantica(),
+        new PrioridadSubatendidos()
+
+    );
+    ProcesadorMatchmaking procesadorMatchmaking = new ProcesadorMatchmaking(algoritmosActivos);
 
     // Gestor de notificaciones (Observer) con enviador externo + registrador de bandeja web
     GestorDeNotificaciones gestorNotificaciones = new GestorDeNotificaciones();
@@ -84,6 +87,7 @@ public class DonacionesApp {
     MatchmakingController matchmakingController = new MatchmakingController(donacionRepository, entidadRepository, propuestaRepository, procesadorMatchmaking);
     DonacionesGraphQLController graphQLController = new DonacionesGraphQLController(donacionRepository, gestorNotificaciones);
 
+
     WebPortalController webController = new WebPortalController(
         donacionRepository, donanteRepository, entidadRepository, subcategoriaRepository,
         propuestaRepository, cargaDonacionRepository, usuarioRepository, notificacionWebRepository,
@@ -91,9 +95,15 @@ public class DonacionesApp {
     );
 
     // Tareas calendarizadas
-    TareaDeInactividad tareaInactividad = new TareaDeInactividad(donanteRepository, gestorNotificaciones);
+    TareaDeInactividad tareaInactividad =
+        new TareaDeInactividad(donanteRepository, gestorNotificaciones);
+
     TareaNocturnaMatchmaking tareaNocturnaMatchmaking =
-        new TareaNocturnaMatchmaking(donacionRepository, entidadRepository, propuestaRepository, procesadorMatchmaking);
+        new TareaNocturnaMatchmaking(donacionRepository, entidadRepository,
+            propuestaRepository, procesadorMatchmaking);
+
+    TareasProgramadasController tareasProgramadasController =
+        new TareasProgramadasController(tareaNocturnaMatchmaking, tareaInactividad);
 
     // 3. Servidor Javalin + Handlebars Template Engine
     ObjectMapper mapper = new ObjectMapper();
@@ -198,12 +208,8 @@ public class DonacionesApp {
       ctx.json(Map.of("status", "ejecutado"));
     });
 
-    tareaInactividad.iniciarDiario();
-    tareaNocturnaMatchmaking.iniciarShedulerProduccion();
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      tareaInactividad.detener();
-      tareaNocturnaMatchmaking.detener();
-    }));
+    app.post("/api/internal/cron/matchmaking", tareasProgramadasController::ejecutarMatchmaking);
+    app.post("/api/internal/cron/inactividad", tareasProgramadasController::ejecutarInactividad);
 
     System.out.println("Servidor Donaciones + Cliente Liviano Web iniciado en http://localhost:" + puerto);
   }

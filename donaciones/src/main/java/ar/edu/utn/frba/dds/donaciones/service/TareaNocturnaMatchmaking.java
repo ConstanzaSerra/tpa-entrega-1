@@ -5,16 +5,12 @@ import ar.edu.utn.frba.dds.donaciones.matchmaking.*;
 import ar.edu.utn.frba.dds.donaciones.repository.*;
 
 import java.util.List;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 public class TareaNocturnaMatchmaking {
   private DonacionRepository repoDonaciones;
   private EntidadRepository repoEntidades;
   private PropuestaRepository repoPropuestas;
   private ProcesadorMatchmaking procesador;
-
-  private ScheduledThreadPoolExecutor scheduler;
 
   public TareaNocturnaMatchmaking(DonacionRepository repoDonaciones,
                                   EntidadRepository repoEntidades,
@@ -24,20 +20,6 @@ public class TareaNocturnaMatchmaking {
     this.repoEntidades = repoEntidades;
     this.repoPropuestas = repoPropuestas;
     this.procesador = procesador;
-    this.scheduler = new ScheduledThreadPoolExecutor(1); // 1 hilo de ejecución
-  }
-
-  public void iniciarShedulerProduccion() {
-    // Ejecuta el método ejecutar. Arranca ya mismo (0), y repite cada 1 día
-    scheduler.scheduleAtFixedRate(this::ejecutar, 0, 1, TimeUnit.DAYS);
-  }
-
-  public void iniciarSchedulerParaTest(long segundos) {
-    scheduler.scheduleAtFixedRate(this::ejecutar, 0, segundos, TimeUnit.SECONDS);
-  }
-
-  public void detener() {
-    scheduler.shutdown();
   }
 
   public void ejecutar() {

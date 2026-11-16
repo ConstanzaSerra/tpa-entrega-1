@@ -1,57 +1,317 @@
 {{#partial "contenido"}}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
   <div>
     <h2 class="fw-bold mb-1"><i class="bi bi-box-seam text-primary me-2"></i>Gestión de Depósito Central</h2>
-    <p class="text-muted mb-0">Registrá personas donantes y cargas de donaciones recibidas en el depósito, y actualizá el estado de donaciones vencidas.</p>
+    <p class="text-muted mb-0">Panel de control de stock, recepción de mercadería y administración de donantes.</p>
   </div>
-  <div class="d-flex gap-2">
+  <div class="d-flex flex-wrap gap-2">
     <a href="/admin/matchmaking" class="btn btn-primary btn-sm"><i class="bi bi-diagram-3 me-1"></i>Ir a Matchmaking</a>
     <a href="/admin/camiones" class="btn btn-outline-primary btn-sm"><i class="bi bi-truck me-1"></i>Flota de Camiones</a>
     <a href="/admin/importar-csv" class="btn btn-outline-dark btn-sm"><i class="bi bi-filetype-csv me-1"></i>Importar CSV</a>
   </div>
 </div>
 
-<div class="row g-4 mb-4">
-  <!-- 13.a Registrar Persona Donante en Depósito -->
-  <div class="col-lg-5">
-    <div class="card card-donatrack p-4 bg-white h-100">
-      <h5 class="fw-bold mb-1"><i class="bi bi-person-plus text-primary me-1"></i>1. Registrar Persona Donante</h5>
-      <p class="small text-muted mb-3">Da de alta al donante y le otorga automáticamente su usuario de acceso.</p>
+<!-- Resumen Ejecutivo del Depósito (KPIs / Métricas Clave) -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-donatrack p-3 bg-white border-0 shadow-sm h-100">
+      <div class="d-flex align-items-center">
+        <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3 text-primary">
+          <i class="bi bi-box-seam fs-3"></i>
+        </div>
+        <div>
+          <span class="text-muted small fw-semibold">Stock en Depósito</span>
+          <h3 class="fw-bold mb-0 text-dark">{{resumen.enDeposito}}</h3>
+          <small class="text-success"><i class="bi bi-check-circle me-1"></i>Disponibles para asignar</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-donatrack p-3 bg-white border-0 shadow-sm h-100">
+      <div class="d-flex align-items-center">
+        <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3 text-info">
+          <i class="bi bi-truck fs-3"></i>
+        </div>
+        <div>
+          <span class="text-muted small fw-semibold">En Logística / En Camino</span>
+          <h3 class="fw-bold mb-0 text-dark">{{resumen.enTransito}}</h3>
+          <small class="text-muted"><i class="bi bi-arrow-right-circle me-1"></i>Asignadas o en viaje</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-donatrack p-3 bg-white border-0 shadow-sm h-100">
+      <div class="d-flex align-items-center">
+        <div class="rounded-3 bg-danger bg-opacity-10 p-3 me-3 text-danger">
+          <i class="bi bi-calendar-x fs-3"></i>
+        </div>
+        <div>
+          <span class="text-muted small fw-semibold">Donaciones Vencidas</span>
+          <h3 class="fw-bold mb-0 text-dark">{{resumen.vencidas}}</h3>
+          <small class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Descarte / Bajas</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-donatrack p-3 bg-white border-0 shadow-sm h-100">
+      <div class="d-flex align-items-center">
+        <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3 text-success">
+          <i class="bi bi-people fs-3"></i>
+        </div>
+        <div>
+          <span class="text-muted small fw-semibold">Donantes Registrados</span>
+          <h3 class="fw-bold mb-0 text-dark">{{resumen.totalDonantes}}</h3>
+          <small class="text-success"><i class="bi bi-person-check me-1"></i>Humanos y Jurídicos</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-      <form method="post" action="/admin/donantes">
-        <div class="row g-2">
-          <div class="col-md-5">
-            <label class="form-label small fw-semibold">Tipo</label>
-            <select name="tipo" id="adminTipoDonante" class="form-select form-select-sm" onchange="toggleAdminDonante()">
-              <option value="HUMANA">HUMANA</option>
-              <option value="JURIDICA">JURIDICA</option>
+<!-- División por Pestañas / Secciones para no saturar de información -->
+<ul class="nav nav-pills mb-4 gap-2 bg-light p-2 rounded-3 border" id="depositoTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {{#if esTabInventario}}active{{/if}} px-4 py-2 fw-semibold" id="tab-inventario-btn" data-bs-toggle="pill" data-bs-target="#tab-inventario" type="button" role="tab">
+      <i class="bi bi-boxes me-2"></i>1. Inventario y Control de Stock ({{resumen.totalDonaciones}})
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {{#if esTabRecepcion}}active{{/if}} px-4 py-2 fw-semibold" id="tab-recepcion-btn" data-bs-toggle="pill" data-bs-target="#tab-recepcion" type="button" role="tab">
+      <i class="bi bi-box-arrow-in-down text-success me-2"></i>2. Recepción de Donación en Depósito
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {{#if esTabDonante}}active{{/if}} px-4 py-2 fw-semibold" id="tab-donante-btn" data-bs-toggle="pill" data-bs-target="#tab-donante" type="button" role="tab">
+      <i class="bi bi-person-plus text-primary me-2"></i>3. Registrar Persona Donante
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="depositoTabsContent">
+  <!-- ========================================== -->
+  <!-- TAB 1: INVENTARIO Y CONTROL DE STOCK      -->
+  <!-- ========================================== -->
+  <div class="tab-pane fade {{#if esTabInventario}}show active{{/if}}" id="tab-inventario" role="tabpanel">
+    <div class="card card-donatrack p-4 bg-white border-0 shadow-sm">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+          <h5 class="fw-bold mb-1"><i class="bi bi-list-ul text-primary me-2"></i>Inventario de Donaciones y Control de Vencimientos</h5>
+          <p class="small text-muted mb-0">Lista detallada de cargas recibidas, donaciones disponibles, asignadas y estado de vencimientos.</p>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-success btn-sm fw-semibold" onclick="activarTab('recepcion')">
+            <i class="bi bi-plus-circle me-1"></i>+ Nueva Donación
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" onclick="activarTab('donante')">
+            <i class="bi bi-person-plus me-1"></i>+ Nuevo Donante
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Categoría / Subcategoría</th>
+              <th>Cantidad</th>
+              <th>Donante</th>
+              <th>Estado Actual</th>
+              <th>Entidad Destino</th>
+              <th class="text-end">Acciones de Depósito</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each donaciones}}
+            <tr>
+              <td><strong>#{{id}}</strong></td>
+              <td>
+                <span class="badge bg-secondary me-1">{{categoriaNombre}}</span>
+                <strong>{{subcategoriaNombre}}</strong>
+              </td>
+              <td>{{cantidad}} {{unidadMedida}}</td>
+              <td>{{donanteNombre}}</td>
+              <td>
+                <span class="badge {{#if esEnDeposito}}bg-primary{{else}}bg-secondary{{/if}}">{{estado}}</span>
+              </td>
+              <td>{{entidadNombre}}</td>
+              <td class="text-end">
+                {{#if esEnDeposito}}
+                <div class="d-inline-flex gap-1">
+                  <a href="/admin/matchmaking" class="btn btn-outline-primary btn-sm" title="Asignar mediante matchmaking">
+                    <i class="bi bi-diagram-3 me-1"></i>Asignar
+                  </a>
+                  <form method="post" action="/admin/donaciones/{{id}}/vencer" class="d-inline">
+                    <input type="hidden" name="_csrf" value="{{../csrfToken}}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Dar de baja por vencimiento">
+                      <i class="bi bi-calendar-x me-1"></i>Marcar Vencida
+                    </button>
+                  </form>
+                </div>
+                {{else}}
+                <small class="text-muted">{{fechaRegistro}}</small>
+                {{/if}}
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+
+      {{#if paginacion.mostrarPaginacion}}
+      <nav aria-label="Navegación de inventario" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+          <span>Mostrando registros {{paginacion.rangoInicio}} a {{paginacion.rangoFin}} de {{paginacion.totalItems}}</span>
+          <span>Página {{paginacion.paginaActual}} de {{paginacion.totalPaginas}}</span>
+        </div>
+        <ul class="pagination pagination-sm justify-content-center mb-0">
+          <li class="page-item {{#unless paginacion.tieneAnterior}}disabled{{/unless}}">
+            <a class="page-link" href="{{paginacion.urlAnterior}}">&laquo; Anterior</a>
+          </li>
+          {{#each paginacion.paginas}}
+          <li class="page-item {{#if activa}}active{{/if}}">
+            <a class="page-link" href="{{url}}">{{numero}}</a>
+          </li>
+          {{/each}}
+          <li class="page-item {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}">
+            <a class="page-link" href="{{paginacion.urlSiguiente}}">Siguiente &raquo;</a>
+          </li>
+        </ul>
+      </nav>
+      {{/if}}
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 2: RECEPCIÓN DE NUEVA DONACIÓN        -->
+  <!-- ========================================== -->
+  <div class="tab-pane fade {{#if esTabRecepcion}}show active{{/if}}" id="tab-recepcion" role="tabpanel">
+    <div class="card card-donatrack p-4 bg-white border-0 shadow-sm mx-auto" style="max-width: 900px;">
+      <div class="border-bottom pb-3 mb-4">
+        <h5 class="fw-bold mb-1 text-success"><i class="bi bi-box-arrow-in-down me-2"></i>Recepción de Donación en Depósito</h5>
+        <p class="small text-muted mb-0">Asociá los bienes recibidos a la persona donante; el sistema segmenta y registra la donación en estado <code>EN_DEPOSITO</code> lista para asignar.</p>
+      </div>
+
+      <form method="post" action="/admin/donaciones">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Persona Donante *</label>
+            <select name="donanteId" class="form-select" required>
+              <option value="">-- Seleccionar Persona Donante --</option>
+              {{#each donantes}}
+              <option value="{{id}}">#{{id}} - {{nombre}} ({{email}})</option>
+              {{/each}}
+            </select>
+            <div class="form-text small">¿Es un donante nuevo? <a href="javascript:void(0)" onclick="activarTab('donante')">Registralo acá primero</a>.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Descripción General de la Carga *</label>
+            <input type="text" name="descripcionGeneral" class="form-control" value="Recepción en depósito Medrano" required>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Categoría de Bienes *</label>
+            <select name="categoria" id="adminCatSelect" onchange="filtrarAdminSubcategorias()" class="form-select">
+              <option value="ALIMENTOS">ALIMENTOS</option>
+              <option value="VESTIMENTA">VESTIMENTA</option>
+              <option value="MOBILIARIO">MOBILIARIO</option>
             </select>
           </div>
-          <div class="col-md-7">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Subcategoría *</label>
+            <select name="subcategoriaNombre" id="adminSubcatSelect" class="form-select" required>
+              <option value="">-- Seleccionar subcategoría --</option>
+              {{#each subcategorias}}
+              <option value="{{nombre}}" data-categoria="{{categoria}}">{{nombre}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Cantidad *</label>
+            <input type="number" name="cantidad" class="form-control" min="1" value="25" required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Unidad *</label>
+            <input type="text" name="unidadMedida" class="form-control" value="unidades" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label small">Estado del bien (Mobiliario / Vestimenta)</label>
+            <select name="esNuevo" class="form-select">
+              <option value="true">Artículo Nuevo</option>
+              <option value="false">Artículo Usado en buen estado</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small">Fecha de Vencimiento (Si es perecedero)</label>
+            <input type="date" name="fechaVencimiento" class="form-control">
+            <div class="form-text small">Obligatorio únicamente para alimentos perecederos con vencimiento próximo.</div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-outline-secondary" onclick="activarTab('inventario')">
+            <i class="bi bi-arrow-left me-1"></i>Volver al Inventario
+          </button>
+          <button type="submit" class="btn btn-success fw-semibold px-4">
+            <i class="bi bi-plus-circle me-1"></i>Ingresar y Segmentar Donación en Depósito
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 3: REGISTRAR PERSONA DONANTE          -->
+  <!-- ========================================== -->
+  <div class="tab-pane fade {{#if esTabDonante}}show active{{/if}}" id="tab-donante" role="tabpanel">
+    <div class="card card-donatrack p-4 bg-white border-0 shadow-sm mx-auto" style="max-width: 800px;">
+      <div class="border-bottom pb-3 mb-4">
+        <h5 class="fw-bold mb-1 text-primary"><i class="bi bi-person-plus me-2"></i>Registrar Persona Donante en Depósito</h5>
+        <p class="small text-muted mb-0">Da de alta al donante y le otorga automáticamente sus credenciales de acceso a DonaTrack.</p>
+      </div>
+
+      <form method="post" action="/admin/donantes">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Tipo de Persona *</label>
+            <select name="tipo" id="adminTipoDonante" class="form-select" onchange="toggleAdminDonante()">
+              <option value="HUMANA">Persona Humana</option>
+              <option value="JURIDICA">Persona Jurídica</option>
+            </select>
+          </div>
+          <div class="col-md-8">
             <label class="form-label small fw-semibold">Correo Electrónico *</label>
-            <input type="email" name="email" class="form-control form-control-sm" required placeholder="donante@correo.com">
+            <input type="email" name="email" class="form-control" required placeholder="donante@correo.com">
           </div>
 
           <div class="col-md-6 adm-hum">
-            <label class="form-label small">Nombre</label>
-            <input type="text" name="nombre" class="form-control form-control-sm" placeholder="Carlos">
+            <label class="form-label small">Nombre *</label>
+            <input type="text" name="nombre" class="form-control" placeholder="Carlos">
           </div>
           <div class="col-md-6 adm-hum">
-            <label class="form-label small">Apellido</label>
-            <input type="text" name="apellido" class="form-control form-control-sm" placeholder="López">
+            <label class="form-label small">Apellido *</label>
+            <input type="text" name="apellido" class="form-control" placeholder="López">
           </div>
           <div class="col-md-6 adm-hum">
-            <label class="form-label small">DNI</label>
-            <input type="number" name="dni" class="form-control form-control-sm" placeholder="32000111">
+            <label class="form-label small">DNI / Documento</label>
+            <input type="number" name="dni" class="form-control" placeholder="32000111">
           </div>
 
           <div class="col-md-8 adm-jur d-none">
-            <label class="form-label small">Razón Social</label>
-            <input type="text" name="razonSocial" class="form-control form-control-sm" placeholder="Fundación Sur">
+            <label class="form-label small">Razón Social *</label>
+            <input type="text" name="razonSocial" class="form-control" placeholder="Fundación Sur">
           </div>
           <div class="col-md-4 adm-jur d-none">
-            <label class="form-label small">Tipo Jurídico</label>
-            <select name="tipoJuridico" class="form-select form-select-sm">
+            <label class="form-label small">Tipo Jurídico *</label>
+            <select name="tipoJuridico" class="form-select">
               <option value="EMPRESA">EMPRESA</option>
               <option value="ONG">ONG</option>
               <option value="INSTITUCION">INSTITUCION</option>
@@ -60,143 +320,95 @@
           </div>
 
           <div class="col-md-6">
-            <label class="form-label small">Teléfono</label>
-            <input type="text" name="telefono" class="form-control form-control-sm" placeholder="+54 11 5555-0000">
+            <label class="form-label small">Teléfono de Contacto</label>
+            <input type="text" name="telefono" class="form-control" placeholder="+54 11 5555-0000">
           </div>
         </div>
-        <button type="submit" class="btn btn-outline-primary btn-sm w-100 mt-3 fw-semibold">
-          <i class="bi bi-person-check me-1"></i>Registrar Donante en Depósito
-        </button>
-      </form>
-    </div>
-  </div>
 
-  <!-- 13.b Registrar Carga de Donación recibida en Depósito -->
-  <div class="col-lg-7">
-    <div class="card card-donatrack p-4 bg-white h-100">
-      <h5 class="fw-bold mb-1"><i class="bi bi-box-arrow-in-down text-success me-1"></i>2. Registrar Donación Recibida en Depósito</h5>
-      <p class="small text-muted mb-3">Asociá los bienes recibidos a la persona donante; el sistema segmenta y registra la donación en estado <code>EN_DEPOSITO</code>.</p>
-
-      <form method="post" action="/admin/donaciones">
-        <div class="row g-2">
-          <div class="col-md-6">
-            <label class="form-label small fw-semibold">Persona Donante *</label>
-            <select name="donanteId" class="form-select form-select-sm" required>
-              {{#each donantes}}
-              <option value="{{id}}">#{{id}} - {{nombre}} ({{email}})</option>
-              {{/each}}
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label small fw-semibold">Descripción General de la Carga</label>
-            <input type="text" name="descripcionGeneral" class="form-control form-control-sm" value="Recepción en depósito Medrano" required>
-          </div>
-
-          <div class="col-md-4">
-            <label class="form-label small fw-semibold">Categoría *</label>
-            <select name="categoria" class="form-select form-select-sm">
-              <option value="ALIMENTOS">ALIMENTOS</option>
-              <option value="VESTIMENTA">VESTIMENTA</option>
-              <option value="MOBILIARIO">MOBILIARIO</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label small fw-semibold">Subcategoría *</label>
-            <input type="text" name="subcategoriaNombre" list="admSubcat" class="form-control form-control-sm" required placeholder="Ej: Arroz, Sillas...">
-            <datalist id="admSubcat">
-              {{#each subcategorias}}
-              <option value="{{nombre}}">{{categoria}}</option>
-              {{/each}}
-            </datalist>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold">Cantidad *</label>
-            <input type="number" name="cantidad" class="form-control form-control-sm" min="1" value="25" required>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold">Unidad *</label>
-            <input type="text" name="unidadMedida" class="form-control form-control-sm" value="unidades" required>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label small">Estado del bien (Mobiliario / Vestimenta)</label>
-            <select name="esNuevo" class="form-select form-select-sm">
-              <option value="true">Artículo Nuevo</option>
-              <option value="false">Artículo Usado en buen estado</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label small">Fecha de Vencimiento (Si es perecedero)</label>
-            <input type="date" name="fechaVencimiento" class="form-control form-control-sm">
-          </div>
+        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+          <button type="button" class="btn btn-outline-secondary" onclick="activarTab('inventario')">
+            <i class="bi bi-arrow-left me-1"></i>Volver al Inventario
+          </button>
+          <button type="submit" class="btn btn-primary fw-semibold px-4">
+            <i class="bi bi-person-check me-1"></i>Registrar Donante en Depósito
+          </button>
         </div>
-        <button type="submit" class="btn btn-success btn-sm w-100 mt-3 fw-semibold">
-          <i class="bi bi-plus-circle me-1"></i>Ingresar y Segmentar Donación en Depósito
-        </button>
       </form>
     </div>
-  </div>
-</div>
-
-<!-- 14. Inventario de Donaciones y actualización a Vencida -->
-<div class="card card-donatrack p-4 bg-white">
-  <h5 class="fw-bold mb-3"><i class="bi bi-list-ul text-primary me-1"></i>Inventario de Donaciones y Control de Vencimientos</h5>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-light">
-        <tr>
-          <th>ID</th>
-          <th>Categoría / Subcategoría</th>
-          <th>Cantidad</th>
-          <th>Donante</th>
-          <th>Estado Actual</th>
-          <th>Entidad Destino</th>
-          <th class="text-end">Acciones de Depósito</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each donaciones}}
-        <tr>
-          <td><strong>#{{id}}</strong></td>
-          <td>
-            <span class="badge bg-secondary me-1">{{categoriaNombre}}</span>
-            <strong>{{subcategoriaNombre}}</strong>
-          </td>
-          <td>{{cantidad}} {{unidadMedida}}</td>
-          <td>{{donanteNombre}}</td>
-          <td><span class="badge bg-primary">{{estado}}</span></td>
-          <td>{{entidadNombre}}</td>
-          <td class="text-end">
-            {{#if esEnDeposito}}
-            <div class="d-inline-flex gap-1">
-              <a href="/admin/matchmaking" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-diagram-3 me-1"></i>Asignar
-              </a>
-              <form method="post" action="/admin/donaciones/{{id}}/vencer" class="d-inline">
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                  <i class="bi bi-calendar-x me-1"></i>Marcar Vencida
-                </button>
-              </form>
-            </div>
-            {{else}}
-            <small class="text-muted">{{fechaRegistro}}</small>
-            {{/if}}
-          </td>
-        </tr>
-        {{/each}}
-      </tbody>
-    </table>
   </div>
 </div>
 {{/partial}}
 
 {{#partial "scripts"}}
 <script>
+  function activarTab(tabName) {
+    let btnId = 'tab-inventario-btn';
+    if (tabName === 'recepcion' || tabName === 'ingreso') {
+      btnId = 'tab-recepcion-btn';
+    } else if (tabName === 'donante') {
+      btnId = 'tab-donante-btn';
+    }
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      bootstrap.Tab.getOrCreateInstance(btn).show();
+      const url = new URL(window.location);
+      url.searchParams.set('tab', tabName);
+      window.history.replaceState({}, '', url);
+    }
+  }
+
   function toggleAdminDonante() {
     const esJur = document.getElementById('adminTipoDonante').value === 'JURIDICA';
     document.querySelectorAll('.adm-hum').forEach(e => e.classList.toggle('d-none', esJur));
     document.querySelectorAll('.adm-jur').forEach(e => e.classList.toggle('d-none', !esJur));
   }
+
+  function filtrarAdminSubcategorias() {
+    const cat = document.getElementById('adminCatSelect').value;
+    const select = document.getElementById('adminSubcatSelect');
+    if (!select) return;
+    const options = Array.from(select.querySelectorAll('option'));
+    let firstValid = null;
+    options.forEach(opt => {
+      if (!opt.value) return;
+      const optCat = opt.getAttribute('data-categoria');
+      if (optCat === cat) {
+        opt.hidden = false;
+        opt.disabled = false;
+        if (!firstValid) firstValid = opt.value;
+      } else {
+        opt.hidden = true;
+        opt.disabled = true;
+      }
+    });
+    const selected = select.options[select.selectedIndex];
+    if (!selected || selected.disabled) {
+      select.value = firstValid || '';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    filtrarAdminSubcategorias();
+
+    // Sincronizar URL con clicks en los tabs
+    const tabButtons = document.querySelectorAll('#depositoTabs button[data-bs-toggle="pill"]');
+    tabButtons.forEach(btn => {
+      btn.addEventListener('shown.bs.tab', event => {
+        let t = 'inventario';
+        if (event.target.id === 'tab-recepcion-btn') t = 'recepcion';
+        if (event.target.id === 'tab-donante-btn') t = 'donante';
+        const url = new URL(window.location);
+        url.searchParams.set('tab', t);
+        window.history.replaceState({}, '', url);
+      });
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam) {
+      activarTab(tabParam);
+    }
+  });
 </script>
 {{/partial}}
 {{> layout}}

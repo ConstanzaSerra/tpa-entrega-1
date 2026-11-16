@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SesionManager {
 
   public static final String COOKIE_SESION = "donatrack_session";
+  public static final String COOKIE_CSRF = "donatrack_csrf";
   private static final int DURACION_SEGUNDOS = 60 * 60 * 24; // 24 horas
 
   private final Map<String, Long> sesionesActivas = new ConcurrentHashMap<>();
@@ -26,6 +27,43 @@ public class SesionManager {
 
   public SesionManager(UsuarioRepository usuarioRepository) {
     this.usuarioRepository = usuarioRepository;
+  }
+
+  /**
+   * Obtiene o genera el token CSRF para la sesión actual y lo almacena en una cookie segura.
+   * Protege contra ataques Cross-Site Request Forgery (robo/falsificación de formularios).
+   */
+  public String obtenerOCrearCsrfToken(Context ctx) {
+    String token = ctx.cookie(COOKIE_CSRF);
+    if (token == null || token.isBlank()) {
+      token = UUID.randomUUID().toString();
+      Cookie cookie = new Cookie(COOKIE_CSRF, token);
+      cookie.setPath("/");
+      cookie.setMaxAge(DURACION_SEGUNDOS);
+      cookie.setHttpOnly(true);
+      cookie.setSameSite(SameSite.LAX);
+      ctx.cookie(cookie);
+    }
+    return token;
+  }
+
+  /**
+   * Valida que el token CSRF enviado en el formulario (o query param / header)
+   * coincida exactamente con el token CSRF almacenado en la cookie segura del cliente.
+   */
+  public boolean validarCsrfToken(Context ctx) {
+    String tokenEsperado = ctx.cookie(COOKIE_CSRF);
+    if (tokenEsperado == null || tokenEsperado.isBlank()) {
+      return false;
+    }
+    String tokenRecibido = ctx.formParam("_csrf");
+    if (tokenRecibido == null || tokenRecibido.isBlank()) {
+      tokenRecibido = ctx.queryParam("_csrf");
+    }
+    if (tokenRecibido == null || tokenRecibido.isBlank()) {
+      tokenRecibido = ctx.header("X-CSRF-Token");
+    }
+    return tokenRecibido != null && tokenEsperado.equals(tokenRecibido.trim());
   }
 
   public void iniciarSesion(Context ctx, Usuario usuario) {

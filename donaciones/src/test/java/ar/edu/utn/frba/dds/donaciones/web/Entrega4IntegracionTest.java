@@ -150,8 +150,175 @@ class Entrega4IntegracionTest {
 
     String htmlLanding = engine.render("landing.hbs", model, null);
     assertTrue(htmlLanding.contains("DonaTrack"));
+    // Req 1: Antes del footer, sacar accesos directos a la plataforma
+    assertFalse(htmlLanding.contains("Accesos Directos de la Plataforma"));
 
     String htmlLogin = engine.render("login.hbs", model, null);
     assertTrue(htmlLogin.contains("Iniciar Sesión"));
+
+    // Req 2: El footer no repite el enlace de registro que ya está en la barra de navegación
+    String htmlLayout = engine.render("legal.hbs", model, null);
+    assertFalse(htmlLayout.contains("<a href=\"/registro\" class=\"me-3\">Registro</a>"));
+
+    // Req 3: Botón que dice "Soy Persona Donante / Jurídica" eliminado de /registro
+    String htmlRegistro = engine.render("registro.hbs", model, null);
+    assertFalse(htmlRegistro.contains("Soy Persona Donante (Humana / Jurídica)"));
+    assertTrue(htmlRegistro.contains("Registro de Entidad Beneficiaria"));
+  }
+
+  @Test
+  void paginacionHelperCalculaPaginasYRangoCorrectamente() {
+    List<String> items = List.of("Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6", "Item 7");
+    WebPortalController.Paginacion<String> pag = new WebPortalController.Paginacion<>(
+        items, 1, 3, "/test", Map.of("filtro", "alimentos")
+    );
+
+    assertEquals(1, pag.getPaginaActual());
+    assertEquals(3, pag.getTotalPaginas());
+    assertEquals(7, pag.getTotalItems());
+    assertEquals(3, pag.getItems().size());
+    assertEquals("Item 1", pag.getItems().get(0));
+    assertTrue(pag.isTieneSiguiente());
+    assertFalse(pag.isTieneAnterior());
+    assertTrue(pag.isMostrarPaginacion());
+    assertEquals(1, pag.getRangoInicio());
+    assertEquals(3, pag.getRangoFin());
+
+    // Segunda página
+    WebPortalController.Paginacion<String> pag2 = new WebPortalController.Paginacion<>(
+        items, 2, 3, "/test", Map.of("filtro", "alimentos")
+    );
+    assertEquals(2, pag2.getPaginaActual());
+    assertEquals(3, pag2.getItems().size());
+    assertEquals("Item 4", pag2.getItems().get(0));
+    assertTrue(pag2.isTieneAnterior());
+    assertTrue(pag2.isTieneSiguiente());
+    assertEquals(4, pag2.getRangoInicio());
+    assertEquals(6, pag2.getRangoFin());
+
+    // Última página
+    WebPortalController.Paginacion<String> pag3 = new WebPortalController.Paginacion<>(
+        items, 3, 3, "/test", Map.of()
+    );
+    assertEquals(1, pag3.getItems().size());
+    assertEquals("Item 7", pag3.getItems().get(0));
+    assertFalse(pag3.isTieneSiguiente());
+    assertEquals(7, pag3.getRangoInicio());
+    assertEquals(7, pag3.getRangoFin());
+  }
+
+  @Test
+  void donanteEntidadesTemplateContieneBotonDonarYModal() {
+    HandlebarsTemplateEngine engine = new HandlebarsTemplateEngine();
+    Map<String, Object> model = new HashMap<>();
+    model.put("tituloPagina", "Entidades Beneficiarias - DonaTrack");
+    model.put("esDonante", true);
+
+    Map<String, Object> necesidad = new HashMap<>();
+    necesidad.put("id", 1L);
+    necesidad.put("subcategoriaNombre", "Fideos secos");
+    necesidad.put("categoriaNombre", "ALIMENTOS");
+    necesidad.put("tipo", "RECURRENTE");
+    necesidad.put("objetivo", 100);
+    necesidad.put("recibida", 40);
+    necesidad.put("faltante", 60);
+    necesidad.put("porcentaje", 40);
+    necesidad.put("descripcion", "Almuerzos semanales");
+    necesidad.put("satisfecha", false);
+
+    Map<String, Object> entidad = new HashMap<>();
+    entidad.put("id", 1L);
+    entidad.put("razonSocial", "Comedor Sonrisas");
+    entidad.put("direccion", "Medrano 951");
+    entidad.put("telefono", "4867-7500");
+    entidad.put("emailPrincipal", "comedor@sonrisas.org");
+    entidad.put("totalNecesidades", 1);
+    entidad.put("totalPendientes", 1);
+    entidad.put("totalSatisfechas", 0);
+    entidad.put("necesidades", List.of(necesidad));
+
+    model.put("entidades", List.of(entidad));
+
+    String html = engine.render("donante-entidades.hbs", model, null);
+    // Req 7: Botón en cada subcard para poder donar
+    assertTrue(html.contains("Donar a esta necesidad"));
+    assertTrue(html.contains("id=\"modalDonar\""));
+    assertTrue(html.contains("action=\"/donante/donar\""));
+  }
+
+  @Test
+  void seguridadCsrfProtegeContraRoboDeFormulario() {
+    SesionManager sm = new SesionManager(usuarioRepo);
+    Context ctx = mock(Context.class);
+
+    // 1. Cuando un usuario accede por primera vez, no tiene cookie CSRF
+    when(ctx.cookie(SesionManager.COOKIE_CSRF)).thenReturn(null);
+    String tokenGenerado = sm.obtenerOCrearCsrfToken(ctx);
+    assertNotNull(tokenGenerado);
+    assertFalse(tokenGenerado.isBlank());
+    verify(ctx).cookie(org.mockito.ArgumentMatchers.any(io.javalin.http.Cookie.class));
+
+    // 2. Simulación de ataque CSRF ("robar el form"): origen externo envía form sin token o con token falso
+    when(ctx.cookie(SesionManager.COOKIE_CSRF)).thenReturn("token-secreto-sesion-legitima");
+    when(ctx.formParam("_csrf")).thenReturn(null);
+    when(ctx.queryParam("_csrf")).thenReturn(null);
+    when(ctx.header("X-CSRF-Token")).thenReturn(null);
+    assertFalse(sm.validarCsrfToken(ctx), "Un formulario robado sin token debe ser rechazado por seguridad");
+
+    when(ctx.formParam("_csrf")).thenReturn("token-falso-atacante");
+    assertFalse(sm.validarCsrfToken(ctx), "Un formulario con token manipulado debe ser rechazado");
+
+    // 3. Envío legítimo con el token coincidente
+    when(ctx.formParam("_csrf")).thenReturn("token-secreto-sesion-legitima");
+    assertTrue(sm.validarCsrfToken(ctx), "El formulario legítimo con token CSRF válido debe ser aceptado");
+
+    // 4. Verificación de que las plantillas renderizan el campo oculto _csrf
+    HandlebarsTemplateEngine engine = new HandlebarsTemplateEngine();
+    Map<String, Object> model = new HashMap<>();
+    model.put("csrfToken", "test-token-csrf-123");
+    String htmlLogin = engine.render("login.hbs", model, null);
+    assertTrue(htmlLogin.contains("name=\"_csrf\""));
+    assertTrue(htmlLogin.contains("test-token-csrf-123"));
+  }
+
+  @Test
+  void adminDepositoContieneResumenConKpisYTabsDivididos() {
+    HandlebarsTemplateEngine engine = new HandlebarsTemplateEngine();
+    Map<String, Object> model = new HashMap<>();
+    model.put("tituloPagina", "Gestión de Depósito Central - DonaTrack");
+    model.put("esAdmin", true);
+    model.put("csrfToken", "csrf-admin-deposito");
+
+    Map<String, Object> resumen = new HashMap<>();
+    resumen.put("totalDonaciones", 15);
+    resumen.put("enDeposito", 8);
+    resumen.put("enTransito", 4);
+    resumen.put("vencidas", 2);
+    resumen.put("entregadas", 1);
+    resumen.put("totalDonantes", 6);
+    model.put("resumen", resumen);
+
+    model.put("esTabInventario", true);
+    model.put("donaciones", List.of());
+    model.put("donantes", List.of());
+    model.put("subcategorias", List.of());
+
+    String html = engine.render("admin-deposito.hbs", model, null);
+
+    // Verificación del resumen ejecutivo (KPI cards)
+    assertTrue(html.contains("Stock en Depósito"));
+    assertTrue(html.contains("En Logística / En Camino"));
+    assertTrue(html.contains("Donaciones Vencidas"));
+    assertTrue(html.contains("Donantes Registrados"));
+
+    // Verificación de la división en pestañas/secciones
+    assertTrue(html.contains("id=\"tab-inventario\""));
+    assertTrue(html.contains("id=\"tab-recepcion\""));
+    assertTrue(html.contains("id=\"tab-donante\""));
+
+    // Verificación de token CSRF en formularios de depósito
+    assertTrue(html.contains("action=\"/admin/donaciones\""));
+    assertTrue(html.contains("action=\"/admin/donantes\""));
+    assertTrue(html.contains("value=\"csrf-admin-deposito\""));
   }
 }

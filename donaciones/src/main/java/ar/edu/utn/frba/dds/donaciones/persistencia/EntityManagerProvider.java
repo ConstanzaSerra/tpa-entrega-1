@@ -60,13 +60,15 @@ public class EntityManagerProvider {
             ? Persistence.createEntityManagerFactory(unidad)
             : Persistence.createEntityManagerFactory(unidad, overrides);
       } catch (Exception e) {
-        if (!UNIDAD_MEMORIA.equals(unidad)) {
-          System.out.println("[EntityManagerProvider] PostgreSQL no disponible (" + e.getMessage()
-              + "). Usando HSQLDB en memoria (" + UNIDAD_MEMORIA + ").");
-          factory = Persistence.createEntityManagerFactory(UNIDAD_MEMORIA);
-        } else {
-          throw e;
-        }
+        // Fail fast: si se pidio una base real y no se puede conectar, el
+        // sistema NO arranca. Antes caia a HSQLDB en memoria, con lo cual en
+        // produccion la app levantaba igual y los datos se perdian en cada
+        // reinicio sin que nadie se enterara
+        // El fallback a memoria queda solo para la unidad de memoria misma.
+        throw new IllegalStateException(
+            "[EntityManagerProvider] No se pudo conectar a la base de la unidad '" + unidad
+                + "'. Revisar JDBC_DATABASE_URL, DB_USER y DB_PASSWORD. Causa: "
+                + e.getMessage(), e);
       }
     }
     return factory;

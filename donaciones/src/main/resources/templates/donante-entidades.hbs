@@ -1,22 +1,66 @@
 {{#partial "contenido"}}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <div>
     <h2 class="fw-bold mb-1"><i class="bi bi-building-heart text-primary me-2"></i>Entidades Beneficiarias Registradas</h2>
-    <p class="text-muted mb-0">Navegá por las organizaciones comunitarias registradas y conocé sus necesidades recurrentes y extraordinarias.</p>
+    <p class="text-muted mb-0">Explorá las organizaciones comunitarias registradas, sus necesidades materiales y realizá donaciones directas.</p>
   </div>
-  <form method="get" action="/donante/entidades" class="d-flex gap-2">
-    <input type="text" name="q" value="{{busqueda}}" class="form-control" placeholder="Buscar por nombre o dirección...">
-    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+  <div class="d-flex gap-2">
+    <a href="/donante/donaciones" class="btn btn-outline-primary"><i class="bi bi-gift me-1"></i>Mis Donaciones</a>
+    <a href="/donante/seguimiento" class="btn btn-primary"><i class="bi bi-truck me-1"></i>Seguimiento en Mapa</a>
+  </div>
+</div>
+
+<!-- Filtros de búsqueda (Req. 4) -->
+<div class="card card-donatrack p-3 mb-4 bg-white">
+  <form method="get" action="/donante/entidades" class="row g-3 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label small fw-semibold">Búsqueda</label>
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" name="q" value="{{busqueda}}" class="form-control" placeholder="Buscar por entidad, dirección o necesidad...">
+      </div>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small fw-semibold">Categoría de Necesidad</label>
+      <select name="categoria" class="form-select">
+        <option value="">Todas las categorías</option>
+        <option value="ALIMENTOS" {{#if (eq filtroCategoria "ALIMENTOS")}}selected{{/if}}>ALIMENTOS</option>
+        <option value="VESTIMENTA" {{#if (eq filtroCategoria "VESTIMENTA")}}selected{{/if}}>VESTIMENTA</option>
+        <option value="MOBILIARIO" {{#if (eq filtroCategoria "MOBILIARIO")}}selected{{/if}}>MOBILIARIO</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <div class="form-check pt-4">
+        <input class="form-check-input" type="checkbox" name="soloPendientes" value="true" id="checkPendientes" {{#if soloPendientes}}checked{{/if}}>
+        <label class="form-check-label small fw-semibold" for="checkPendientes">
+          Solo con pendientes
+        </label>
+      </div>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel-fill me-1"></i>Filtrar</button>
+      <a href="/donante/entidades" class="btn btn-outline-secondary" title="Limpiar filtros"><i class="bi bi-x-lg"></i></a>
+    </div>
   </form>
 </div>
 
+<!-- Grilla de Entidades Beneficiarias (Req. 4 y 6) -->
 <div class="row g-4">
   {{#each entidades}}
-  <div class="col-md-6">
-    <div class="card card-donatrack h-100 p-4 bg-white">
+  <div class="col-lg-6">
+    <div class="card card-donatrack h-100 p-4 bg-white entidad-card" data-entidad-id="{{id}}">
       <div class="d-flex justify-content-between align-items-start mb-2">
-        <h4 class="fw-bold mb-0">{{razonSocial}}</h4>
-        <span class="badge bg-primary">Entidad #{{id}}</span>
+        <div>
+          <h4 class="fw-bold mb-1">{{razonSocial}}</h4>
+          <span class="badge bg-primary">Entidad #{{id}}</span>
+          <span class="badge bg-light text-dark border"><i class="bi bi-clipboard2-pulse me-1"></i>{{totalNecesidades}} necesidades</span>
+          {{#if totalPendientes}}
+          <span class="badge bg-warning-subtle text-warning-emphasis border">{{totalPendientes}} pendientes</span>
+          {{/if}}
+          {{#if totalSatisfechas}}
+          <span class="badge bg-success-subtle text-success-emphasis border">{{totalSatisfechas}} cubiertas</span>
+          {{/if}}
+        </div>
       </div>
       <p class="small text-muted mb-3">
         <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{direccion}}<br>
@@ -24,31 +68,254 @@
         <i class="bi bi-envelope-fill text-primary ms-1 me-1"></i>{{emailPrincipal}}
       </p>
 
-      <h6 class="fw-bold small text-uppercase text-muted border-bottom pb-2 mb-2">
-        <i class="bi bi-clipboard2-pulse me-1"></i>Necesidades Materiales Declaradas
-      </h6>
-      {{#each necesidades}}
-      <div class="p-2 mb-2 rounded-3 bg-light border">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <span class="badge bg-secondary me-1">{{tipo}}</span>
-            <strong>{{subcategoriaNombre}}</strong>
-            <small class="text-muted">({{detallePeriodo}})</small>
-          </div>
-          {{#if satisfecha}}
-          <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i>Satisfecha</span>
-          {{else}}
-          <span class="badge bg-warning text-dark">Recibido: {{recibida}} / {{objetivo}}</span>
-          {{/if}}
+      <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+        <h6 class="fw-bold small text-uppercase text-muted mb-0">
+          <i class="bi bi-clipboard2-pulse me-1"></i>Necesidades Materiales
+        </h6>
+        <!-- Filtro rápido por categoría para este beneficiario (Req. 4) -->
+        <div class="btn-group btn-group-sm filtro-necs-pills" role="group">
+          <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 active" onclick="filtrarNecsBeneficiario('{{id}}', 'TODAS', this)">Todas</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" onclick="filtrarNecsBeneficiario('{{id}}', 'ALIMENTOS', this)">Alimentos</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" onclick="filtrarNecsBeneficiario('{{id}}', 'VESTIMENTA', this)">Ropa</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" onclick="filtrarNecsBeneficiario('{{id}}', 'MOBILIARIO', this)">Mobiliario</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" onclick="filtrarNecsBeneficiario('{{id}}', 'PENDIENTES', this)">Pendientes</button>
         </div>
-        <div class="small text-muted mt-1">{{descripcion}}</div>
       </div>
-      {{else}}
-      <p class="small text-muted fst-italic mb-0">Sin necesidades activas registradas.</p>
-      {{/each}}
+
+      <!-- Contenedor de subcards de necesidades con paginación integrada (Req. 4 y 7) -->
+      <div class="necesidades-lista" id="lista-necs-{{id}}">
+        {{#each necesidades}}
+        <div class="subcard-necesidad p-3 mb-2 rounded-3 bg-light border"
+             data-categoria="{{categoriaNombre}}"
+             data-satisfecha="{{satisfecha}}">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div>
+              <span class="badge bg-secondary me-1">{{tipo}}</span>
+              <span class="badge bg-info-subtle text-info-emphasis border me-1">{{categoriaNombre}}</span>
+              <strong class="text-dark">{{subcategoriaNombre}}</strong>
+              <small class="text-muted">({{detallePeriodo}})</small>
+            </div>
+            {{#if satisfecha}}
+            <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i>Satisfecha</span>
+            {{else}}
+            <span class="badge bg-warning text-dark">Recibido: {{recibida}} / {{objetivo}} (Faltan: {{faltante}})</span>
+            {{/if}}
+          </div>
+
+          <div class="progress my-2" style="height: 6px;">
+            <div class="progress-bar {{#if satisfecha}}bg-success{{else}}bg-warning{{/if}}" role="progressbar" style="width: {{porcentaje}}%;"></div>
+          </div>
+
+          <div class="small text-muted mb-2">{{descripcion}}</div>
+
+          <!-- Botón en cada subcard para donar directamente a esta necesidad (Req. 7) -->
+          <div class="d-flex justify-content-end">
+            <button type="button"
+                    class="btn btn-sm btn-primary px-3 fw-semibold"
+                    onclick="abrirModalDonar('{{../id}}', '{{../razonSocial}}', '{{id}}', '{{subcategoriaNombre}}', '{{categoriaNombre}}', '{{faltante}}')">
+              <i class="bi bi-gift-fill me-1"></i>Donar a esta necesidad
+            </button>
+          </div>
+        </div>
+        {{else}}
+        <p class="small text-muted fst-italic mb-0">Sin necesidades activas registradas.</p>
+        {{/each}}
+      </div>
+
+      <!-- Paginador dentro de la card cuando hay muchas necesidades (Req. 4) -->
+      <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top small in-card-paginador" id="paginador-necs-{{id}}">
+        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-prev-necs" onclick="cambiarPaginaNecs('{{id}}', -1)">&laquo; Anterior</button>
+        <span class="text-muted info-pag-necs">Mostrando <span class="cur-range">1-3</span> de <span class="tot-items">0</span> necesidades</span>
+        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-next-necs" onclick="cambiarPaginaNecs('{{id}}', 1)">Siguiente &raquo;</button>
+      </div>
     </div>
+  </div>
+  {{else}}
+  <div class="col-12">
+    <div class="alert alert-info">No se encontraron entidades beneficiarias con los criterios de búsqueda.</div>
   </div>
   {{/each}}
 </div>
+
+<!-- Paginación general de entidades (Req. 6) -->
+{{#if paginacion.mostrarPaginacion}}
+<nav aria-label="Navegación de páginas" class="mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+    <span>Mostrando entidades {{paginacion.rangoInicio}} a {{paginacion.rangoFin}} de {{paginacion.totalItems}}</span>
+    <span>Página {{paginacion.paginaActual}} de {{paginacion.totalPaginas}}</span>
+  </div>
+  <ul class="pagination justify-content-center mb-0">
+    <li class="page-item {{#unless paginacion.tieneAnterior}}disabled{{/unless}}">
+      <a class="page-link" href="{{paginacion.urlAnterior}}">&laquo; Anterior</a>
+    </li>
+    {{#each paginacion.paginas}}
+    <li class="page-item {{#if activa}}active{{/if}}">
+      <a class="page-link" href="{{url}}">{{numero}}</a>
+    </li>
+    {{/each}}
+    <li class="page-item {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}">
+      <a class="page-link" href="{{paginacion.urlSiguiente}}">Siguiente &raquo;</a>
+    </li>
+  </ul>
+</nav>
+{{/if}}
+
+<!-- Modal para Donar a una Necesidad (Req. 7) -->
+<div class="modal fade" id="modalDonar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <form method="post" action="/donante/donar">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="bi bi-gift-fill me-2 text-warning"></i>Donar a Necesidad Material</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="entidadId" id="modalEntidadId">
+          <input type="hidden" name="necesidadId" id="modalNecesidadId">
+          <input type="hidden" name="subcategoriaNombre" id="modalSubcategoriaNombre">
+
+          <div class="bg-light p-3 rounded-3 border mb-3">
+            <div class="small text-muted mb-1">Entidad Beneficiaria Destino:</div>
+            <h5 class="fw-bold mb-2 text-dark" id="modalEntidadNombre"></h5>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-secondary" id="modalCategoriaBadge"></span>
+              <span class="fw-bold fs-6 text-primary" id="modalSubcategoriaTexto"></span>
+            </div>
+            <div class="small text-muted mt-2" id="modalFaltanteTexto"></div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-7">
+              <label class="form-label small fw-semibold">Cantidad a Donar *</label>
+              <input type="number" name="cantidad" id="modalCantidad" class="form-control" min="1" value="10" required>
+            </div>
+            <div class="col-5">
+              <label class="form-label small fw-semibold">Unidad *</label>
+              <select name="unidadMedida" class="form-select">
+                <option value="unidades">unidades</option>
+                <option value="kg">kg</option>
+                <option value="paquetes">paquetes</option>
+                <option value="cajas">cajas</option>
+                <option value="litros">litros</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="alert alert-success-subtle border small mb-0">
+            <i class="bi bi-check-circle-fill text-success me-1"></i>
+            Esta donación quedará registrada a tu nombre con estado <strong>ASIGNACION_REALIZADA</strong> y la entidad beneficiaria recibirá una notificación inmediata.
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary fw-semibold px-4"><i class="bi bi-heart-fill text-danger me-1"></i>Confirmar Donación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{{/partial}}
+
+{{#partial "scripts"}}
+<script>
+  // Control de paginación y filtros dentro de cada card de beneficiario (Req. 4)
+  const ITEMS_PER_CARD_PAGE = 3;
+  const paginasCard = {};
+
+  function inicializarCards() {
+    document.querySelectorAll('.entidad-card').forEach(card => {
+      const id = card.getAttribute('data-entidad-id');
+      paginasCard[id] = { pagina: 1, categoria: 'TODAS' };
+      actualizarCard(id);
+    });
+  }
+
+  function filtrarNecsBeneficiario(entidadId, categoria, btnElement) {
+    if (btnElement) {
+      const container = btnElement.parentElement;
+      container.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btnElement.classList.add('active');
+    }
+    if (!paginasCard[entidadId]) paginasCard[entidadId] = { pagina: 1, categoria: 'TODAS' };
+    paginasCard[entidadId].categoria = categoria;
+    paginasCard[entidadId].pagina = 1;
+    actualizarCard(entidadId);
+  }
+
+  function cambiarPaginaNecs(entidadId, delta) {
+    if (!paginasCard[entidadId]) paginasCard[entidadId] = { pagina: 1, categoria: 'TODAS' };
+    paginasCard[entidadId].pagina += delta;
+    actualizarCard(entidadId);
+  }
+
+  function actualizarCard(entidadId) {
+    const listContainer = document.getElementById('lista-necs-' + entidadId);
+    if (!listContainer) return;
+
+    const items = Array.from(listContainer.querySelectorAll('.subcard-necesidad'));
+    const state = paginasCard[entidadId] || { pagina: 1, categoria: 'TODAS' };
+
+    // Filtrar según categoría activa
+    const visibles = items.filter(el => {
+      const cat = el.getAttribute('data-categoria') || '';
+      const satisfecha = el.getAttribute('data-satisfecha') === 'true';
+      if (state.categoria === 'TODAS') return true;
+      if (state.categoria === 'PENDIENTES') return !satisfecha;
+      return cat.toUpperCase() === state.categoria.toUpperCase();
+    });
+
+    const total = visibles.length;
+    const totalPags = Math.max(1, Math.ceil(total / ITEMS_PER_CARD_PAGE));
+    if (state.pagina > totalPags) state.pagina = totalPags;
+    if (state.pagina < 1) state.pagina = 1;
+
+    const inicio = (state.pagina - 1) * ITEMS_PER_CARD_PAGE;
+    const fin = inicio + ITEMS_PER_CARD_PAGE;
+
+    items.forEach(el => el.classList.add('d-none'));
+    visibles.slice(inicio, fin).forEach(el => el.classList.remove('d-none'));
+
+    // Actualizar barra de paginación de la card
+    const paginador = document.getElementById('paginador-necs-' + entidadId);
+    if (paginador) {
+      if (total <= ITEMS_PER_CARD_PAGE) {
+        paginador.classList.add('d-none');
+      } else {
+        paginador.classList.remove('d-none');
+        const rangeText = (inicio + 1) + '-' + Math.min(fin, total);
+        paginador.querySelector('.cur-range').textContent = rangeText;
+        paginador.querySelector('.tot-items').textContent = total;
+        paginador.querySelector('.btn-prev-necs').disabled = (state.pagina <= 1);
+        paginador.querySelector('.btn-next-necs').disabled = (state.pagina >= totalPags);
+      }
+    }
+  }
+
+  // Apertura del modal para donar a una subcard específica (Req. 7)
+  function abrirModalDonar(entidadId, entidadNombre, necesidadId, subcat, cat, faltante) {
+    document.getElementById('modalEntidadId').value = entidadId;
+    document.getElementById('modalNecesidadId').value = necesidadId;
+    document.getElementById('modalSubcategoriaNombre').value = subcat;
+    document.getElementById('modalEntidadNombre').textContent = entidadNombre;
+    document.getElementById('modalSubcategoriaTexto').textContent = subcat;
+    document.getElementById('modalCategoriaBadge').textContent = cat;
+
+    const falt = parseInt(faltante) || 0;
+    const faltTexto = document.getElementById('modalFaltanteTexto');
+    if (falt > 0) {
+      faltTexto.textContent = 'Objetivo restante para cubrir la necesidad: ' + falt + ' unidades.';
+      document.getElementById('modalCantidad').value = falt > 0 ? falt : 10;
+    } else {
+      faltTexto.textContent = 'Esta necesidad ya alcanzó su objetivo; tu aporte constituirá un refuerzo adicional.';
+      document.getElementById('modalCantidad').value = 10;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('modalDonar'));
+    modal.show();
+  }
+
+  document.addEventListener('DOMContentLoaded', inicializarCards);
+</script>
 {{/partial}}
 {{> layout}}

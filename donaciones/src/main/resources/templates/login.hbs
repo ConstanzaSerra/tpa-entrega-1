@@ -9,6 +9,7 @@
       </div>
 
       <form method="post" action="/login" id="formLogin">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="mb-3">
           <label class="form-label fw-semibold">Correo Electrónico</label>
           <input type="email" name="email" id="inputEmail" class="form-control" required placeholder="usuario@donatrack.org">

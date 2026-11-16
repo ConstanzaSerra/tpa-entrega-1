@@ -91,8 +91,13 @@ public class WebPortalController {
 
   /** 1.i Visualización de fotos de donaciones entregadas sin login */
   public void galeriaFotos(Context ctx) {
+    int pagina = Math.max(1, parsearEntero(ctx.queryParam("page"), 1));
+    List<Map<String, Object>> entregas = armarEntregasEntregadasVista();
+    Paginacion<Map<String, Object>> paginacion = new Paginacion<>(entregas, pagina, 6, "/galeria", Map.of());
+
     Map<String, Object> model = modeloBase(ctx, "Galería de Donaciones Entregadas - DonaTrack");
-    model.put("entregas", armarEntregasEntregadasVista());
+    model.put("entregas", paginacion.getItems());
+    model.put("paginacion", paginacion);
     ctx.render("galeria.hbs", model);
   }
 
@@ -253,7 +258,7 @@ public class WebPortalController {
   // 5–7. ROL PERSONA DONANTE
   // =========================================================================
 
-  /** 5. Filtrar sus donaciones realizadas por estado y categoría o subcategoría/s */
+  /** 5. Filtrar sus donaciones realizadas por estado y categoría o subcategoría/s con paginación */
   public void donanteMisDonaciones(Context ctx) {
     Usuario u = sesionManager.exigirRol(ctx, RolUsuario.DONANTE, RolUsuario.ADMIN);
     if (u == null) return;
@@ -261,6 +266,7 @@ public class WebPortalController {
     String filtroEstado = valor(ctx.queryParam("estado"), "");
     String filtroCategoria = valor(ctx.queryParam("categoria"), "");
     String filtroSubcategoria = valor(ctx.queryParam("subcategoria"), "").trim();
+    int pagina = Math.max(1, parsearEntero(ctx.queryParam("page"), 1));
 
     List<Donacion> base = (u.getDonante() != null)
         ? donacionRepo.buscarPorDonante(u.getDonante().getId())
@@ -274,8 +280,17 @@ public class WebPortalController {
             && d.getSubcategoria().getNombre().toLowerCase().contains(filtroSubcategoria.toLowerCase())))
         .toList();
 
+    List<Map<String, Object>> donacionesMapeadas = filtradas.stream().map(this::mapearDonacionVista).toList();
+    Map<String, String> qParams = new HashMap<>();
+    if (!filtroEstado.isBlank()) qParams.put("estado", filtroEstado);
+    if (!filtroCategoria.isBlank()) qParams.put("categoria", filtroCategoria);
+    if (!filtroSubcategoria.isBlank()) qParams.put("subcategoria", filtroSubcategoria);
+
+    Paginacion<Map<String, Object>> paginacion = new Paginacion<>(donacionesMapeadas, pagina, 5, "/donante/donaciones", qParams);
+
     Map<String, Object> model = modeloBase(ctx, "Mis Donaciones - DonaTrack");
-    model.put("donaciones", filtradas.stream().map(this::mapearDonacionVista).toList());
+    model.put("donaciones", paginacion.getItems());
+    model.put("paginacion", paginacion);
     model.put("filtroEstado", filtroEstado);
     model.put("filtroCategoria", filtroCategoria);
     model.put("filtroSubcategoria", filtroSubcategoria);
@@ -283,22 +298,138 @@ public class WebPortalController {
     ctx.render("donante-donaciones.hbs", model);
   }
 
-  /** 6. Navegar por las entidades beneficiarias registradas */
+  /** 6. Navegar por las entidades beneficiarias registradas con filtros y paginación (Req. 4 y 6) */
   public void donanteEntidades(Context ctx) {
     Usuario u = sesionManager.exigirRol(ctx, RolUsuario.DONANTE, RolUsuario.ADMIN);
     if (u == null) return;
 
     String busqueda = valor(ctx.queryParam("q"), "").trim();
-    List<EntidadBeneficiaria> entidades = entidadRepo.obtenerTodas().stream()
-        .filter(e -> busqueda.isBlank()
-            || (e.getRazonSocial() != null && e.getRazonSocial().toLowerCase().contains(busqueda.toLowerCase()))
-            || (e.getDireccion() != null && e.getDireccion().toLowerCase().contains(busqueda.toLowerCase())))
+    String filtroCategoria = valor(ctx.queryParam("categoria"), "").trim();
+    boolean soloPendientes = "true".equalsIgnoreCase(ctx.queryParam("soloPendientes"));
+    int pagina = Math.max(1, parsearEntero(ctx.queryParam("page"), 1));
+
+    List<EntidadBeneficiaria> base = entidadRepo.obtenerTodas();
+    List<EntidadBeneficiaria> filtradas = base.stream()
+        .filter(e -> {
+          if (busqueda.isBlank()) return true;
+          String b = busqueda.toLowerCase();
+          boolean coincideEntidad = (e.getRazonSocial() != null && e.getRazonSocial().toLowerCase().contains(b))
+              || (e.getDireccion() != null && e.getDireccion().toLowerCase().contains(b));
+          boolean coincideNecesidad = e.getNecesidades() != null && e.getNecesidades().stream().anyMatch(n ->
+              (n.getDescripcion() != null && n.getDescripcion().toLowerCase().contains(b))
+                  || (n.getSubcategoria() != null && n.getSubcategoria().getNombre() != null
+                  && n.getSubcategoria().getNombre().toLowerCase().contains(b))
+          );
+          return coincideEntidad || coincideNecesidad;
+        })
+        .filter(e -> {
+          if (filtroCategoria.isBlank()) return true;
+          return e.getNecesidades() != null && e.getNecesidades().stream().anyMatch(n ->
+              n.getSubcategoria() != null && n.getSubcategoria().getCategoria() != null
+                  && n.getSubcategoria().getCategoria().name().equalsIgnoreCase(filtroCategoria)
+          );
+        })
+        .filter(e -> {
+          if (!soloPendientes) return true;
+          return e.getNecesidades() != null && e.getNecesidades().stream().anyMatch(n -> !Boolean.TRUE.equals(n.estaSatisfecha()));
+        })
         .toList();
 
+    List<Map<String, Object>> entidadesMapeadas = filtradas.stream().map(this::mapearEntidadVista).toList();
+
+    Map<String, String> queryParams = new HashMap<>();
+    if (!busqueda.isBlank()) queryParams.put("q", busqueda);
+    if (!filtroCategoria.isBlank()) queryParams.put("categoria", filtroCategoria);
+    if (soloPendientes) queryParams.put("soloPendientes", "true");
+
+    Paginacion<Map<String, Object>> paginacion = new Paginacion<>(entidadesMapeadas, pagina, 4, "/donante/entidades", queryParams);
+
     Map<String, Object> model = modeloBase(ctx, "Entidades Beneficiarias - DonaTrack");
-    model.put("entidades", entidades.stream().map(this::mapearEntidadVista).toList());
+    model.put("entidades", paginacion.getItems());
+    model.put("paginacion", paginacion);
     model.put("busqueda", busqueda);
+    model.put("filtroCategoria", filtroCategoria);
+    model.put("soloPendientes", soloPendientes);
+    model.put("totalEntidadesEncontradas", filtradas.size());
+    model.put("subcategoriasDisponibles", subcategoriaRepo.obtenerTodas());
     ctx.render("donante-entidades.hbs", model);
+  }
+
+  /** 7.b POST Donar directamente a una necesidad desde la subcard (Req. 7) */
+  public void donanteRealizarDonacion(Context ctx) {
+    Usuario u = sesionManager.exigirRol(ctx, RolUsuario.DONANTE, RolUsuario.ADMIN);
+    if (u == null) return;
+
+    Long entidadId = parsearLong(ctx.formParam("entidadId"));
+    Long necesidadId = parsearLong(ctx.formParam("necesidadId"));
+    String subcategoriaNombre = valor(ctx.formParam("subcategoriaNombre"), "").trim();
+    int cantidad = Math.max(1, parsearEntero(ctx.formParam("cantidad"), 1));
+    String unidadMedida = valor(ctx.formParam("unidadMedida"), "unidades").trim();
+
+    Optional<EntidadBeneficiaria> oEntidad = entidadId != null ? entidadRepo.buscarPorId(entidadId) : Optional.empty();
+    if (oEntidad.isEmpty()) {
+      ctx.redirect("/donante/entidades?error=" + urlEncode("Entidad beneficiaria no encontrada"));
+      return;
+    }
+
+    Optional<Subcategoria> oSub = subcategoriaRepo.buscarPorNombre(subcategoriaNombre);
+    if (oSub.isEmpty()) {
+      ctx.redirect("/donante/entidades?error=" + urlEncode("Subcategoría '" + subcategoriaNombre + "' no válida"));
+      return;
+    }
+
+    EntidadBeneficiaria entidad = oEntidad.get();
+    Subcategoria sub = oSub.get();
+
+    PersonaDonante donante = u.getDonante();
+    if (donante == null) {
+      List<PersonaDonante> todos = donanteRepo.obtenerTodos();
+      if (!todos.isEmpty()) {
+        donante = todos.get(0);
+      }
+    }
+
+    if (donante != null) {
+      donante.registrarInteraccion();
+      donanteRepo.guardar(donante);
+    }
+
+    Donacion d = new Donacion(sub, cantidad, unidadMedida, donante, LocalDate.now());
+    d.asignarEntidad(entidad);
+    donacionRepo.guardar(d);
+
+    // Actualizar progreso de la necesidad específica en la entidad
+    if (entidad.getNecesidades() != null) {
+      for (Necesidad n : entidad.getNecesidades()) {
+        if ((necesidadId != null && n.getId() != null && n.getId().equals(necesidadId))
+            || (n.getSubcategoria() != null && n.getSubcategoria().getNombre().equalsIgnoreCase(sub.getNombre()))) {
+          try {
+            n.registrarRecepcion(cantidad);
+          } catch (Exception ignored) {}
+          break;
+        }
+      }
+      entidadRepo.guardar(entidad);
+    }
+
+    // Notificaciones (Observer)
+    gestorNotificaciones.publicar(new EventoDeNotificacion(
+        List.of(entidad),
+        "¡Nueva donación asignada! " + (donante != null ? nombreDeDonante(donante) : "Una persona donante")
+            + " donó " + cantidad + " " + unidadMedida + " de " + sub.getNombre() + "."
+    ));
+
+    if (donante != null) {
+      gestorNotificaciones.publicar(new EventoDeNotificacion(
+          List.of(donante),
+          "¡Gracias por tu donación #" + d.getId() + "! Se registró tu aporte de " + cantidad + " " + unidadMedida
+              + " de " + sub.getNombre() + " para " + entidad.getRazonSocial() + "."
+      ));
+    }
+
+    ctx.redirect("/donante/donaciones?msg=" + urlEncode(
+        "¡Muchas gracias! Tu donación de " + cantidad + " " + unidadMedida + " de " + sub.getNombre()
+            + " para " + entidad.getRazonSocial() + " fue registrada exitosamente en estado ASIGNACION_REALIZADA."));
   }
 
   /** 7. Seguir en un mapa las entregas activas de las donaciones que realizó */
@@ -325,7 +456,7 @@ public class WebPortalController {
   // 8–12. ROL ENTIDAD BENEFICIARIA
   // =========================================================================
 
-  /** 8. Vista y registro de necesidades materiales concretas */
+  /** 8. Vista y registro de necesidades materiales concretas con paginación */
   public void entidadNecesidades(Context ctx) {
     Usuario u = sesionManager.exigirRol(ctx, RolUsuario.ENTIDAD, RolUsuario.ADMIN);
     if (u == null) return;
@@ -333,13 +464,20 @@ public class WebPortalController {
     EntidadBeneficiaria entidad = resolverEntidadDeUsuario(u);
     Map<String, Object> model = modeloBase(ctx, "Necesidades Materiales - DonaTrack");
     if (entidad != null) {
-      model.put("entidad", mapearEntidadVista(entidad));
+      Map<String, Object> entidadVista = mapearEntidadVista(entidad);
+      @SuppressWarnings("unchecked")
+      List<Map<String, Object>> todasNecs = (List<Map<String, Object>>) entidadVista.get("necesidades");
+      int pagina = Math.max(1, parsearEntero(ctx.queryParam("page"), 1));
+      Paginacion<Map<String, Object>> paginacion = new Paginacion<>(todasNecs, pagina, 5, "/entidad/necesidades", Map.of());
+      model.put("entidad", entidadVista);
+      model.put("necesidades", paginacion.getItems());
+      model.put("paginacion", paginacion);
     }
     model.put("subcategorias", subcategoriaRepo.obtenerTodas());
     ctx.render("entidad-necesidades.hbs", model);
   }
 
-  /** 8.b POST Registrar nueva necesidad material (Extraordinaria o Recurrente) */
+  /** 8.b POST Registrar nueva necesidad material con validación estricta de subcategoría (Req. 5) */
   public void entidadCrearNecesidad(Context ctx) {
     Usuario u = sesionManager.exigirRol(ctx, RolUsuario.ENTIDAD, RolUsuario.ADMIN);
     if (u == null) return;
@@ -352,13 +490,14 @@ public class WebPortalController {
 
     String tipoNecesidad = valor(ctx.formParam("tipoNecesidad"), "EXTRAORDINARIA");
     String categoriaStr = valor(ctx.formParam("categoria"), "ALIMENTOS");
-    String subcategoriaNombre = valor(ctx.formParam("subcategoriaNombre"), "Alimentos generales").trim();
-    String descripcion = valor(ctx.formParam("descripcion"), "Necesidad registrada en plataforma").trim();
+    String subcategoriaNombre = valor(ctx.formParam("subcategoriaNombre"), "").trim();
+    String descripcion = valor(ctx.formParam("descripcion"), "").trim();
     int cantidad = Math.max(1, parsearEntero(ctx.formParam("cantidad"), 10));
     String periodoStr = valor(ctx.formParam("periodo"), "MENSUAL");
 
-    if (descripcion.isBlank()) {
-      descripcion = "Demanda de " + subcategoriaNombre;
+    if (subcategoriaNombre.isBlank()) {
+      ctx.redirect("/entidad/necesidades?error=" + urlEncode("Debés seleccionar una subcategoría"));
+      return;
     }
 
     Categoria cat;
@@ -368,9 +507,22 @@ public class WebPortalController {
       cat = Categoria.ALIMENTOS;
     }
 
-    Subcategoria sub = subcategoriaRepo.obtenerOCrear(
-        subcategoriaNombre, cat, cat != Categoria.ALIMENTOS, cat == Categoria.ALIMENTOS
-    );
+    // Validación estricta de subcategoría existente
+    Optional<Subcategoria> oSub = subcategoriaRepo.buscarPorNombre(subcategoriaNombre);
+    if (oSub.isEmpty()) {
+      ctx.redirect("/entidad/necesidades?error=" + urlEncode("La subcategoría seleccionada '" + subcategoriaNombre + "' no es válida."));
+      return;
+    }
+
+    Subcategoria sub = oSub.get();
+    if (sub.getCategoria() != cat) {
+      ctx.redirect("/entidad/necesidades?error=" + urlEncode("La subcategoría '" + sub.getNombre() + "' no corresponde a la categoría " + cat.name() + "."));
+      return;
+    }
+
+    if (descripcion.isBlank()) {
+      descripcion = "Demanda de " + sub.getNombre();
+    }
 
     Necesidad nueva;
     if ("RECURRENTE".equalsIgnoreCase(tipoNecesidad)) {
@@ -384,10 +536,10 @@ public class WebPortalController {
     entidad.agregarNecesidad(nueva);
     entidadRepo.guardar(entidad);
 
-    ctx.redirect("/entidad/necesidades?msg=" + urlEncode("Necesidad material (" + subcategoriaNombre + ") registrada correctamente"));
+    ctx.redirect("/entidad/necesidades?msg=" + urlEncode("Necesidad material (" + sub.getNombre() + ") registrada correctamente"));
   }
 
-  /** 9 y 10. Ver estado de las donaciones asignadas y confirmar recepción con fotos */
+  /** 9 y 10. Ver estado de las donaciones asignadas con paginación */
   public void entidadDonaciones(Context ctx) {
     Usuario u = sesionManager.exigirRol(ctx, RolUsuario.ENTIDAD, RolUsuario.ADMIN);
     if (u == null) return;
@@ -397,9 +549,14 @@ public class WebPortalController {
         ? donacionRepo.buscarPorEntidadAsignada(entidad.getId())
         : donacionRepo.obtenerTodas();
 
+    int pagina = Math.max(1, parsearEntero(ctx.queryParam("page"), 1));
+    List<Map<String, Object>> donacionesMapeadas = asignadas.stream().map(this::mapearDonacionVista).toList();
+    Paginacion<Map<String, Object>> paginacion = new Paginacion<>(donacionesMapeadas, pagina, 5, "/entidad/donaciones", Map.of());
+
     Map<String, Object> model = modeloBase(ctx, "Donaciones Asignadas - DonaTrack");
     model.put("entidadNombre", entidad != null ? entidad.getRazonSocial() : "Todas las Entidades");
-    model.put("donaciones", asignadas.stream().map(this::mapearDonacionVista).toList());
+    model.put("donaciones", paginacion.getItems());
+    model.put("paginacion", paginacion);
     ctx.render("entidad-donaciones.hbs", model);
   }
 
@@ -525,17 +682,45 @@ public class WebPortalController {
   // 13–17. ROL PERSONA ADMINISTRADORA
   // =========================================================================
 
-  /** 13 y 14. Gestión de Depósito: registrar donantes, cargas de donaciones y marcar vencidas */
+  /** 13 y 14. Gestión de Depósito: resumen de depósito, inventario paginado, recepción y donantes divididos por tabs */
   public void adminDeposito(Context ctx) {
     Usuario u = sesionManager.exigirRol(ctx, RolUsuario.ADMIN);
     if (u == null) return;
 
-    Map<String, Object> model = modeloBase(ctx, "Administración de Depósito - DonaTrack");
-    model.put("donantes", donanteRepo.obtenerTodos().stream().map(this::mapearDonanteVista).toList());
-    model.put("donaciones", donacionRepo.obtenerTodas().stream()
+    int pagina = Math.max(1, parsearEntero(ctx.queryParam("page"), 1));
+    List<Donacion> todasDonaciones = donacionRepo.obtenerTodas();
+    List<Map<String, Object>> todas = todasDonaciones.stream()
         .sorted(Comparator.comparing(Donacion::getId, Comparator.nullsLast(Comparator.reverseOrder())))
         .map(this::mapearDonacionVista)
-        .toList());
+        .toList();
+    Paginacion<Map<String, Object>> paginacion = new Paginacion<>(todas, pagina, 8, "/admin/deposito", Map.of());
+
+    // Resumen ejecutivo y métricas de depósito (Gestión de Depósito General)
+    long totalEnDeposito = todasDonaciones.stream().filter(d -> d.getEstado() == EstadoDonacion.EN_DEPOSITO).count();
+    long totalEnTransito = todasDonaciones.stream().filter(d -> d.getEstado() == EstadoDonacion.ASIGNACION_REALIZADA || d.getEstado() == EstadoDonacion.LISTA_PARA_ENTREGAR || d.getEstado() == EstadoDonacion.EN_TRASLADO).count();
+    long totalVencidas = todasDonaciones.stream().filter(d -> d.getEstado() == EstadoDonacion.VENCIDA).count();
+    long totalEntregadas = todasDonaciones.stream().filter(d -> d.getEstado() == EstadoDonacion.ENTREGADA).count();
+    long totalDonantes = donanteRepo.obtenerTodos().size();
+
+    Map<String, Object> resumen = new HashMap<>();
+    resumen.put("totalDonaciones", todasDonaciones.size());
+    resumen.put("enDeposito", totalEnDeposito);
+    resumen.put("enTransito", totalEnTransito);
+    resumen.put("vencidas", totalVencidas);
+    resumen.put("entregadas", totalEntregadas);
+    resumen.put("totalDonantes", totalDonantes);
+
+    String tab = valor(ctx.queryParam("tab"), "inventario");
+
+    Map<String, Object> model = modeloBase(ctx, "Gestión de Depósito Central - DonaTrack");
+    model.put("resumen", resumen);
+    model.put("tabActivo", tab);
+    model.put("esTabInventario", "inventario".equalsIgnoreCase(tab));
+    model.put("esTabRecepcion", "recepcion".equalsIgnoreCase(tab) || "ingreso".equalsIgnoreCase(tab));
+    model.put("esTabDonante", "donante".equalsIgnoreCase(tab));
+    model.put("donantes", donanteRepo.obtenerTodos().stream().map(this::mapearDonanteVista).toList());
+    model.put("donaciones", paginacion.getItems());
+    model.put("paginacion", paginacion);
     model.put("subcategorias", subcategoriaRepo.obtenerTodas());
     ctx.render("admin-deposito.hbs", model);
   }
@@ -550,7 +735,7 @@ public class WebPortalController {
     String telefonoStr = valor(ctx.formParam("telefono"), "+54 11 0000-0000");
 
     if (emailStr.isBlank()) {
-      ctx.redirect("/admin/deposito?error=" + urlEncode("El email del donante es obligatorio"));
+      ctx.redirect("/admin/deposito?tab=donante&error=" + urlEncode("El email del donante es obligatorio"));
       return;
     }
 
@@ -593,7 +778,7 @@ public class WebPortalController {
         "¡Bienvenido/a a DonaTrack! Tu usuario de acceso fue habilitado con el correo " + emailStr + "."
     ));
 
-    ctx.redirect("/admin/deposito?msg=" + urlEncode("Donante '" + nombreMostrar + "' registrado y usuario otorgado"));
+    ctx.redirect("/admin/deposito?tab=donante&msg=" + urlEncode("Donante '" + nombreMostrar + "' registrado exitosamente y usuario otorgado"));
   }
 
   /** 13.b POST Registrar donación / carga de bienes en el depósito asociándola a la persona donante */
@@ -603,12 +788,12 @@ public class WebPortalController {
 
     Long donanteId = parsearLong(ctx.formParam("donanteId"));
     if (donanteId == null) {
-      ctx.redirect("/admin/deposito?error=" + urlEncode("Seleccioná una persona donante"));
+      ctx.redirect("/admin/deposito?tab=recepcion&error=" + urlEncode("Seleccioná una persona donante"));
       return;
     }
     Optional<PersonaDonante> oDonante = donanteRepo.buscarPorId(donanteId);
     if (oDonante.isEmpty()) {
-      ctx.redirect("/admin/deposito?error=" + urlEncode("No existe el donante seleccionado"));
+      ctx.redirect("/admin/deposito?tab=recepcion&error=" + urlEncode("No existe el donante seleccionado"));
       return;
     }
 
@@ -627,9 +812,21 @@ public class WebPortalController {
       cat = Categoria.ALIMENTOS;
     }
 
+    // Validación estricta de subcategoría existente (Req. 5)
+    Optional<Subcategoria> oSub = subcategoriaRepo.buscarPorNombre(subcategoriaNombre);
+    if (oSub.isEmpty()) {
+      ctx.redirect("/admin/deposito?tab=recepcion&error=" + urlEncode("La subcategoría seleccionada '" + subcategoriaNombre + "' no existe en el sistema."));
+      return;
+    }
+
+    Subcategoria sub = oSub.get();
+    if (sub.getCategoria() != cat) {
+      ctx.redirect("/admin/deposito?tab=recepcion&error=" + urlEncode("La subcategoría '" + sub.getNombre() + "' no corresponde a la categoría " + cat.name() + "."));
+      return;
+    }
+
     boolean requiereEstado = (cat == Categoria.MOBILIARIO || cat == Categoria.VESTIMENTA);
     boolean esPerecedero = (cat == Categoria.ALIMENTOS && !fechaVencStr.isBlank());
-    Subcategoria sub = subcategoriaRepo.obtenerOCrear(subcategoriaNombre, cat, requiereEstado, esPerecedero);
 
     Bien bien;
     if (!fechaVencStr.isBlank()) {
@@ -653,7 +850,7 @@ public class WebPortalController {
       donacionRepo.guardar(d);
     }
 
-    ctx.redirect("/admin/deposito?msg=" + urlEncode(
+    ctx.redirect("/admin/deposito?tab=inventario&msg=" + urlEncode(
         "Carga registrada y segmentada en " + segmentadas.size() + " donación(es) en estado EN_DEPOSITO"));
   }
 
@@ -665,16 +862,16 @@ public class WebPortalController {
     Long id = Long.valueOf(ctx.pathParam("id"));
     Optional<Donacion> oDonacion = donacionRepo.buscarPorId(id);
     if (oDonacion.isEmpty()) {
-      ctx.redirect("/admin/deposito?error=" + urlEncode("No existe la donación #" + id));
+      ctx.redirect("/admin/deposito?tab=inventario&error=" + urlEncode("No existe la donación #" + id));
       return;
     }
     try {
       Donacion d = oDonacion.get();
       d.marcarVencida();
       donacionRepo.guardar(d);
-      ctx.redirect("/admin/deposito?msg=" + urlEncode("Donación #" + id + " marcada como VENCIDA"));
+      ctx.redirect("/admin/deposito?tab=inventario&msg=" + urlEncode("Donación #" + id + " marcada como VENCIDA"));
     } catch (IllegalStateException e) {
-      ctx.redirect("/admin/deposito?error=" + urlEncode(e.getMessage()));
+      ctx.redirect("/admin/deposito?tab=inventario&error=" + urlEncode(e.getMessage()));
     }
   }
 
@@ -701,9 +898,14 @@ public class WebPortalController {
       pendientesVista.add(item);
     }
 
+    int pagina = Math.max(1, parsearEntero(ctx.queryParam("page"), 1));
+    Paginacion<Map<String, Object>> paginacion = new Paginacion<>(pendientesVista, pagina, 5, "/admin/matchmaking", Map.of());
+
     Map<String, Object> model = modeloBase(ctx, "Matchmaking y Asignación - DonaTrack");
-    model.put("donacionesPendientes", pendientesVista);
+    model.put("donacionesPendientes", paginacion.getItems());
+    model.put("paginacion", paginacion);
     model.put("todasEntidades", todasEntidades);
+    model.put("totalPendientes", enDeposito.size());
     ctx.render("admin-matchmaking.hbs", model);
   }
 
@@ -922,6 +1124,10 @@ public class WebPortalController {
     model.put("msg", ctx.queryParam("msg"));
     model.put("error", ctx.queryParam("error"));
 
+    // Protección CSRF: token seguro de sesión inyectado en cada vista HTML
+    String csrfToken = sesionManager.obtenerOCrearCsrfToken(ctx);
+    model.put("csrfToken", csrfToken);
+
     sesionManager.obtenerUsuarioActual(ctx).ifPresent(u -> {
       model.put("usuarioActual", u);
       model.put("nombreUsuario", u.getNombreMostrar());
@@ -1052,31 +1258,52 @@ public class WebPortalController {
         ? e.getEmailsRepresentantes().get(0) : "");
 
     List<Map<String, Object>> necs = new ArrayList<>();
+    int totalPendientes = 0;
+    int totalSatisfechas = 0;
     if (e.getNecesidades() != null) {
       for (Necesidad n : e.getNecesidades()) {
         Map<String, Object> nm = new HashMap<>();
         nm.put("id", n.getId());
         nm.put("descripcion", n.getDescripcion());
         nm.put("subcategoriaNombre", n.getSubcategoria() != null ? n.getSubcategoria().getNombre() : "General");
-        nm.put("categoriaNombre", (n.getSubcategoria() != null && n.getSubcategoria().getCategoria() != null)
-            ? n.getSubcategoria().getCategoria().name() : "ALIMENTOS");
-        nm.put("satisfecha", Boolean.TRUE.equals(n.estaSatisfecha()));
+        String catNom = (n.getSubcategoria() != null && n.getSubcategoria().getCategoria() != null)
+            ? n.getSubcategoria().getCategoria().name() : "ALIMENTOS";
+        nm.put("categoriaNombre", catNom);
+        boolean satisfecha = Boolean.TRUE.equals(n.estaSatisfecha());
+        nm.put("satisfecha", satisfecha);
+        if (satisfecha) {
+          totalSatisfechas++;
+        } else {
+          totalPendientes++;
+        }
+
+        int objetivo = 0;
+        int recibida = 0;
         if (n instanceof NecesidadExtraordinaria ne) {
           nm.put("tipo", "EXTRAORDINARIA");
-          nm.put("objetivo", ne.getCantidadRequerida());
-          nm.put("recibida", ne.getCantidadRecibida());
+          objetivo = ne.getCantidadRequerida();
+          recibida = ne.getCantidadRecibida();
           nm.put("detallePeriodo", "Emergencia / Puntual");
         } else if (n instanceof NecesidadRecurrente nr) {
           PeriodoConsumo pc = nr.getPeriodoConsumo();
           nm.put("tipo", "RECURRENTE");
-          nm.put("objetivo", pc != null ? pc.getCantidadObjetivo() : 0);
-          nm.put("recibida", pc != null ? pc.getCantidadRecibida() : 0);
+          objetivo = pc != null ? pc.getCantidadObjetivo() : 0;
+          recibida = pc != null ? pc.getCantidadRecibida() : 0;
           nm.put("detallePeriodo", pc != null && pc.getDescripcion() != null ? pc.getDescripcion() : "PERIÓDICA");
         }
+        nm.put("objetivo", objetivo);
+        nm.put("recibida", recibida);
+        int faltante = Math.max(0, objetivo - recibida);
+        nm.put("faltante", faltante);
+        int porcentaje = objetivo > 0 ? Math.min(100, (int) Math.round(((double) recibida / objetivo) * 100)) : 100;
+        nm.put("porcentaje", porcentaje);
         necs.add(nm);
       }
     }
     m.put("necesidades", necs);
+    m.put("totalNecesidades", necs.size());
+    m.put("totalPendientes", totalPendientes);
+    m.put("totalSatisfechas", totalSatisfechas);
     return m;
   }
 
@@ -1172,5 +1399,87 @@ public class WebPortalController {
 
   private String urlEncode(String texto) {
     return URLEncoder.encode(texto, StandardCharsets.UTF_8);
+  }
+
+  /**
+   * Helper generico de paginacion para el Cliente Liviano MVC (Requerimiento oral).
+   */
+  public static class Paginacion<T> {
+    private final List<T> items;
+    private final int paginaActual;
+    private final int totalPaginas;
+    private final int totalItems;
+    private final boolean tieneAnterior;
+    private final boolean tieneSiguiente;
+    private final int paginaAnterior;
+    private final int paginaSiguiente;
+    private final String urlAnterior;
+    private final String urlSiguiente;
+    private final boolean mostrarPaginacion;
+    private final List<Map<String, Object>> paginas;
+    private final int rangoInicio;
+    private final int rangoFin;
+
+    public Paginacion(List<T> listaCompleta, int paginaActual, int pageSize, String urlBase, Map<String, String> params) {
+      this.totalItems = listaCompleta.size();
+      int calculadas = (int) Math.ceil((double) totalItems / pageSize);
+      this.totalPaginas = Math.max(1, calculadas);
+      this.paginaActual = Math.max(1, Math.min(paginaActual, this.totalPaginas));
+
+      int inicio = (this.paginaActual - 1) * pageSize;
+      int fin = Math.min(inicio + pageSize, totalItems);
+      this.items = (inicio < totalItems) ? listaCompleta.subList(inicio, fin) : Collections.emptyList();
+      this.rangoInicio = totalItems == 0 ? 0 : inicio + 1;
+      this.rangoFin = fin;
+
+      this.tieneAnterior = this.paginaActual > 1;
+      this.tieneSiguiente = this.paginaActual < this.totalPaginas;
+      this.paginaAnterior = this.paginaActual - 1;
+      this.paginaSiguiente = this.paginaActual + 1;
+      this.mostrarPaginacion = this.totalPaginas > 1;
+
+      this.urlAnterior = armarUrl(urlBase, params, this.paginaAnterior);
+      this.urlSiguiente = armarUrl(urlBase, params, this.paginaSiguiente);
+
+      this.paginas = new ArrayList<>();
+      for (int i = 1; i <= this.totalPaginas; i++) {
+        Map<String, Object> p = new HashMap<>();
+        p.put("numero", i);
+        p.put("activa", i == this.paginaActual);
+        p.put("url", armarUrl(urlBase, params, i));
+        this.paginas.add(p);
+      }
+    }
+
+    private static String armarUrl(String base, Map<String, String> params, int page) {
+      StringBuilder sb = new StringBuilder(base).append("?");
+      if (params != null) {
+        for (Map.Entry<String, String> e : params.entrySet()) {
+          if (e.getKey() != null && !e.getKey().equals("page") && e.getValue() != null && !e.getValue().isBlank()) {
+            sb.append(URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8))
+                .append("=")
+                .append(URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+                .append("&");
+          }
+        }
+      }
+      sb.append("page=").append(page);
+      return sb.toString();
+    }
+
+    public List<T> getItems() { return items; }
+    public int getPaginaActual() { return paginaActual; }
+    public int getTotalPaginas() { return totalPaginas; }
+    public int getTotalItems() { return totalItems; }
+    public boolean isTieneAnterior() { return tieneAnterior; }
+    public boolean isTieneSiguiente() { return tieneSiguiente; }
+    public int getPaginaAnterior() { return paginaAnterior; }
+    public int getPaginaSiguiente() { return paginaSiguiente; }
+    public String getUrlAnterior() { return urlAnterior; }
+    public String getUrlSiguiente() { return urlSiguiente; }
+    public boolean isMostrarPaginacion() { return mostrarPaginacion; }
+    public List<Map<String, Object>> getPaginas() { return paginas; }
+    public int getRangoInicio() { return rangoInicio; }
+    public int getRangoFin() { return rangoFin; }
   }
 }

@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import io.javalin.http.UnauthorizedResponse;
 
 import java.util.Map;
 
@@ -198,8 +199,47 @@ public class DonacionesApp {
       ctx.json(Map.of("status", "ejecutado"));
     });
 
-    tareaInactividad.iniciarDiario();
-    tareaNocturnaMatchmaking.iniciarShedulerProduccion();
+    // ───────────────────────────────────────────────────────────────────
+    //  Planificacion EXTERNA de tareas
+    //
+    //  Antes estas dos tareas se programaban solas dentro de este proceso
+    //  (scheduleAtFixedRate cada 24 hs). Eso tenia tres problemas: la hora de
+    //  ejecucion dependia de cuando habia arrancado el contenedor, el contador
+    //  se reiniciaba en cada deploy, y con mas de una replica cada tarea
+    //  correria una vez por replica.
+    //
+    //  Ahora la aplicacion solo expone QUE se puede ejecutar. El CUANDO lo
+    //  decide el planificador de Railway, que a la hora configurada levanta un
+    //  contenedor efimero (Dockerfile.cron) que pega a estos endpoints.
+    // ───────────────────────────────────────────────────────────────────
+
+    // Los endpoints internos no son para el publico: los llama el disparador.
+    // Si la clave no esta configurada el pedido falla, en vez de quedar
+    // abierto: un olvido de configuracion no puede traducirse en que
+    // cualquiera pueda disparar el matchmaking o las notificaciones.
+    app.before("/api/internal/*", ctx -> {
+      String claveEsperada = System.getenv("CRON_API_KEY");
+      if (claveEsperada == null || claveEsperada.isBlank()) {
+        throw new IllegalStateException(
+            "CRON_API_KEY no esta configurada: los endpoints internos quedarian sin proteccion.");
+      }
+      if (!claveEsperada.equals(ctx.header("X-API-KEY"))) {
+        throw new UnauthorizedResponse();
+      }
+    });
+
+    app.post("/api/internal/cron/matchmaking", ctx -> {
+      tareaNocturnaMatchmaking.ejecutar();
+      ctx.json(Map.of("status", "ok", "tarea", "matchmaking"));
+    });
+
+    app.post("/api/internal/cron/inactividad", ctx -> {
+      tareaInactividad.ejecutar();
+      ctx.json(Map.of("status", "ok", "tarea", "inactividad"));
+    });
+
+    // Los schedulers internos se detienen igual al apagar, por si algun test
+    // o arranque manual los puso en marcha.
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       tareaInactividad.detener();
       tareaNocturnaMatchmaking.detener();

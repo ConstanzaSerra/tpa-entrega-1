@@ -1,0 +1,13 @@
+# Contenedor efimero que dispara las tareas programadas.
+#
+# No lleva un demonio cron adentro: quien mide el tiempo es Railway, mediante
+# el campo "Cron Schedule" del servicio. Este contenedor se enciende a la hora
+# indicada, hace los pedidos y termina.
+FROM alpine:3.20
+
+RUN apk add --no-cache curl
+
+COPY docker/ejecutar-tareas.sh /ejecutar-tareas.sh
+RUN chmod +x /ejecutar-tareas.sh
+
+CMD ["/ejecutar-tareas.sh"]

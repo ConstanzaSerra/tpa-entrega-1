@@ -1,0 +1,10 @@
+# Contenedor efimero que dispara la planificacion de rutas.
+# No lleva demonio cron: quien mide el tiempo es Railway ("Cron Schedule").
+FROM alpine:3.20
+
+RUN apk add --no-cache curl
+
+COPY docker/ejecutar-tareas.sh /ejecutar-tareas.sh
+RUN chmod +x /ejecutar-tareas.sh
+
+CMD ["/ejecutar-tareas.sh"]

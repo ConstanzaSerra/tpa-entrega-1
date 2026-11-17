@@ -10,6 +10,7 @@ import ar.edu.utn.frba.dds.logistica.aplicacion.service.PlanificacionScheduler;
 import ar.edu.utn.frba.dds.logistica.aplicacion.service.PlanificadorRutas;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import io.javalin.http.UnauthorizedResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -50,16 +51,10 @@ public class LogisticaApp {
         PlanificadorRutas planificadorService = new PlanificadorRutas(
                 donacionesAPI, planificadorAPI, camionRepository, rutaRepository, entregaRepository, callbackUrl, linkMapa);
 
-        // Inicializo el Scheduler, corre a las 2 de la mañana
-        PlanificacionScheduler scheduler = new PlanificacionScheduler(planificadorService);
-        String periodMinutes = ConfigManager.getProperty("scheduler.period.minutes", "");
-        if (!periodMinutes.isBlank()) {
-            long period = Long.parseLong(periodMinutes);
-            scheduler.iniciar(period, period, TimeUnit.MINUTES);
-        } else {
-            LocalTime horaBajaCarga = LocalTime.parse(ConfigManager.getProperty("scheduler.hora", "02:00"));
-            scheduler.iniciarDiario(horaBajaCarga);
-        }
+        // La planificacion ya no se programa dentro de este proceso: el CUANDO lo
+        // decide el planificador de Railway (ver Dockerfile.cron), que a la hora
+        // configurada pega a /api/internal/cron/planificacion. La clase
+        // PlanificacionScheduler se conserva para pruebas y ejecucion local.
 
         // Inicializo controladores REST + GraphQL (Entrega 4)
         CamionController camionController = new CamionController(camionRepository);
@@ -82,6 +77,27 @@ public class LogisticaApp {
         }).start(port);
 
         app.get("/health", ctx -> ctx.json(Map.of("status", "UP", "service", "logistica", "protocol", "GraphQL+REST")));
+
+        // ───────────────────────────────────────────────────────────────
+        //  Planificacion EXTERNA: la aplicacion expone QUE se puede ejecutar,
+        //  el disparador decide CUANDO. Si la clave no esta configurada el
+        //  pedido falla, para que un olvido no deje el endpoint abierto.
+        // ───────────────────────────────────────────────────────────────
+        app.before("/api/internal/*", ctx -> {
+            String claveEsperada = System.getenv("CRON_API_KEY");
+            if (claveEsperada == null || claveEsperada.isBlank()) {
+                throw new IllegalStateException(
+                        "CRON_API_KEY no esta configurada: los endpoints internos quedarian sin proteccion.");
+            }
+            if (!claveEsperada.equals(ctx.header("X-API-KEY"))) {
+                throw new UnauthorizedResponse();
+            }
+        });
+
+        app.post("/api/internal/cron/planificacion", ctx -> {
+            planificadorService.planificar();
+            ctx.json(Map.of("status", "ok", "tarea", "planificacion"));
+        });
 
         // Endpoint GraphQL (Entrega 4 - Requerimiento detallado 3b)
         app.post("/graphql", graphQLController::ejecutar);

@@ -85,49 +85,102 @@ public class ImportadorDonantesCSV {
 
     int[] contadores = new int[3]; // [0]=creados, [1]=actualizados, [2]=usuariosOtorgados
 
-    repo.ejecutarEnTransaccion(() -> {
-      for (FilaDonanteCSV fila : filas) {
-        if (fila.email() == null || fila.email().isBlank()) {
-          continue;
-        }
-        String emailKey = fila.email().trim().toLowerCase();
-        PersonaDonante donante = donantesPorEmail.get(emailKey);
+    List<ErrorDeFila> errores = new ArrayList<>();
 
-        if (donante != null) {
-          actualizar(donante, fila);
-          contadores[1]++;
-        } else {
-          donante = crear(fila);
+    repo.ejecutarEnTransaccion(() -> {
+      for (int indice = 0; indice < filas.size(); indice++) {
+        FilaDonanteCSV fila = filas.get(indice);
+        // +2 porque el archivo arranca con el encabezado y las lineas se
+        // cuentan desde 1: asi el numero coincide con lo que ve la persona
+        // al abrir el CSV en una planilla.
+        int linea = indice + 2;
+        String referencia = referenciaDe(fila);
+
+        try {
+          if (fila.email() == null || fila.email().isBlank()) {
+            errores.add(new ErrorDeFila(linea, referencia, "Falta el email, que es el dato con el que se identifica a la persona donante"));
+            continue;
+          }
+          String emailKey = fila.email().trim().toLowerCase();
+          PersonaDonante donante = donantesPorEmail.get(emailKey);
+
           if (donante != null) {
+            actualizar(donante, fila);
+            contadores[1]++;
+          } else {
+            donante = crear(fila);
+            if (donante == null) {
+              errores.add(new ErrorDeFila(linea, referencia,
+                  "Tipo de persona desconocido: '" + fila.tipo() + "'. Se espera HUMANA o JURIDICA"));
+              continue;
+            }
             repo.guardar(donante);
             donantesPorEmail.put(emailKey, donante);
             contadores[0]++;
           }
-        }
 
-        if (donante != null && usuarioRepository != null && !emailsConUsuario.contains(emailKey)) {
-          String passInicial = (fila.documento() != null && !fila.documento().isBlank())
-              ? fila.documento().trim()
-              : "donatrack123";
-          Usuario nuevoUsuario = new Usuario(
-              emailKey,
-              passInicial,
-              fila.nombre(),
-              RolUsuario.DONANTE,
-              donante,
-              null
-          );
-          usuarioRepository.guardar(nuevoUsuario);
-          emailsConUsuario.add(emailKey);
-          contadores[2]++;
+          if (donante != null && usuarioRepository != null && !emailsConUsuario.contains(emailKey)) {
+            String passInicial = (fila.documento() != null && !fila.documento().isBlank())
+                ? fila.documento().trim()
+                : "donatrack123";
+            Usuario nuevoUsuario = new Usuario(
+                emailKey,
+                passInicial,
+                fila.nombre(),
+                RolUsuario.DONANTE,
+                donante,
+                null
+            );
+            usuarioRepository.guardar(nuevoUsuario);
+            emailsConUsuario.add(emailKey);
+            contadores[2]++;
+          }
+
+        } catch (RuntimeException e) {
+          // Una fila invalida no puede tumbar la importacion entera: se anota
+          // con su numero de linea y el proceso sigue con las demas.
+          errores.add(new ErrorDeFila(linea, referencia, mensajeDe(e)));
         }
       }
     });
 
-    return new ResultadoImportacion(filas.size(), contadores[0], contadores[1], contadores[2]);
+    return new ResultadoImportacion(
+        filas.size(), contadores[0], contadores[1], contadores[2], List.copyOf(errores));
   }
 
-  public record ResultadoImportacion(int filasLeidas, int donantesCreados, int donantesActualizados, int usuariosOtorgados) {}
+  /** Algo con que ubicar la fila en el archivo, ademas del numero de linea. */
+  private String referenciaDe(FilaDonanteCSV fila) {
+    if (fila.email() != null && !fila.email().isBlank()) {
+      return fila.email().trim();
+    }
+    if (fila.nombre() != null && !fila.nombre().isBlank()) {
+      return fila.nombre().trim();
+    }
+    return "(fila sin email ni nombre)";
+  }
+
+  private String mensajeDe(RuntimeException e) {
+    String mensaje = e.getMessage();
+    return (mensaje == null || mensaje.isBlank()) ? e.getClass().getSimpleName() : mensaje;
+  }
+
+  /** Una fila que no se pudo importar, con lo necesario para encontrarla y corregirla. */
+  public record ErrorDeFila(int linea, String referencia, String motivo) {}
+
+  public record ResultadoImportacion(int filasLeidas, int donantesCreados, int donantesActualizados,
+                                     int usuariosOtorgados, List<ErrorDeFila> errores) {
+    public int filasConError() {
+      return errores.size();
+    }
+
+    public boolean tuvoErrores() {
+      return !errores.isEmpty();
+    }
+
+    public int filasImportadas() {
+      return donantesCreados + donantesActualizados;
+    }
+  }
 
   private PersonaDonante actualizar(PersonaDonante donante, FilaDonanteCSV fila) {
     donante.actualizarEmail(fila.email());

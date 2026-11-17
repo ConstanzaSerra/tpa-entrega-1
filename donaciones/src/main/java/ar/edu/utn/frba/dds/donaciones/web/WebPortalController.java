@@ -894,14 +894,51 @@ public class WebPortalController {
       ImportadorDonantesCSV.ResultadoImportacion res = importador.importarMasivoConUsuarios(reader, usuarioRepo);
       long ms = System.currentTimeMillis() - inicio;
 
-      String resumen = String.format(
-          "Importación finalizada en %d ms: %d filas procesadas (%d donantes nuevos, %d actualizados, %d usuarios otorgados).",
-          ms, res.filasLeidas(), res.donantesCreados(), res.donantesActualizados(), res.usuariosOtorgados()
-      );
-      ctx.redirect("/admin/importar-csv?msg=" + urlEncode(resumen));
+      // Se renderiza en vez de redirigir: el detalle de errores es una lista
+      // y no puede viajar en un parametro de la URL.
+      renderResultadoCsv(ctx, res, ms, null);
     } catch (Exception e) {
-      ctx.redirect("/admin/importar-csv?error=" + urlEncode("Error procesando CSV: " + e.getMessage()));
+      renderResultadoCsv(ctx, null, 0L, "No se pudo procesar el archivo: " + e.getMessage());
     }
+  }
+
+  /** Muestra la pantalla de importacion con el resultado del ultimo intento. */
+  private void renderResultadoCsv(Context ctx, ImportadorDonantesCSV.ResultadoImportacion res,
+                                  long ms, String errorGeneral) {
+    Map<String, Object> model = modeloBase(ctx, "Importación Masiva CSV (+10.000 filas) - DonaTrack");
+    model.put("totalDonantesActuales", donanteRepo.obtenerTodos().size());
+    model.put("totalUsuariosActuales", usuarioRepo.obtenerTodos().size());
+
+    if (errorGeneral != null) {
+      model.put("error", errorGeneral);
+    }
+
+    if (res != null) {
+      Map<String, Object> resumen = new LinkedHashMap<>();
+      resumen.put("milisegundos", ms);
+      resumen.put("filasLeidas", res.filasLeidas());
+      resumen.put("filasImportadas", res.filasImportadas());
+      resumen.put("donantesCreados", res.donantesCreados());
+      resumen.put("donantesActualizados", res.donantesActualizados());
+      resumen.put("usuariosOtorgados", res.usuariosOtorgados());
+      resumen.put("filasConError", res.filasConError());
+      resumen.put("tuvoErrores", res.tuvoErrores());
+      model.put("resultado", resumen);
+
+      List<Map<String, Object>> errores = new ArrayList<>();
+      for (ImportadorDonantesCSV.ErrorDeFila err : res.errores()) {
+        Map<String, Object> fila = new LinkedHashMap<>();
+        fila.put("linea", err.linea());
+        fila.put("referencia", err.referencia());
+        fila.put("motivo", err.motivo());
+        errores.add(fila);
+      }
+      if (!errores.isEmpty()) {
+        model.put("errores", errores);
+      }
+    }
+
+    ctx.render("admin-csv.hbs", model);
   }
 
   /** 17.b GET Descargar un archivo CSV de prueba con 10.500 filas válidas */

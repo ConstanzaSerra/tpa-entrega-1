@@ -10,16 +10,76 @@
         <span class="badge bg-primary px-3 py-2">{{totalDonantesActuales}} Donantes · {{totalUsuariosActuales}} Usuarios</span>
       </div>
 
-      <div class="bg-light border rounded-3 p-3 mb-4 small">
+      <style>
+        /* Bootstrap pinta <code> en rosa/rojo y el formato esperado se lee como
+           si fuera un error. Estos campos son informativos, no una falla. */
+        .formato-csv code { color: #334155; font-weight: 500; }
+      </style>
+
+      <div class="bg-light border rounded-3 p-3 mb-4 small formato-csv">
         <div class="fw-bold mb-1"><i class="bi bi-table me-1"></i>Formato oficial esperado del archivo CSV:</div>
         <code>TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono</code><br>
         <code>HUMANA,DNI,12345678,Ana Pérez,ana@mail.com,+54 11 5555-5555</code><br>
         <code>JURIDICA,CUIT,30-12345678-9,Arcos Plateados S.A.,contacto@empresa.com,+54 11 4444-4444</code>
       </div>
 
+      {{#if error}}
+      <div class="alert alert-warning d-flex align-items-start" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+        <div>
+          <div class="fw-semibold">No se pudo importar el archivo</div>
+          <div class="small">{{error}}</div>
+        </div>
+      </div>
+      {{/if}}
+
+      {{#if resultado}}
+      <div class="border rounded-3 p-3 mb-4 {{#if resultado.tuvoErrores}}border-warning bg-warning-subtle{{else}}border-success bg-success-subtle{{/if}}">
+        <div class="fw-bold mb-2">
+          {{#if resultado.tuvoErrores}}
+          <i class="bi bi-exclamation-circle-fill text-warning me-1"></i>Importación finalizada con observaciones
+          {{else}}
+          <i class="bi bi-check-circle-fill text-success me-1"></i>Importación finalizada correctamente
+          {{/if}}
+        </div>
+        <div class="row text-center small g-2">
+          <div class="col"><div class="fs-5 fw-bold">{{resultado.filasLeidas}}</div><div class="text-muted">filas leídas</div></div>
+          <div class="col"><div class="fs-5 fw-bold">{{resultado.filasImportadas}}</div><div class="text-muted">importadas</div></div>
+          <div class="col"><div class="fs-5 fw-bold">{{resultado.donantesCreados}}</div><div class="text-muted">nuevas</div></div>
+          <div class="col"><div class="fs-5 fw-bold">{{resultado.donantesActualizados}}</div><div class="text-muted">actualizadas</div></div>
+          <div class="col"><div class="fs-5 fw-bold">{{resultado.usuariosOtorgados}}</div><div class="text-muted">usuarios otorgados</div></div>
+          <div class="col"><div class="fs-5 fw-bold">{{resultado.filasConError}}</div><div class="text-muted">con error</div></div>
+        </div>
+        <div class="text-muted small mt-2">Tiempo de proceso: {{resultado.milisegundos}} ms.</div>
+      </div>
+      {{/if}}
+
+      {{#if errores}}
+      <div class="mb-4">
+        <div class="fw-semibold mb-2"><i class="bi bi-list-ul me-1"></i>Filas que no se pudieron importar</div>
+        <p class="small text-muted">El resto del archivo se importó igual. Corregí estas filas en el CSV y volvé a subirlo: las personas ya importadas se actualizan, no se duplican.</p>
+        <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+          <table class="table table-sm table-striped align-middle small mb-0">
+            <thead class="table-light">
+              <tr><th style="width: 5rem;">Línea</th><th>Fila</th><th>Motivo</th></tr>
+            </thead>
+            <tbody>
+              {{#each errores}}
+              <tr>
+                <td class="fw-semibold">{{this.linea}}</td>
+                <td>{{this.referencia}}</td>
+                <td>{{this.motivo}}</td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {{/if}}
+
       <!-- Opción 1: Subir un archivo CSV desde la computadora -->
       <form method="post" action="/admin/importar-csv" enctype="multipart/form-data" class="mb-4">
-        <label class="form-label fw-semibold">Seleccionar archivo <code>.csv</code> desde tu equipo</label>
+        <label class="form-label fw-semibold">Seleccionar archivo <span class="formato-csv"><code>.csv</code></span> desde tu equipo</label>
         <div class="input-group">
           <input type="file" name="archivoCsv" accept=".csv,text/csv" class="form-control" required>
           <button type="submit" class="btn btn-primary fw-semibold px-4">

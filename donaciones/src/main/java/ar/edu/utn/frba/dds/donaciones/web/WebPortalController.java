@@ -335,7 +335,7 @@ public class WebPortalController {
     if (entidad != null) {
       model.put("entidad", mapearEntidadVista(entidad));
     }
-    model.put("subcategorias", subcategoriaRepo.obtenerTodas());
+    model.put("subcategorias", subcategoriasVista());
     ctx.render("entidad-necesidades.hbs", model);
   }
 
@@ -351,26 +351,24 @@ public class WebPortalController {
     }
 
     String tipoNecesidad = valor(ctx.formParam("tipoNecesidad"), "EXTRAORDINARIA");
-    String categoriaStr = valor(ctx.formParam("categoria"), "ALIMENTOS");
-    String subcategoriaNombre = valor(ctx.formParam("subcategoriaNombre"), "Alimentos generales").trim();
     String descripcion = valor(ctx.formParam("descripcion"), "Necesidad registrada en plataforma").trim();
     int cantidad = Math.max(1, parsearEntero(ctx.formParam("cantidad"), 10));
     String periodoStr = valor(ctx.formParam("periodo"), "MENSUAL");
 
+    // Misma regla que en el deposito: la subcategoria sale del catalogo. Una
+    // necesidad de "Arros" nunca cruzaria con una donacion de "Arroz".
+    Optional<Subcategoria> oSub = buscarSubcategoriaDelFormulario(ctx);
+    if (oSub.isEmpty()) {
+      ctx.redirect("/entidad/necesidades?error=" + urlEncode(
+          "Elegí una subcategoría del catálogo para registrar la necesidad."));
+      return;
+    }
+    Subcategoria sub = oSub.get();
+    String subcategoriaNombre = sub.getNombre();
+
     if (descripcion.isBlank()) {
       descripcion = "Demanda de " + subcategoriaNombre;
     }
-
-    Categoria cat;
-    try {
-      cat = Categoria.valueOf(categoriaStr);
-    } catch (Exception e) {
-      cat = Categoria.ALIMENTOS;
-    }
-
-    Subcategoria sub = subcategoriaRepo.obtenerOCrear(
-        subcategoriaNombre, cat, cat != Categoria.ALIMENTOS, cat == Categoria.ALIMENTOS
-    );
 
     Necesidad nueva;
     if ("RECURRENTE".equalsIgnoreCase(tipoNecesidad)) {
@@ -530,14 +528,124 @@ public class WebPortalController {
     Usuario u = sesionManager.exigirRol(ctx, RolUsuario.ADMIN);
     if (u == null) return;
 
+    // Filtros y orden viajan por la URL para que la vista sea compartible,
+    // el boton "atras" funcione y recargar no pierda lo que la persona eligio.
+    EstadoDonacion estado = parsearEnum(EstadoDonacion.class, ctx.queryParam("estado"));
+    Categoria categoria = parsearEnum(Categoria.class, ctx.queryParam("categoria"));
+    Long donanteId = parsearIdOpcional(ctx.queryParam("donante"));
+    String orden = valor(ctx.queryParam("orden"), DonacionRepository.ORDEN_POR_DEFECTO);
+    boolean descendente = !"asc".equalsIgnoreCase(ctx.queryParam("dir"));
+    int pagina = Math.max(1, parsearEntero(ctx.queryParam("pagina"), 1));
+    int tamanio = Math.min(100, Math.max(5, parsearEntero(ctx.queryParam("tam"), 10)));
+
+    DonacionRepository.PaginaDonaciones resultado =
+        donacionRepo.buscarPaginado(estado, categoria, donanteId, orden, descendente, pagina, tamanio);
+
     Map<String, Object> model = modeloBase(ctx, "Administración de Depósito - DonaTrack");
     model.put("donantes", donanteRepo.obtenerTodos().stream().map(this::mapearDonanteVista).toList());
-    model.put("donaciones", donacionRepo.obtenerTodas().stream()
-        .sorted(Comparator.comparing(Donacion::getId, Comparator.nullsLast(Comparator.reverseOrder())))
-        .map(this::mapearDonacionVista)
-        .toList());
-    model.put("subcategorias", subcategoriaRepo.obtenerTodas());
+    model.put("donaciones", resultado.items().stream().map(this::mapearDonacionVista).toList());
+    model.put("subcategorias", subcategoriasVista());
+    model.put("categorias", List.of(Categoria.values()));
+    model.put("estados", List.of(EstadoDonacion.values()));
+
+    Map<String, String> filtros = new LinkedHashMap<>();
+    if (estado != null) { filtros.put("estado", estado.name()); }
+    if (categoria != null) { filtros.put("categoria", categoria.name()); }
+    if (donanteId != null) { filtros.put("donante", String.valueOf(donanteId)); }
+    filtros.put("tam", String.valueOf(tamanio));
+
+    model.put("filtroEstado", estado != null ? estado.name() : "");
+    model.put("filtroCategoria", categoria != null ? categoria.name() : "");
+    model.put("filtroDonante", donanteId != null ? String.valueOf(donanteId) : "");
+    model.put("hayFiltros", estado != null || categoria != null || donanteId != null);
+    model.put("tamanio", tamanio);
+    model.put("ordenActual", orden);
+    model.put("dirActual", descendente ? "desc" : "asc");
+    model.put("orden", enlacesDeOrden(filtros, orden, descendente));
+    model.put("paginacion", datosDePaginacion(filtros, orden, descendente, resultado));
+
     ctx.render("admin-deposito.hbs", model);
+  }
+
+  /** Subcategorias con su categoria, para que el combo se filtre al elegirla. */
+  private List<Map<String, Object>> subcategoriasVista() {
+    return subcategoriaRepo.obtenerTodas().stream()
+        .sorted(Comparator.comparing(Subcategoria::getNombre, String.CASE_INSENSITIVE_ORDER))
+        .map(sc -> {
+          Map<String, Object> m = new LinkedHashMap<>();
+          m.put("id", sc.getId());
+          m.put("nombre", sc.getNombre());
+          m.put("categoria", sc.getCategoria() != null ? sc.getCategoria().name() : "");
+          return m;
+        })
+        .toList();
+  }
+
+  /** Un enlace por columna ordenable: alterna la direccion y conserva los filtros. */
+  private Map<String, Map<String, String>> enlacesDeOrden(Map<String, String> filtros,
+                                                          String ordenActual, boolean descendente) {
+    Map<String, Map<String, String>> enlaces = new LinkedHashMap<>();
+    for (String columna : List.of("fecha", "id", "cantidad", "estado", "subcategoria", "donante")) {
+      boolean esLaActual = columna.equals(ordenActual);
+      // Si ya se esta ordenando por esta columna, el click invierte la direccion.
+      String direccion = (esLaActual && descendente) ? "asc" : "desc";
+      Map<String, String> datos = new LinkedHashMap<>();
+      datos.put("href", urlDeposito(filtros, columna, direccion, 1));
+      datos.put("icono", !esLaActual ? "bi-arrow-down-up text-muted"
+          : (descendente ? "bi-sort-down" : "bi-sort-up"));
+      enlaces.put(columna, datos);
+    }
+    return enlaces;
+  }
+
+  private Map<String, Object> datosDePaginacion(Map<String, String> filtros, String orden,
+                                                boolean descendente,
+                                                DonacionRepository.PaginaDonaciones resultado) {
+    String dir = descendente ? "desc" : "asc";
+    Map<String, Object> p = new LinkedHashMap<>();
+    p.put("pagina", resultado.pagina());
+    p.put("totalPaginas", resultado.totalPaginas());
+    p.put("total", resultado.total());
+    p.put("hayVariasPaginas", resultado.totalPaginas() > 1);
+    p.put("desde", resultado.total() == 0 ? 0 : (resultado.pagina() - 1) * resultado.tamanio() + 1);
+    p.put("hasta", Math.min((long) resultado.pagina() * resultado.tamanio(), resultado.total()));
+    p.put("hayAnterior", resultado.pagina() > 1);
+    p.put("haySiguiente", resultado.pagina() < resultado.totalPaginas());
+    p.put("hrefPrimera", urlDeposito(filtros, orden, dir, 1));
+    p.put("hrefAnterior", urlDeposito(filtros, orden, dir, resultado.pagina() - 1));
+    p.put("hrefSiguiente", urlDeposito(filtros, orden, dir, resultado.pagina() + 1));
+    p.put("hrefUltima", urlDeposito(filtros, orden, dir, resultado.totalPaginas()));
+    return p;
+  }
+
+  private String urlDeposito(Map<String, String> filtros, String orden, String dir, int pagina) {
+    StringBuilder url = new StringBuilder("/admin/deposito?orden=").append(orden)
+        .append("&dir=").append(dir)
+        .append("&pagina=").append(Math.max(1, pagina));
+    filtros.forEach((clave, valor) -> url.append("&").append(clave).append("=").append(urlEncode(valor)));
+    return url.toString();
+  }
+
+  private <E extends Enum<E>> E parsearEnum(Class<E> tipo, String valor) {
+    if (valor == null || valor.isBlank()) {
+      return null;
+    }
+    try {
+      return Enum.valueOf(tipo, valor.trim().toUpperCase());
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  private Long parsearIdOpcional(String valor) {
+    if (valor == null || valor.isBlank()) {
+      return null;
+    }
+    try {
+      return Long.parseLong(valor.trim());
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   /** 13.a POST Registrar persona donante desde el panel administrador */
@@ -613,23 +721,24 @@ public class WebPortalController {
     }
 
     String descripcionGeneral = valor(ctx.formParam("descripcionGeneral"), "Ingreso por depósito");
-    String categoriaStr = valor(ctx.formParam("categoria"), "ALIMENTOS");
-    String subcategoriaNombre = valor(ctx.formParam("subcategoriaNombre"), "Alimentos").trim();
     int cantidad = Math.max(1, parsearEntero(ctx.formParam("cantidad"), 10));
     String unidadMedida = valor(ctx.formParam("unidadMedida"), "unidades");
     String estadoBienStr = valor(ctx.formParam("esNuevo"), "true");
     String fechaVencStr = valor(ctx.formParam("fechaVencimiento"), "");
 
-    Categoria cat;
-    try {
-      cat = Categoria.valueOf(categoriaStr);
-    } catch (Exception e) {
-      cat = Categoria.ALIMENTOS;
+    // La subcategoria se elige del catalogo y viaja por id. Si no existe, la
+    // donacion no se registra: antes se creaba una nueva en silencio y un
+    // tipeo dejaba la donacion fuera del matchmaking sin ningun aviso.
+    Optional<Subcategoria> oSub = buscarSubcategoriaDelFormulario(ctx);
+    if (oSub.isEmpty()) {
+      ctx.redirect("/admin/deposito?error=" + urlEncode(
+          "Elegí una subcategoría del catálogo. Si la que necesitás no está, agregala con \"Nueva subcategoría\"."));
+      return;
     }
-
+    Subcategoria sub = oSub.get();
+    // La categoria la define la subcategoria elegida, que es su unica fuente.
+    Categoria cat = sub.getCategoria();
     boolean requiereEstado = (cat == Categoria.MOBILIARIO || cat == Categoria.VESTIMENTA);
-    boolean esPerecedero = (cat == Categoria.ALIMENTOS && !fechaVencStr.isBlank());
-    Subcategoria sub = subcategoriaRepo.obtenerOCrear(subcategoriaNombre, cat, requiereEstado, esPerecedero);
 
     Bien bien;
     if (!fechaVencStr.isBlank()) {
@@ -952,6 +1061,48 @@ public class WebPortalController {
   // =========================================================================
   // HELPERS DE MAPEO DE VISTAS Y COORDENADAS PARA MAPAS INTERACTIVOS
   // =========================================================================
+
+  /**
+   * Resuelve la subcategoria elegida en un formulario. Solo acepta un id del
+   * catalogo: no crea nada. Devolver Optional vacio y que el controlador
+   * redirija con un mensaje es deliberado, para que el dato invalido no entre.
+   */
+  private Optional<Subcategoria> buscarSubcategoriaDelFormulario(Context ctx) {
+    Long id = parsearIdOpcional(ctx.formParam("subcategoriaId"));
+    if (id == null) {
+      return Optional.empty();
+    }
+    return subcategoriaRepo.buscarPorId(id);
+  }
+
+  /**
+   * 13.c Alta explicita de subcategoria. Dar de alta una entrada del catalogo
+   * es un acto deliberado del administrador, no un efecto lateral de un tipeo.
+   */
+  public void adminCrearSubcategoria(Context ctx) {
+    Usuario u = sesionManager.exigirRol(ctx, RolUsuario.ADMIN);
+    if (u == null) return;
+
+    String nombre = valor(ctx.formParam("nombre"), "").trim();
+    Categoria categoria = parsearEnum(Categoria.class, ctx.formParam("categoria"));
+
+    if (nombre.isBlank() || categoria == null) {
+      ctx.redirect("/admin/deposito?error=" + urlEncode("Indicá un nombre y una categoría para la subcategoría."));
+      return;
+    }
+
+    Optional<Subcategoria> yaExiste = subcategoriaRepo.buscarPorNombre(nombre);
+    if (yaExiste.isPresent()) {
+      ctx.redirect("/admin/deposito?error=" + urlEncode("Ya existe una subcategoría llamada \"" + nombre + "\"."));
+      return;
+    }
+
+    boolean requiereEstado = (categoria == Categoria.MOBILIARIO || categoria == Categoria.VESTIMENTA);
+    boolean esPerecedero = (categoria == Categoria.ALIMENTOS);
+    subcategoriaRepo.guardar(new Subcategoria(nombre, categoria, requiereEstado, esPerecedero));
+
+    ctx.redirect("/admin/deposito?msg=" + urlEncode("Subcategoría \"" + nombre + "\" agregada al catálogo."));
+  }
 
   private Map<String, Object> modeloBase(Context ctx, String tituloPagina) {
     Map<String, Object> model = new HashMap<>();

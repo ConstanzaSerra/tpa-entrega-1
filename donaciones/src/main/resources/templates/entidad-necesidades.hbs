@@ -17,7 +17,9 @@
 
         <div class="mb-3">
           <label class="form-label fw-semibold">Categoría</label>
-          <select name="categoria" class="form-select">
+          <!-- Solo acota el combo de abajo; la categoria real la aporta la
+               subcategoria elegida. -->
+          <select id="catNecesidad" class="form-select">
             <option value="ALIMENTOS">ALIMENTOS</option>
             <option value="VESTIMENTA">VESTIMENTA</option>
             <option value="MOBILIARIO">MOBILIARIO</option>
@@ -26,12 +28,13 @@
 
         <div class="mb-3">
           <label class="form-label fw-semibold">Subcategoría *</label>
-          <input type="text" name="subcategoriaNombre" list="subcatList" class="form-control" required placeholder="Ej: Fideos secos, Sillas, Ropa de abrigo">
-          <datalist id="subcatList">
+          <!-- Del catalogo y por id: una necesidad de "Arros" no cruzaria
+               nunca con una donacion de "Arroz". -->
+          <select name="subcategoriaId" id="subNecesidad" class="form-select" required>
             {{#each subcategorias}}
-            <option value="{{nombre}}">{{categoria}}</option>
+            <option value="{{id}}" data-categoria="{{categoria}}">{{nombre}}</option>
             {{/each}}
-          </datalist>
+          </select>
         </div>
 
         <div class="row g-2 mb-3">
@@ -103,6 +106,34 @@
 {{/partial}}
 
 {{#partial "scripts"}}
+<script>
+  // El combo de subcategorias muestra solo las de la categoria elegida.
+  (function () {
+    var selCategoria = document.getElementById('catNecesidad');
+    var selSubcategoria = document.getElementById('subNecesidad');
+    if (!selCategoria || !selSubcategoria) { return; }
+
+    var todas = Array.prototype.slice.call(selSubcategoria.options);
+
+    function filtrar() {
+      var categoria = selCategoria.value;
+      selSubcategoria.innerHTML = '';
+      var visibles = todas.filter(function (o) { return o.dataset.categoria === categoria; });
+
+      if (visibles.length === 0) {
+        var vacia = document.createElement('option');
+        vacia.value = '';
+        vacia.textContent = 'No hay subcategorías para ' + categoria;
+        selSubcategoria.appendChild(vacia);
+        return;
+      }
+      visibles.forEach(function (o) { selSubcategoria.appendChild(o); });
+    }
+
+    selCategoria.addEventListener('change', filtrar);
+    filtrar();
+  })();
+</script>
 <script>
   function togglePeriodo() {
     const esRecurrente = document.getElementById('tipoNecesidad').value === 'RECURRENTE';

@@ -141,6 +141,7 @@ public class DonacionesApp {
     app.get("/admin/deposito", webController::adminDeposito);
     app.post("/admin/donantes", webController::adminCrearDonante);
     app.post("/admin/donaciones", webController::adminRegistrarCargaDonacion);
+    app.post("/admin/subcategorias", webController::adminCrearSubcategoria);
     app.post("/admin/donaciones/{id}/vencer", webController::adminMarcarVencida);
     app.get("/admin/matchmaking", webController::adminMatchmaking);
     app.post("/admin/donaciones/{id}/matchmaking", webController::adminEjecutarMatchmaking);

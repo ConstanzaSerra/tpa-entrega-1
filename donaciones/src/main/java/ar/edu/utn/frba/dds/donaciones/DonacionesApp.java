@@ -8,6 +8,9 @@ import ar.edu.utn.frba.dds.donaciones.controller.EntidadController;
 import ar.edu.utn.frba.dds.donaciones.controller.MatchmakingController;
 import ar.edu.utn.frba.dds.donaciones.controller.NecesidadController;
 import ar.edu.utn.frba.dds.donaciones.controller.NotificacionController;
+import ar.edu.utn.frba.dds.donaciones.matchmaking.AlgoritmoDonacion;
+import ar.edu.utn.frba.dds.donaciones.matchmaking.CompatibilidadSemantica;
+import ar.edu.utn.frba.dds.donaciones.matchmaking.PrioridadSubatendidos;
 import ar.edu.utn.frba.dds.donaciones.matchmaking.ProcesadorMatchmaking;
 import ar.edu.utn.frba.dds.donaciones.notificaciones.EnviadorPorMedioPreferido;
 import ar.edu.utn.frba.dds.donaciones.notificaciones.GestorDeNotificaciones;
@@ -33,7 +36,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
 import io.javalin.http.UnauthorizedResponse;
-
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -55,7 +58,14 @@ public class DonacionesApp {
     CargaDonacionRepository cargaDonacionRepository = new CargaDonacionRepository();
     UsuarioRepository usuarioRepository = new UsuarioRepository();
     NotificacionWebRepository notificacionWebRepository = new NotificacionWebRepository();
-    ProcesadorMatchmaking procesadorMatchmaking = new ProcesadorMatchmaking();
+    //ProcesadorMatchmaking procesadorMatchmaking = new ProcesadorMatchmaking();
+    //Refactor: se cambia para que sea más facil agregar nuevos algoritmos de matcheo
+    List<AlgoritmoDonacion> algoritmosActivos = List.of(
+        new CompatibilidadSemantica(),
+        new PrioridadSubatendidos()
+
+    );
+    ProcesadorMatchmaking procesadorMatchmaking = new ProcesadorMatchmaking(algoritmosActivos);
 
     // Gestor de notificaciones (Observer) con enviador externo + registrador de bandeja web
     GestorDeNotificaciones gestorNotificaciones = new GestorDeNotificaciones();

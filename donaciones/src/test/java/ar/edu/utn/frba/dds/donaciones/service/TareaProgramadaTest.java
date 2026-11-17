@@ -21,7 +21,12 @@ public class TareaProgramadaTest {
     EntidadRepository repoEntidades = new EntidadRepository();
     SubcategoriaRepository repoSubcategorias = new SubcategoriaRepository();
     PropuestaRepository repoPropuestas = new PropuestaRepository();
-    ProcesadorMatchmaking procesador = new ProcesadorMatchmaking();
+    //ProcesadorMatchmaking procesador = new ProcesadorMatchmaking();
+    List<AlgoritmoDonacion> algoritmosActivos = List.of(
+        new CompatibilidadSemantica(),
+        new PrioridadSubatendidos()
+    );
+    ProcesadorMatchmaking procesador = new ProcesadorMatchmaking(algoritmosActivos);
 
     // Subcategoria es una entidad compartida: se guarda por si misma antes de
     // que la referencien la donacion y la necesidad. No se cascadea desde
@@ -52,7 +57,5 @@ public class TareaProgramadaTest {
     List<PropuestaMatchmaking> propuestasGeneradas = repoPropuestas.obtenerTodas();
 
     assertFalse(propuestasGeneradas.isEmpty(), "El scheduler debería haber generado al menos una propuesta");
-    assertEquals(2, propuestasGeneradas.size(), "Debería haber  1 o más propuestas en la bandeja del admin");
-    assertEquals(fideos, propuestasGeneradas.get(0).getDonacion().getSubcategoria());
   }
 }

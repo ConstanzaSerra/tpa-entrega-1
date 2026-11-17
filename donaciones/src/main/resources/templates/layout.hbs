@@ -42,6 +42,17 @@
     .card-donatrack:hover {
       box-shadow: 0 6px 16px rgba(15, 23, 42, 0.09);
     }
+    .navbar-donatrack .nav-link.activo {
+      color: #ffffff;
+      font-weight: 600;
+      border-bottom: 2px solid #fbbf24;
+    }
+    .separador-nav {
+      width: 1px;
+      height: 1.5rem;
+      background-color: rgba(255, 255, 255, 0.25);
+      margin: 0 0.75rem;
+    }
     .badge-estado {
       font-weight: 600;
       padding: 0.4em 0.75em;
@@ -89,57 +100,61 @@
     <div class="collapse navbar-collapse" id="navMain">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link" href="/"><i class="bi bi-house-door me-1"></i>Inicio</a>
+          <a class="nav-link {{#if (eq rutaActual "/")}}activo{{/if}}" href="/"><i class="bi bi-house-door me-1"></i>Inicio</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/mapa-entregas"><i class="bi bi-geo-alt-fill me-1"></i>Mapa Entregas</a>
+          <a class="nav-link {{#if (eq rutaActual "/mapa-entregas")}}activo{{/if}}" href="/mapa-entregas"><i class="bi bi-geo-alt-fill me-1"></i>Mapa Entregas</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/galeria"><i class="bi bi-images me-1"></i>Fotos Entregas</a>
+          <a class="nav-link {{#if (eq rutaActual "/galeria")}}activo{{/if}}" href="/galeria"><i class="bi bi-images me-1"></i>Fotos Entregas</a>
         </li>
+
+        {{#if usuarioActual}}
+        <li class="nav-item d-none d-lg-flex align-items-center"><span class="separador-nav"></span></li>
+        {{/if}}
 
         {{#if esDonante}}
         <li class="nav-item">
-          <a class="nav-link text-info fw-semibold" href="/donante/donaciones"><i class="bi bi-gift me-1"></i>Mis Donaciones</a>
+          <a class="nav-link text-info fw-semibold {{#if (eq rutaActual "/donante/donaciones")}}activo{{/if}}" href="/donante/donaciones"><i class="bi bi-gift me-1"></i>Mis Donaciones</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-info fw-semibold" href="/donante/entidades"><i class="bi bi-building-heart me-1"></i>Entidades Beneficiarias</a>
+          <a class="nav-link text-info fw-semibold {{#if (eq rutaActual "/donante/entidades")}}activo{{/if}}" href="/donante/entidades"><i class="bi bi-building-heart me-1"></i>Entidades Beneficiarias</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-info fw-semibold" href="/donante/seguimiento"><i class="bi bi-truck me-1"></i>Seguimiento en Mapa</a>
+          <a class="nav-link text-info fw-semibold {{#if (eq rutaActual "/donante/seguimiento")}}activo{{/if}}" href="/donante/seguimiento"><i class="bi bi-truck me-1"></i>Seguimiento en Mapa</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/entidad/notificaciones"><i class="bi bi-bell me-1"></i>Notificaciones</a>
+          <a class="nav-link {{#if (eq rutaActual "/entidad/notificaciones")}}activo{{/if}}" href="/entidad/notificaciones"><i class="bi bi-bell me-1"></i>Notificaciones</a>
         </li>
         {{/if}}
 
         {{#if esEntidad}}
         <li class="nav-item">
-          <a class="nav-link text-warning fw-semibold" href="/entidad/necesidades"><i class="bi bi-clipboard2-plus me-1"></i>Mis Necesidades</a>
+          <a class="nav-link text-warning fw-semibold {{#if (eq rutaActual "/entidad/necesidades")}}activo{{/if}}" href="/entidad/necesidades"><i class="bi bi-clipboard2-plus me-1"></i>Mis Necesidades</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-warning fw-semibold" href="/entidad/donaciones"><i class="bi bi-box-seam me-1"></i>Donaciones Asignadas</a>
+          <a class="nav-link text-warning fw-semibold {{#if (eq rutaActual "/entidad/donaciones")}}activo{{/if}}" href="/entidad/donaciones"><i class="bi bi-box-seam me-1"></i>Donaciones Asignadas</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-warning fw-semibold" href="/entidad/seguimiento"><i class="bi bi-truck me-1"></i>Seguimiento en Mapa</a>
+          <a class="nav-link text-warning fw-semibold {{#if (eq rutaActual "/entidad/seguimiento")}}activo{{/if}}" href="/entidad/seguimiento"><i class="bi bi-truck me-1"></i>Seguimiento en Mapa</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-warning fw-semibold" href="/entidad/notificaciones"><i class="bi bi-bell-fill me-1"></i>Notificaciones</a>
+          <a class="nav-link text-warning fw-semibold {{#if (eq rutaActual "/entidad/notificaciones")}}activo{{/if}}" href="/entidad/notificaciones"><i class="bi bi-bell-fill me-1"></i>Notificaciones</a>
         </li>
         {{/if}}
 
         {{#if esAdmin}}
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle text-warning fw-semibold" href="#" role="button" data-bs-toggle="dropdown">
-            <i class="bi bi-shield-lock-fill me-1"></i>Administración
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/admin/deposito"><i class="bi bi-box-seam me-2"></i>Depósito: Donantes, Cargas y Vencimientos</a></li>
-            <li><a class="dropdown-item" href="/admin/matchmaking"><i class="bi bi-diagram-3 me-2"></i>Matchmaking y Asignación de Destino</a></li>
-            <li><a class="dropdown-item" href="/admin/camiones"><i class="bi bi-truck-front me-2"></i>Flota de Camiones y Rutas (GraphQL)</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/admin/importar-csv"><i class="bi bi-filetype-csv me-2"></i>Importar Donantes CSV (+10.000 filas)</a></li>
-          </ul>
+        <!-- Mismo patron que donante y entidad: secciones planas, sin desplegable.
+             Importar CSV no esta aca porque es una accion, no una seccion: vive
+             dentro de la pantalla de Deposito, que es donde estan los donantes. -->
+        <li class="nav-item">
+          <a class="nav-link text-warning fw-semibold {{#if (eq rutaActual "/admin/deposito")}}activo{{/if}}" href="/admin/deposito"><i class="bi bi-box-seam me-1"></i>Depósito</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-warning fw-semibold {{#if (eq rutaActual "/admin/matchmaking")}}activo{{/if}}" href="/admin/matchmaking"><i class="bi bi-diagram-3 me-1"></i>Matchmaking</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-warning fw-semibold {{#if (eq rutaActual "/admin/camiones")}}activo{{/if}}" href="/admin/camiones"><i class="bi bi-truck-front me-1"></i>Flota</a>
         </li>
         {{/if}}
       </ul>

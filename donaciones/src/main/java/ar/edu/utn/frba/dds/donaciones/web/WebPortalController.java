@@ -958,6 +958,8 @@ public class WebPortalController {
     model.put("tituloPagina", tituloPagina);
     model.put("msg", ctx.queryParam("msg"));
     model.put("error", ctx.queryParam("error"));
+    // Lo usa el layout para marcar en que seccion esta parada la persona.
+    model.put("rutaActual", ctx.path());
 
     sesionManager.obtenerUsuarioActual(ctx).ifPresent(u -> {
       model.put("usuarioActual", u);

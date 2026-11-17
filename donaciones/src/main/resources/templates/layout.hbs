@@ -17,6 +17,7 @@
     body {
       background-color: var(--dt-bg);
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 1.0625rem;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -53,6 +54,9 @@
       border-radius: 0.85rem;
       border: 2px solid #e2e8f0;
       z-index: 1;
+    }
+    main {
+      flex: 1 0 auto;
     }
     footer {
       margin-top: auto;
@@ -172,7 +176,7 @@
   {{#block "contenido"}}{{/block}}
 </main>
 
-<footer class="py-4 mt-5">
+<footer class="py-4">
   <div class="container">
     <div class="row align-items-center">
       <div class="col-md-6 mb-2 mb-md-0">
@@ -180,10 +184,6 @@
         <p class="small mb-0">Sistema de Gestión y Trazabilidad de Donaciones · Diseño de Sistemas (DDS)</p>
       </div>
       <div class="col-md-6 text-md-end small">
-        <a href="/" class="me-3">Inicio</a>
-        <a href="/galeria" class="me-3">Fotos de Entregas</a>
-        <a href="/mapa-entregas" class="me-3">Mapa Interactivo</a>
-        <a href="/registro" class="me-3">Registro</a>
         <a href="/legal">Información Legal y Privacidad</a>
       </div>
     </div>

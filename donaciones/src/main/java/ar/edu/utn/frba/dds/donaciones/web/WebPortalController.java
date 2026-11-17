@@ -910,7 +910,7 @@ public class WebPortalController {
     model.put("totalUsuariosActuales", usuarioRepo.obtenerTodos().size());
 
     if (errorGeneral != null) {
-      model.put("error", errorGeneral);
+      model.put("errorCsv", errorGeneral);
     }
 
     if (res != null) {

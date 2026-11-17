@@ -2,33 +2,58 @@
 <div class="row justify-content-center">
   <div class="col-lg-8">
     <div class="card card-donatrack p-4 p-md-5 bg-white">
-      <div class="d-flex justify-content-between align-items-start mb-3">
-        <div>
-          <h2 class="fw-bold mb-1"><i class="bi bi-filetype-csv text-primary me-2"></i>Importación Masiva de Donantes CSV</h2>
-          <p class="text-muted mb-0">Migración histórica de personas donantes desde archivos CSV de más de 10.000 filas, otorgándoles automáticamente su usuario en la plataforma (Requerimiento 17).</p>
-        </div>
-        <span class="badge bg-primary px-3 py-2">{{totalDonantesActuales}} Donantes · {{totalUsuariosActuales}} Usuarios</span>
-      </div>
 
       <style>
-        /* Bootstrap pinta <code> en rosa/rojo y el formato esperado se lee como
-           si fuera un error. Estos campos son informativos, no una falla. */
-        .formato-csv code { color: #334155; font-weight: 500; }
+        /* Los <code> de Bootstrap vienen en rosa/rojo y el formato esperado se
+           lee como si fuera un error. Es informativo, no una falla. */
+        .formato-csv code { color: #713f12; font-weight: 500; }
+        /* El selector de archivos nativo rotula en ingles y no se puede
+           traducir por HTML, asi que se arma uno propio. */
+        .input-archivo { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+        /* Contadores: contorno en vez de relleno, para no competir con el CTA. */
+        .badge-contador {
+          background-color: transparent;
+          border: 1.5px solid currentColor;
+          font-weight: 600;
+        }
+        .badge-donantes { color: var(--dt-primary); }
+        .badge-usuarios { color: var(--dt-accent); }
+
+        /* Zona de arrastre: es el control, no un adorno. */
+        .zona-csv {
+          border: 2px dashed #cbd5e1;
+          border-radius: 0.85rem;
+          background-color: #f8fafc;
+          padding: 2.5rem 1.5rem;
+          text-align: center;
+          cursor: pointer;
+          transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+        .zona-csv:hover { border-color: var(--dt-primary); background-color: #eef2ff; }
+        .zona-csv.arrastrando { border-color: var(--dt-primary); background-color: #e0e7ff; border-style: solid; }
+        .zona-csv.ocupada { cursor: progress; border-color: var(--dt-primary); background-color: #eef2ff; }
+        .zona-csv .icono { font-size: 2.5rem; color: var(--dt-primary); line-height: 1; }
       </style>
 
-      <div class="bg-light border rounded-3 p-3 mb-4 small formato-csv">
-        <div class="fw-bold mb-1"><i class="bi bi-table me-1"></i>Formato oficial esperado del archivo CSV:</div>
-        <code>TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono</code><br>
-        <code>HUMANA,DNI,12345678,Ana Pérez,ana@mail.com,+54 11 5555-5555</code><br>
-        <code>JURIDICA,CUIT,30-12345678-9,Arcos Plateados S.A.,contacto@empresa.com,+54 11 4444-4444</code>
+      <!-- Encabezado: titulo breve y los dos contadores separados por color -->
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+        <div>
+          <h2 class="fw-bold mb-1"><i class="bi bi-filetype-csv text-primary me-2"></i>Importar Donantes</h2>
+          <p class="text-muted mb-0">Migración de donantes y creación automática de sus usuarios.</p>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="badge badge-estado badge-contador badge-donantes">{{totalDonantesActuales}} donantes</span>
+          <span class="badge badge-estado badge-contador badge-usuarios">{{totalUsuariosActuales}} usuarios</span>
+        </div>
       </div>
 
-      {{#if error}}
+      {{#if errorCsv}}
       <div class="alert alert-warning d-flex align-items-start" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
         <div>
           <div class="fw-semibold">No se pudo importar el archivo</div>
-          <div class="small">{{error}}</div>
+          <div class="small">{{errorCsv}}</div>
         </div>
       </div>
       {{/if}}
@@ -47,7 +72,7 @@
           <div class="col"><div class="fs-5 fw-bold">{{resultado.filasImportadas}}</div><div class="text-muted">importadas</div></div>
           <div class="col"><div class="fs-5 fw-bold">{{resultado.donantesCreados}}</div><div class="text-muted">nuevas</div></div>
           <div class="col"><div class="fs-5 fw-bold">{{resultado.donantesActualizados}}</div><div class="text-muted">actualizadas</div></div>
-          <div class="col"><div class="fs-5 fw-bold">{{resultado.usuariosOtorgados}}</div><div class="text-muted">usuarios otorgados</div></div>
+          <div class="col"><div class="fs-5 fw-bold">{{resultado.usuariosOtorgados}}</div><div class="text-muted">usuarios creados</div></div>
           <div class="col"><div class="fs-5 fw-bold">{{resultado.filasConError}}</div><div class="text-muted">con error</div></div>
         </div>
         <div class="text-muted small mt-2">Tiempo de proceso: {{resultado.milisegundos}} ms.</div>
@@ -57,7 +82,7 @@
       {{#if errores}}
       <div class="mb-4">
         <div class="fw-semibold mb-2"><i class="bi bi-list-ul me-1"></i>Filas que no se pudieron importar</div>
-        <p class="small text-muted">El resto del archivo se importó igual. Corregí estas filas en el CSV y volvé a subirlo: las personas ya importadas se actualizan, no se duplican.</p>
+        <p class="small text-muted">El resto del archivo se importó igual. Corregí estas filas y volvé a subirlo: las personas ya importadas se actualizan, no se duplican.</p>
         <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
           <table class="table table-sm table-striped align-middle small mb-0">
             <thead class="table-light">
@@ -77,39 +102,111 @@
       </div>
       {{/if}}
 
-      <!-- Opción 1: Subir un archivo CSV desde la computadora -->
-      <form method="post" action="/admin/importar-csv" enctype="multipart/form-data" class="mb-4">
-        <label class="form-label fw-semibold">Seleccionar archivo <span class="formato-csv"><code>.csv</code></span> desde tu equipo</label>
-        <div class="input-group">
-          <input type="file" name="archivoCsv" accept=".csv,text/csv" class="form-control" required>
-          <button type="submit" class="btn btn-primary fw-semibold px-4">
-            <i class="bi bi-cloud-arrow-up-fill me-1"></i>Importar y Otorgar Usuarios
-          </button>
+      <!-- Acción principal de la pantalla -->
+      <form method="post" action="/admin/importar-csv" enctype="multipart/form-data" class="mb-4" id="formCsv">
+        <input type="file" id="archivoCsv" name="archivoCsv" accept=".csv,text/csv" class="input-archivo">
+
+        <div class="zona-csv" id="zonaCsv" role="button" tabindex="0"
+             aria-label="Arrastrá un archivo CSV acá o hacé clic para elegirlo">
+          <div class="icono mb-2"><i class="bi bi-cloud-arrow-up"></i></div>
+          <div class="fw-semibold" id="zonaTitulo">Arrastrá tu archivo CSV acá</div>
+          <div class="text-muted small" id="zonaAyuda">o hacé clic para elegirlo desde tu equipo</div>
         </div>
+
+        <noscript>
+          <div class="mt-2">
+            <label for="archivoCsv" class="btn btn-outline-secondary">Elegir archivo</label>
+            <button type="submit" class="btn btn-primary">Importar</button>
+          </div>
+        </noscript>
       </form>
 
-      <hr class="my-4">
-
-      <!-- Opción 2: Descargar o ejecutar en 1 clic un lote de prueba de 10.500 filas -->
-      <div class="d-flex flex-wrap justify-content-between align-items-center bg-light p-3 rounded-3">
+      <!-- Lote de prueba de 10.500 filas -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center bg-light p-3 rounded-3 mb-4">
         <div class="mb-2 mb-md-0">
-          <h6 class="fw-bold mb-1"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Prueba de Estrés (+10.000 Filas)</h6>
-          <p class="small text-muted mb-0">Podés descargar un archivo CSV de 10.500 filas o ejecutar su importación directa en lote.</p>
+          <h6 class="fw-bold mb-1"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Prueba de carga (+10.000 filas)</h6>
+          <p class="small text-muted mb-0">Descargá un archivo de 10.500 filas o ejecutá su importación directa.</p>
         </div>
         <div class="d-flex gap-2">
           <a href="/admin/importar-csv/ejemplo-10000.csv" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-download me-1"></i>Descargar CSV (10.500 filas)
+            <i class="bi bi-download me-1"></i>Descargar CSV
           </a>
           <form method="post" action="/admin/importar-csv">
             <input type="hidden" name="generarDemo10k" value="true">
-            <button type="submit" class="btn btn-success btn-sm fw-semibold">
-              <i class="bi bi-play-fill me-1"></i>Ejecutar Importación de 10.500 Filas Ahora
+            <button type="submit" class="btn btn-outline-success btn-sm fw-semibold">
+              <i class="bi bi-play-fill me-1"></i>Importar 10.500 filas
             </button>
           </form>
         </div>
       </div>
+
+      <!-- Referencia: al pie porque es material de consulta, no una acción -->
+      <div class="border border-warning-subtle bg-warning-subtle rounded-3 p-3 small formato-csv">
+        <div class="fw-semibold mb-1"><i class="bi bi-info-circle me-1"></i>Formato esperado del archivo</div>
+        <code>TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono</code><br>
+        <code>HUMANA,DNI,12345678,Ana Pérez,ana@mail.com,+54 11 5555-5555</code><br>
+        <code>JURIDICA,CUIT,30-12345678-9,Arcos Plateados S.A.,contacto@empresa.com,+54 11 4444-4444</code>
+      </div>
+
     </div>
   </div>
 </div>
+{{/partial}}
+
+{{#partial "scripts"}}
+<script>
+  // La zona de arrastre es el unico control: elegir el archivo y lanzar la
+  // importacion son un solo gesto. Al soltar o elegir, el formulario se envia.
+  (function () {
+    var zona = document.getElementById('zonaCsv');
+    var input = document.getElementById('archivoCsv');
+    var form = document.getElementById('formCsv');
+    var titulo = document.getElementById('zonaTitulo');
+    var ayuda = document.getElementById('zonaAyuda');
+    if (!zona || !input || !form) { return; }
+
+    function importar(nombre) {
+      zona.classList.remove('arrastrando');
+      zona.classList.add('ocupada');
+      titulo.textContent = 'Importando ' + nombre + '…';
+      ayuda.textContent = 'Un archivo grande puede tardar un rato. No cierres esta pantalla.';
+      form.submit();
+    }
+
+    zona.addEventListener('click', function () { input.click(); });
+    zona.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+    });
+
+    input.addEventListener('change', function () {
+      if (input.files.length > 0) { importar(input.files[0].name); }
+    });
+
+    ['dragenter', 'dragover'].forEach(function (evento) {
+      zona.addEventListener(evento, function (e) {
+        e.preventDefault();
+        zona.classList.add('arrastrando');
+      });
+    });
+
+    ['dragleave', 'dragend'].forEach(function (evento) {
+      zona.addEventListener(evento, function () { zona.classList.remove('arrastrando'); });
+    });
+
+    zona.addEventListener('drop', function (e) {
+      e.preventDefault();
+      if (!e.dataTransfer.files.length) { return; }
+      input.files = e.dataTransfer.files;
+      importar(e.dataTransfer.files[0].name);
+    });
+
+    // Sin esto, soltar el archivo fuera de la zona hace que el navegador lo abra.
+    ['dragover', 'drop'].forEach(function (evento) {
+      document.addEventListener(evento, function (e) {
+        if (!zona.contains(e.target)) { e.preventDefault(); }
+      });
+    });
+  })();
+</script>
 {{/partial}}
 {{> layout}}

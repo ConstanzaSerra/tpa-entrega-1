@@ -19,8 +19,68 @@
   </div>
 </div>
 
+<!-- Resumen Ejecutivo del Depósito (KPIs / Métricas Clave) -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-donatrack p-3 bg-white border-0 shadow-sm h-100">
+      <div class="d-flex align-items-center">
+        <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3 text-primary">
+          <i class="bi bi-box-seam fs-3"></i>
+        </div>
+        <div>
+          <span class="text-muted small fw-semibold">Stock en Depósito</span>
+          <h3 class="fw-bold mb-0 text-dark">{{resumen.enDeposito}}</h3>
+          <small class="text-success"><i class="bi bi-check-circle me-1"></i>Disponibles para asignar</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-donatrack p-3 bg-white border-0 shadow-sm h-100">
+      <div class="d-flex align-items-center">
+        <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3 text-info">
+          <i class="bi bi-truck fs-3"></i>
+        </div>
+        <div>
+          <span class="text-muted small fw-semibold">En Logística / En Camino</span>
+          <h3 class="fw-bold mb-0 text-dark">{{resumen.enTransito}}</h3>
+          <small class="text-muted"><i class="bi bi-arrow-right-circle me-1"></i>Asignadas o en viaje</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-donatrack p-3 bg-white border-0 shadow-sm h-100">
+      <div class="d-flex align-items-center">
+        <div class="rounded-3 bg-danger bg-opacity-10 p-3 me-3 text-danger">
+          <i class="bi bi-calendar-x fs-3"></i>
+        </div>
+        <div>
+          <span class="text-muted small fw-semibold">Donaciones Vencidas</span>
+          <h3 class="fw-bold mb-0 text-dark">{{resumen.vencidas}}</h3>
+          <small class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Descarte / Bajas</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card card-donatrack p-3 bg-white border-0 shadow-sm h-100">
+      <div class="d-flex align-items-center">
+        <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3 text-success">
+          <i class="bi bi-people fs-3"></i>
+        </div>
+        <div>
+          <span class="text-muted small fw-semibold">Donantes Registrados</span>
+          <h3 class="fw-bold mb-0 text-dark">{{resumen.totalDonantes}}</h3>
+          <small class="text-success"><i class="bi bi-person-check me-1"></i>Humanos y Jurídicos</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== INVENTARIO ===================== -->
-<div class="card card-donatrack p-4 bg-white">
+<div class="card card-donatrack p-4 bg-white" id="tab-inventario">
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <h5 class="fw-bold mb-0"><i class="bi bi-list-ul text-primary me-1"></i>Inventario de Donaciones</h5>
     <span class="text-muted small">
@@ -113,6 +173,7 @@
                 <i class="bi bi-diagram-3 me-1"></i>Asignar
               </a>
               <form method="post" action="/admin/donaciones/{{id}}/vencer" class="d-inline">
+                <input type="hidden" name="_csrf" value="{{../csrfToken}}">
                 <button type="submit" class="btn btn-outline-danger btn-sm">
                   <i class="bi bi-calendar-x me-1"></i>Vencida
                 </button>
@@ -157,6 +218,7 @@
 
 <!-- ===================== PANEL: NUEVO DONANTE ===================== -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="panelDonante" style="width: 480px;">
+  <div id="tab-donante"></div>
   <div class="offcanvas-header border-bottom">
     <h5 class="offcanvas-title fw-bold"><i class="bi bi-person-plus text-primary me-1"></i>Registrar Persona Donante</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
@@ -164,6 +226,7 @@
   <div class="offcanvas-body">
     <p class="small text-muted">Da de alta al donante y le otorga automáticamente su usuario de acceso.</p>
     <form method="post" action="/admin/donantes">
+      <input type="hidden" name="_csrf" value="{{csrfToken}}">
       <div class="row g-2">
         <div class="col-5">
           <label class="form-label small fw-semibold">Tipo</label>
@@ -218,6 +281,7 @@
 
 <!-- ===================== PANEL: REGISTRAR DONACIÓN ===================== -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="panelDonacion" style="width: 560px;">
+  <div id="tab-recepcion"></div>
   <div class="offcanvas-header border-bottom">
     <h5 class="offcanvas-title fw-bold"><i class="bi bi-box-arrow-in-down text-success me-1"></i>Registrar Donación Recibida</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
@@ -225,6 +289,7 @@
   <div class="offcanvas-body">
     <p class="small text-muted">Asociá los bienes recibidos a la persona donante; el sistema segmenta y registra la donación en estado EN_DEPOSITO.</p>
     <form method="post" action="/admin/donaciones">
+      <input type="hidden" name="_csrf" value="{{csrfToken}}">
       <div class="row g-2">
         <div class="col-12">
           <label class="form-label small fw-semibold">Persona Donante *</label>
@@ -302,6 +367,7 @@
       entrada solo si realmente no existe: dos nombres parecidos no se cruzan entre sí.
     </p>
     <form method="post" action="/admin/subcategorias">
+      <input type="hidden" name="_csrf" value="{{csrfToken}}">
       <label class="form-label small fw-semibold">Nombre *</label>
       <input type="text" name="nombre" class="form-control form-control-sm mb-2" required placeholder="Ej: Yerba mate">
       <label class="form-label small fw-semibold">Categoría *</label>
@@ -361,6 +427,16 @@
 
     selCategoria.addEventListener('change', filtrar);
     filtrar();
+
+    var params = new URLSearchParams(window.location.search);
+    var tabParam = params.get('tab');
+    if (tabParam === 'recepcion' || tabParam === 'ingreso') {
+      var pDon = document.getElementById('panelDonacion');
+      if (pDon && window.bootstrap) { bootstrap.Offcanvas.getOrCreateInstance(pDon).show(); }
+    } else if (tabParam === 'donante') {
+      var pDte = document.getElementById('panelDonante');
+      if (pDte && window.bootstrap) { bootstrap.Offcanvas.getOrCreateInstance(pDte).show(); }
+    }
   })();
 </script>
 {{/partial}}

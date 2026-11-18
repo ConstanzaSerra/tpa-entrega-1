@@ -55,6 +55,7 @@ public class LogisticaApp {
         // decide el planificador de Railway (ver Dockerfile.cron), que a la hora
         // configurada pega a /api/internal/cron/planificacion. La clase
         // PlanificacionScheduler se conserva para pruebas y ejecucion local.
+        PlanificacionScheduler scheduler = new PlanificacionScheduler(planificadorService);
 
         // Inicializo controladores REST + GraphQL (Entrega 4)
         CamionController camionController = new CamionController(camionRepository);

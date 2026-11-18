@@ -120,6 +120,31 @@ public class DonacionesApp {
       config.fileRenderer(new HandlebarsTemplateEngine());
     }).start(puerto);
 
+    // Filtro de Seguridad CSRF: Protección contra robo y falsificación de formularios (Cross-Site Request Forgery)
+    app.before(ctx -> {
+      String method = ctx.method().name();
+      if ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method)) {
+        String path = ctx.path();
+        // Excluir APIs de integración máquina a máquina, cron interno y webhooks
+        if (path.startsWith("/graphql") || path.startsWith("/health") || path.startsWith("/api/internal/")
+            || path.startsWith("/notificaciones/") || path.startsWith("/tareas/")
+            || path.equals("/donaciones") || (path.startsWith("/donaciones/") && !path.startsWith("/donante/"))
+            || path.equals("/donantes") || path.startsWith("/donantes/")
+            || path.equals("/entidades") || path.startsWith("/entidades/")) {
+          return;
+        }
+
+        // Proteger rutas de formularios del Cliente Liviano (Web MVC)
+        if (path.startsWith("/admin") || path.startsWith("/donante") || path.startsWith("/entidad")
+            || path.startsWith("/registro") || path.equals("/login") || path.equals("/logout")) {
+          if (!sesionManager.validarCsrfToken(ctx)) {
+            ctx.status(403).result("403 Prohibido - Ataque CSRF bloqueado: Token CSRF inválido o ausente. El formulario no puede enviarse desde un origen externo no autorizado.");
+            ctx.skipRemainingHandlers();
+          }
+        }
+      }
+    });
+
     // 4. Rutas del Cliente Liviano MVC (Entrega 4 - Pantallas 1 a 17)
     // Público (1–4)
     app.get("/", webController::landing);
@@ -137,6 +162,7 @@ public class DonacionesApp {
     // Persona Donante (5–7)
     app.get("/donante/donaciones", webController::donanteMisDonaciones);
     app.get("/donante/entidades", webController::donanteEntidades);
+    app.post("/donante/donar", webController::donanteRealizarDonacion);
     app.get("/donante/seguimiento", webController::donanteSeguimientoMapa);
 
     // Entidad Beneficiaria (8–12)
@@ -149,6 +175,8 @@ public class DonacionesApp {
 
     // Persona Administradora (13–17)
     app.get("/admin/deposito", webController::adminDeposito);
+    app.get("/admin/deposito/recepcion", ctx -> ctx.redirect("/admin/deposito?tab=recepcion"));
+    app.get("/admin/deposito/donantes", ctx -> ctx.redirect("/admin/deposito?tab=donante"));
     app.post("/admin/donantes", webController::adminCrearDonante);
     app.post("/admin/donaciones", webController::adminRegistrarCargaDonacion);
     app.post("/admin/subcategorias", webController::adminCrearSubcategoria);

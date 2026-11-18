@@ -7,6 +7,7 @@
       <p class="text-muted small mb-3">Declarar necesidades recurrentes (consumos periódicos) o extraordinarias (emergencias) para el algoritmo de matchmaking.</p>
 
       <form method="post" action="/entidad/necesidades">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="mb-3">
           <label class="form-label fw-semibold">Tipo de Necesidad</label>
           <select name="tipoNecesidad" id="tipoNecesidad" class="form-select" onchange="togglePeriodo()">
@@ -99,6 +100,28 @@
         <div class="alert alert-info mb-0">Aún no registraste necesidades materiales.</div>
         {{/each}}
       </div>
+
+      {{#if paginacion.mostrarPaginacion}}
+      <nav aria-label="Navegación de páginas" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+          <span>Mostrando necesidades {{paginacion.rangoInicio}} a {{paginacion.rangoFin}} de {{paginacion.totalItems}}</span>
+          <span>Página {{paginacion.paginaActual}} de {{paginacion.totalPaginas}}</span>
+        </div>
+        <ul class="pagination pagination-sm justify-content-center mb-0">
+          <li class="page-item {{#unless paginacion.tieneAnterior}}disabled{{/unless}}">
+            <a class="page-link" href="{{paginacion.urlAnterior}}">&laquo; Anterior</a>
+          </li>
+          {{#each paginacion.paginas}}
+          <li class="page-item {{#if activa}}active{{/if}}">
+            <a class="page-link" href="{{url}}">{{numero}}</a>
+          </li>
+          {{/each}}
+          <li class="page-item {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}">
+            <a class="page-link" href="{{paginacion.urlSiguiente}}">Siguiente &raquo;</a>
+          </li>
+        </ul>
+      </nav>
+      {{/if}}
       {{/if}}
     </div>
   </div>

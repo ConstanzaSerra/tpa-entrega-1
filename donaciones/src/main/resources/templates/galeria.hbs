@@ -33,5 +33,27 @@
   </div>
   {{/each}}
 </div>
+
+{{#if paginacion.mostrarPaginacion}}
+<nav aria-label="Navegación de galería" class="mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+    <span>Mostrando entregas {{paginacion.rangoInicio}} a {{paginacion.rangoFin}} de {{paginacion.totalItems}}</span>
+    <span>Página {{paginacion.paginaActual}} de {{paginacion.totalPaginas}}</span>
+  </div>
+  <ul class="pagination justify-content-center mb-0">
+    <li class="page-item {{#unless paginacion.tieneAnterior}}disabled{{/unless}}">
+      <a class="page-link" href="{{paginacion.urlAnterior}}">&laquo; Anterior</a>
+    </li>
+    {{#each paginacion.paginas}}
+    <li class="page-item {{#if activa}}active{{/if}}">
+      <a class="page-link" href="{{url}}">{{numero}}</a>
+    </li>
+    {{/each}}
+    <li class="page-item {{#unless paginacion.tieneSiguiente}}disabled{{/unless}}">
+      <a class="page-link" href="{{paginacion.urlSiguiente}}">Siguiente &raquo;</a>
+    </li>
+  </ul>
+</nav>
+{{/if}}
 {{/partial}}
 {{> layout}}

@@ -1,7 +1,7 @@
 {{#partial "contenido"}}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+<div class="encabezado-pagina mb-3">
   <div>
-    <h2 class="fw-bold mb-1"><i class="bi bi-building-heart text-primary me-2"></i>Entidades Beneficiarias Registradas</h2>
+    <h2 class="fw-bold mb-1"><i class="bi bi-house-heart text-primary me-2"></i>Entidades Beneficiarias Registradas</h2>
     <p class="text-muted mb-0">Explorá las organizaciones comunitarias registradas, sus necesidades materiales y realizá donaciones directas.</p>
   </div>
   <div class="d-flex gap-2">
@@ -21,12 +21,12 @@
       </div>
     </div>
     <div class="col-md-3">
-      <label class="form-label small fw-semibold">Categoría de Necesidad</label>
-      <select name="categoria" class="form-select">
+      <label class="form-label small fw-semibold" for="campo-categoria">Categoría de Necesidad</label>
+      <select id="campo-categoria" name="categoria" class="form-select">
         <option value="">Todas las categorías</option>
-        <option value="ALIMENTOS" {{#if (eq filtroCategoria "ALIMENTOS")}}selected{{/if}}>ALIMENTOS</option>
-        <option value="VESTIMENTA" {{#if (eq filtroCategoria "VESTIMENTA")}}selected{{/if}}>VESTIMENTA</option>
-        <option value="MOBILIARIO" {{#if (eq filtroCategoria "MOBILIARIO")}}selected{{/if}}>MOBILIARIO</option>
+        <option value="ALIMENTOS" {{#if (eq filtroCategoria "ALIMENTOS")}}selected{{/if}}>Alimentos</option>
+        <option value="VESTIMENTA" {{#if (eq filtroCategoria "VESTIMENTA")}}selected{{/if}}>Vestimenta</option>
+        <option value="MOBILIARIO" {{#if (eq filtroCategoria "MOBILIARIO")}}selected{{/if}}>Mobiliario</option>
       </select>
     </div>
     <div class="col-md-2">
@@ -73,7 +73,7 @@
           <i class="bi bi-clipboard2-pulse me-1"></i>Necesidades Materiales
         </h6>
         <!-- Filtro rápido por categoría para este beneficiario (Req. 4) -->
-        <div class="btn-group btn-group-sm filtro-necs-pills" role="group">
+        <div class="btn-group btn-group-sm flex-wrap filtro-necs-pills" role="group" aria-label="Filtrar necesidades">
           <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 active" onclick="filtrarNecsBeneficiario('{{id}}', 'TODAS', this)">Todas</button>
           <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" onclick="filtrarNecsBeneficiario('{{id}}', 'ALIMENTOS', this)">Alimentos</button>
           <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" onclick="filtrarNecsBeneficiario('{{id}}', 'VESTIMENTA', this)">Ropa</button>
@@ -90,8 +90,8 @@
              data-satisfecha="{{satisfecha}}">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div>
-              <span class="badge bg-secondary me-1">{{tipo}}</span>
-              <span class="badge bg-info-subtle text-info-emphasis border me-1">{{categoriaNombre}}</span>
+              <span class="badge bg-secondary me-1">{{legible tipo}}</span>
+              <span class="badge bg-info-subtle text-info-emphasis border me-1">{{legible categoriaNombre}}</span>
               <strong class="text-dark">{{subcategoriaNombre}}</strong>
               <small class="text-muted">({{detallePeriodo}})</small>
             </div>
@@ -110,9 +110,14 @@
 
           <!-- Botón en cada subcard para donar directamente a esta necesidad (Req. 7) -->
           <div class="d-flex justify-content-end">
+            <!-- Los datos van en atributos data-*: Handlebars los escapa y el JS los lee como texto.
+                 Antes iban dentro del onclick, y un nombre con comilla (ej. "Hogar D'Angelo")
+                 rompia el boton o permitia inyectar codigo (XSS). -->
             <button type="button"
-                    class="btn btn-sm btn-primary px-3 fw-semibold"
-                    onclick="abrirModalDonar('{{../id}}', '{{../razonSocial}}', '{{id}}', '{{subcategoriaNombre}}', '{{categoriaNombre}}', '{{faltante}}')">
+                    class="btn btn-sm btn-primary px-3 fw-semibold btn-donar"
+                    data-entidad-id="{{../id}}" data-entidad-nombre="{{../razonSocial}}"
+                    data-necesidad-id="{{id}}" data-subcategoria="{{subcategoriaNombre}}"
+                    data-categoria="{{legible categoriaNombre}}" data-faltante="{{faltante}}">
               <i class="bi bi-gift-fill me-1"></i>Donar a esta necesidad
             </button>
           </div>
@@ -178,7 +183,7 @@
           <div class="bg-light p-3 rounded-3 border mb-3">
             <div class="small text-muted mb-1">Entidad Beneficiaria Destino:</div>
             <h5 class="fw-bold mb-2 text-dark" id="modalEntidadNombre"></h5>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex flex-wrap align-items-center gap-2">
               <span class="badge bg-secondary" id="modalCategoriaBadge"></span>
               <span class="fw-bold fs-6 text-primary" id="modalSubcategoriaTexto"></span>
             </div>
@@ -187,12 +192,12 @@
 
           <div class="row g-2 mb-3">
             <div class="col-7">
-              <label class="form-label small fw-semibold">Cantidad a Donar *</label>
+              <label class="form-label small fw-semibold" for="modalCantidad">Cantidad a Donar *</label>
               <input type="number" name="cantidad" id="modalCantidad" class="form-control" min="1" value="10" required>
             </div>
             <div class="col-5">
-              <label class="form-label small fw-semibold">Unidad *</label>
-              <select name="unidadMedida" class="form-select">
+              <label class="form-label small fw-semibold" for="campo-unidadMedida">Unidad *</label>
+              <select id="campo-unidadMedida" name="unidadMedida" class="form-select">
                 <option value="unidades">unidades</option>
                 <option value="kg">kg</option>
                 <option value="paquetes">paquetes</option>
@@ -204,7 +209,7 @@
 
           <div class="alert alert-success-subtle border small mb-0">
             <i class="bi bi-check-circle-fill text-success me-1"></i>
-            Esta donación quedará registrada a tu nombre con estado <strong>ASIGNACION_REALIZADA</strong> y la entidad beneficiaria recibirá una notificación inmediata.
+            La donación queda registrada a tu nombre y asignada a esta entidad, que recibe una notificación en el momento.
           </div>
         </div>
         <div class="modal-footer bg-light">
@@ -314,6 +319,13 @@
     const modal = new bootstrap.Modal(document.getElementById('modalDonar'));
     modal.show();
   }
+
+  document.addEventListener('click', function (e) {
+    const boton = e.target.closest('.btn-donar');
+    if (!boton) return;
+    const d = boton.dataset;
+    abrirModalDonar(d.entidadId, d.entidadNombre, d.necesidadId, d.subcategoria, d.categoria, d.faltante);
+  });
 
   document.addEventListener('DOMContentLoaded', inicializarCards);
 </script>

@@ -1,5 +1,5 @@
 {{#partial "contenido"}}
-<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+<div class="encabezado-pagina mb-4">
   <div>
     <h2 class="fw-bold mb-1"><i class="bi bi-box-seam text-primary me-2"></i>Gestión de Depósito Central</h2>
     <p class="text-muted mb-0">Inventario de donaciones recibidas y control de vencimientos.</p>
@@ -29,7 +29,7 @@
         </div>
         <div>
           <span class="text-muted small fw-semibold">Stock en Depósito</span>
-          <h3 class="fw-bold mb-0 text-dark">{{resumen.enDeposito}}</h3>
+          <h3 class="fw-bold mb-0 text-dark">{{numero resumen.enDeposito}}</h3>
           <small class="text-success"><i class="bi bi-check-circle me-1"></i>Disponibles para asignar</small>
         </div>
       </div>
@@ -43,7 +43,7 @@
         </div>
         <div>
           <span class="text-muted small fw-semibold">En Logística / En Camino</span>
-          <h3 class="fw-bold mb-0 text-dark">{{resumen.enTransito}}</h3>
+          <h3 class="fw-bold mb-0 text-dark">{{numero resumen.enTransito}}</h3>
           <small class="text-muted"><i class="bi bi-arrow-right-circle me-1"></i>Asignadas o en viaje</small>
         </div>
       </div>
@@ -57,7 +57,7 @@
         </div>
         <div>
           <span class="text-muted small fw-semibold">Donaciones Vencidas</span>
-          <h3 class="fw-bold mb-0 text-dark">{{resumen.vencidas}}</h3>
+          <h3 class="fw-bold mb-0 text-dark">{{numero resumen.vencidas}}</h3>
           <small class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Descarte / Bajas</small>
         </div>
       </div>
@@ -71,7 +71,7 @@
         </div>
         <div>
           <span class="text-muted small fw-semibold">Donantes Registrados</span>
-          <h3 class="fw-bold mb-0 text-dark">{{resumen.totalDonantes}}</h3>
+          <h3 class="fw-bold mb-0 text-dark">{{numero resumen.totalDonantes}}</h3>
           <small class="text-success"><i class="bi bi-person-check me-1"></i>Humanos y Jurídicos</small>
         </div>
       </div>
@@ -93,26 +93,26 @@
     <input type="hidden" name="orden" value="{{ordenActual}}">
     <input type="hidden" name="dir" value="{{dirActual}}">
     <div class="col-sm-6 col-lg-3">
-      <label class="form-label small fw-semibold mb-1">Estado</label>
-      <select name="estado" class="form-select form-select-sm">
+      <label class="form-label small fw-semibold mb-1" for="campo-estado">Estado</label>
+      <select id="campo-estado" name="estado" class="form-select form-select-sm">
         <option value="">Todos</option>
         {{#each estados}}
-        <option value="{{this}}" {{#if (eq ../filtroEstado this)}}selected{{/if}}>{{this}}</option>
+        <option value="{{this}}" {{#if (eq ../filtroEstado this)}}selected{{/if}}>{{estadoTexto this}}</option>
         {{/each}}
       </select>
     </div>
     <div class="col-sm-6 col-lg-3">
-      <label class="form-label small fw-semibold mb-1">Categoría</label>
-      <select name="categoria" class="form-select form-select-sm">
+      <label class="form-label small fw-semibold mb-1" for="campo-categoria">Categoría</label>
+      <select id="campo-categoria" name="categoria" class="form-select form-select-sm">
         <option value="">Todas</option>
         {{#each categorias}}
-        <option value="{{this}}" {{#if (eq ../filtroCategoria this)}}selected{{/if}}>{{this}}</option>
+        <option value="{{this}}" {{#if (eq ../filtroCategoria this)}}selected{{/if}}>{{legible this}}</option>
         {{/each}}
       </select>
     </div>
     <div class="col-sm-6 col-lg-3">
-      <label class="form-label small fw-semibold mb-1">Donante</label>
-      <select name="donante" class="form-select form-select-sm">
+      <label class="form-label small fw-semibold mb-1" for="campo-donante">Donante</label>
+      <select id="campo-donante" name="donante" class="form-select form-select-sm">
         <option value="">Todos</option>
         {{#each donantes}}
         <option value="{{id}}" {{#if (eq ../filtroDonante id)}}selected{{/if}}>{{nombre}}</option>
@@ -120,8 +120,8 @@
       </select>
     </div>
     <div class="col-sm-3 col-lg-1">
-      <label class="form-label small fw-semibold mb-1">Filas</label>
-      <select name="tam" class="form-select form-select-sm">
+      <label class="form-label small fw-semibold mb-1" for="campo-tam">Filas</label>
+      <select id="campo-tam" name="tam" class="form-select form-select-sm">
         <option value="10" {{#if (eq tamanio 10)}}selected{{/if}}>10</option>
         <option value="25" {{#if (eq tamanio 25)}}selected{{/if}}>25</option>
         <option value="50" {{#if (eq tamanio 50)}}selected{{/if}}>50</option>
@@ -157,22 +157,23 @@
         {{#each donaciones}}
         <tr>
           <td><strong>#{{id}}</strong></td>
-          <td class="text-nowrap small text-muted">{{fechaRegistro}}</td>
+          <td class="text-nowrap small text-muted">{{fecha fechaRegistro}}</td>
           <td>
-            <span class="badge bg-secondary me-1">{{categoriaNombre}}</span>
+            <span class="badge bg-secondary me-1">{{legible categoriaNombre}}</span>
             <strong>{{subcategoriaNombre}}</strong>
           </td>
           <td class="text-nowrap">{{cantidad}} {{unidadMedida}}</td>
           <td>{{donanteNombre}}</td>
-          <td><span class="badge bg-primary">{{estado}}</span></td>
+          <td><span class="estado {{estadoClase estado}}">{{estadoTexto estado}}</span></td>
           <td>{{entidadNombre}}</td>
           <td class="text-end">
             {{#if esEnDeposito}}
             <div class="d-inline-flex gap-1">
-              <a href="/admin/matchmaking" class="btn btn-outline-primary btn-sm">
+              <a href="/admin/matchmaking#donacion-{{id}}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-diagram-3 me-1"></i>Asignar
               </a>
-              <form method="post" action="/admin/donaciones/{{id}}/vencer" class="d-inline">
+              <form method="post" action="/admin/donaciones/{{id}}/vencer" class="d-inline"
+                    data-confirmar="¿Marcar como vencida la donación #{{id}} ({{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}})? Sale del inventario y no se puede deshacer.">
                 <input type="hidden" name="_csrf" value="{{../csrfToken}}">
                 <button type="submit" class="btn btn-outline-danger btn-sm">
                   <i class="bi bi-calendar-x me-1"></i>Vencida
@@ -229,37 +230,37 @@
       <input type="hidden" name="_csrf" value="{{csrfToken}}">
       <div class="row g-2">
         <div class="col-5">
-          <label class="form-label small fw-semibold">Tipo</label>
+          <label class="form-label small fw-semibold" for="adminTipoDonante">Tipo</label>
           <select name="tipo" id="adminTipoDonante" class="form-select form-select-sm" onchange="toggleAdminDonante()">
             <option value="HUMANA">HUMANA</option>
             <option value="JURIDICA">JURIDICA</option>
           </select>
         </div>
         <div class="col-7">
-          <label class="form-label small fw-semibold">Correo Electrónico *</label>
-          <input type="email" name="email" class="form-control form-control-sm" required placeholder="donante@correo.com">
+          <label class="form-label small fw-semibold" for="campo-email">Correo Electrónico *</label>
+          <input id="campo-email" type="email" name="email" class="form-control form-control-sm" required placeholder="donante@correo.com">
         </div>
 
         <div class="col-6 adm-hum">
-          <label class="form-label small">Nombre</label>
-          <input type="text" name="nombre" class="form-control form-control-sm" placeholder="Carlos">
+          <label class="form-label small" for="campo-nombre">Nombre</label>
+          <input id="campo-nombre" type="text" name="nombre" class="form-control form-control-sm" placeholder="Carlos">
         </div>
         <div class="col-6 adm-hum">
-          <label class="form-label small">Apellido</label>
-          <input type="text" name="apellido" class="form-control form-control-sm" placeholder="López">
+          <label class="form-label small" for="campo-apellido">Apellido</label>
+          <input id="campo-apellido" type="text" name="apellido" class="form-control form-control-sm" placeholder="López">
         </div>
         <div class="col-6 adm-hum">
-          <label class="form-label small">DNI</label>
-          <input type="number" name="dni" class="form-control form-control-sm" placeholder="32000111">
+          <label class="form-label small" for="campo-dni">DNI</label>
+          <input id="campo-dni" type="number" name="dni" class="form-control form-control-sm" placeholder="32000111">
         </div>
 
         <div class="col-8 adm-jur d-none">
-          <label class="form-label small">Razón Social</label>
-          <input type="text" name="razonSocial" class="form-control form-control-sm" placeholder="Fundación Sur">
+          <label class="form-label small" for="campo-razonSocial">Razón Social</label>
+          <input id="campo-razonSocial" type="text" name="razonSocial" class="form-control form-control-sm" placeholder="Fundación Sur">
         </div>
         <div class="col-4 adm-jur d-none">
-          <label class="form-label small">Tipo Jurídico</label>
-          <select name="tipoJuridico" class="form-select form-select-sm">
+          <label class="form-label small" for="campo-tipoJuridico">Tipo Jurídico</label>
+          <select id="campo-tipoJuridico" name="tipoJuridico" class="form-select form-select-sm">
             <option value="EMPRESA">EMPRESA</option>
             <option value="ONG">ONG</option>
             <option value="INSTITUCION">INSTITUCION</option>
@@ -268,8 +269,8 @@
         </div>
 
         <div class="col-6">
-          <label class="form-label small">Teléfono</label>
-          <input type="text" name="telefono" class="form-control form-control-sm" placeholder="+54 11 5555-0000">
+          <label class="form-label small" for="campo-telefono">Teléfono</label>
+          <input id="campo-telefono" type="text" name="telefono" class="form-control form-control-sm" placeholder="+54 11 5555-0000">
         </div>
       </div>
       <button type="submit" class="btn btn-primary w-100 mt-3 fw-semibold">
@@ -292,30 +293,30 @@
       <input type="hidden" name="_csrf" value="{{csrfToken}}">
       <div class="row g-2">
         <div class="col-12">
-          <label class="form-label small fw-semibold">Persona Donante *</label>
-          <select name="donanteId" class="form-select form-select-sm" required>
+          <label class="form-label small fw-semibold" for="campo-donanteId">Persona Donante *</label>
+          <select id="campo-donanteId" name="donanteId" class="form-select form-select-sm" required>
             {{#each donantes}}
             <option value="{{id}}">#{{id}} - {{nombre}} ({{email}})</option>
             {{/each}}
           </select>
         </div>
         <div class="col-12">
-          <label class="form-label small fw-semibold">Descripción General de la Carga</label>
-          <input type="text" name="descripcionGeneral" class="form-control form-control-sm" value="Recepción en depósito Medrano" required>
+          <label class="form-label small fw-semibold" for="campo-descripcionGeneral">Descripción General de la Carga</label>
+          <input id="campo-descripcionGeneral" type="text" name="descripcionGeneral" class="form-control form-control-sm" placeholder="Ej: Colecta del club Atlético Medrano" required>
         </div>
 
         <div class="col-6">
-          <label class="form-label small fw-semibold">Categoría *</label>
+          <label class="form-label small fw-semibold" for="catDonacion">Categoría *</label>
           <!-- Solo acota el combo de abajo: la categoria real la define la
                subcategoria elegida, que es su unica fuente de verdad. -->
           <select id="catDonacion" class="form-select form-select-sm">
             {{#each categorias}}
-            <option value="{{this}}">{{this}}</option>
+            <option value="{{this}}">{{legible this}}</option>
             {{/each}}
           </select>
         </div>
         <div class="col-6">
-          <label class="form-label small fw-semibold">Subcategoría *</label>
+          <label class="form-label small fw-semibold" for="subDonacion">Subcategoría *</label>
           <select name="subcategoriaId" id="subDonacion" class="form-select form-select-sm" required>
             {{#each subcategorias}}
             <option value="{{id}}" data-categoria="{{categoria}}">{{nombre}}</option>
@@ -328,24 +329,28 @@
         </div>
 
         <div class="col-6">
-          <label class="form-label small fw-semibold">Cantidad *</label>
-          <input type="number" name="cantidad" class="form-control form-control-sm" min="1" value="25" required>
+          <label class="form-label small fw-semibold" for="campo-cantidad">Cantidad *</label>
+          <input id="campo-cantidad" type="number" name="cantidad" class="form-control form-control-sm" min="1" placeholder="Ej: 25" required>
         </div>
         <div class="col-6">
-          <label class="form-label small fw-semibold">Unidad *</label>
-          <input type="text" name="unidadMedida" class="form-control form-control-sm" value="unidades" required>
+          <label class="form-label small fw-semibold" for="campo-unidadMedida">Unidad *</label>
+          <input id="campo-unidadMedida" type="text" name="unidadMedida" class="form-control form-control-sm" value="unidades" list="unidadesSugeridas" required>
+          <!-- Sugerencias para que la misma unidad no se escriba de muchas formas (kg, Kg, kilos...) -->
+          <datalist id="unidadesSugeridas">
+            <option value="unidades"><option value="kg"><option value="litros"><option value="paquetes"><option value="cajas">
+          </datalist>
         </div>
 
         <div class="col-12">
-          <label class="form-label small">Estado del bien (Mobiliario / Vestimenta)</label>
-          <select name="esNuevo" class="form-select form-select-sm">
+          <label class="form-label small" for="campo-esNuevo">Estado del bien (Mobiliario / Vestimenta)</label>
+          <select id="campo-esNuevo" name="esNuevo" class="form-select form-select-sm">
             <option value="true">Artículo Nuevo</option>
             <option value="false">Artículo Usado en buen estado</option>
           </select>
         </div>
         <div class="col-12">
-          <label class="form-label small">Fecha de Vencimiento (si es perecedero)</label>
-          <input type="date" name="fechaVencimiento" class="form-control form-control-sm">
+          <label class="form-label small" for="campo-fechaVencimiento">Fecha de Vencimiento (si es perecedero)</label>
+          <input id="campo-fechaVencimiento" type="date" name="fechaVencimiento" class="form-control form-control-sm">
         </div>
       </div>
       <button type="submit" class="btn btn-success w-100 mt-3 fw-semibold">
@@ -368,12 +373,12 @@
     </p>
     <form method="post" action="/admin/subcategorias">
       <input type="hidden" name="_csrf" value="{{csrfToken}}">
-      <label class="form-label small fw-semibold">Nombre *</label>
-      <input type="text" name="nombre" class="form-control form-control-sm mb-2" required placeholder="Ej: Yerba mate">
-      <label class="form-label small fw-semibold">Categoría *</label>
-      <select name="categoria" class="form-select form-select-sm mb-3" required>
+      <label class="form-label small fw-semibold" for="campo-nombre-2">Nombre *</label>
+      <input id="campo-nombre-2" type="text" name="nombre" class="form-control form-control-sm mb-2" required placeholder="Ej: Yerba mate">
+      <label class="form-label small fw-semibold" for="campo-categoria-2">Categoría *</label>
+      <select id="campo-categoria-2" name="categoria" class="form-select form-select-sm mb-3" required>
         {{#each categorias}}
-        <option value="{{this}}">{{this}}</option>
+        <option value="{{this}}">{{legible this}}</option>
         {{/each}}
       </select>
       <button type="submit" class="btn btn-primary w-100 fw-semibold">

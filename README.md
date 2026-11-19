@@ -37,12 +37,12 @@ Al iniciar `DonacionesApp`, si la base está vacía se cargan automáticamente d
 ## Cómo Ejecutar el Proyecto
 
 ### Opción A: Ejecución Directa (sin requerir Docker instalado)
-Ambos servicios detectan automáticamente si PostgreSQL está disponible en `localhost:5432`; si no lo está, utilizan **HSQLDB en memoria** automáticamente para que puedas levantar y probar toda la interfaz web de inmediato:
+Los servicios necesitan una base PostgreSQL: si no pueden conectarse, **no arrancan** (*fail fast*), para que nunca quede un servicio funcionando sobre una base equivocada. Para probar sin PostgreSQL hay que pedir explícitamente la base en memoria (HSQLDB):
 
 ```bash
 mvn clean package
-java -jar logistica/target/tpa-logistica-1.0-SNAPSHOT.jar
-java -jar donaciones/target/tpa-donaciones-1.0-SNAPSHOT.jar
+PERSISTENCE_UNIT=simple-persistence-unit java -jar logistica/target/tpa-logistica-1.0-SNAPSHOT.jar
+PERSISTENCE_UNIT=simple-persistence-unit java -jar donaciones/target/tpa-donaciones-1.0-SNAPSHOT.jar
 ```
 Luego abrir en el navegador: **http://localhost:8080**
 
@@ -54,11 +54,15 @@ docker compose up --build
 - Servicio de Logística + GraphQL: `http://localhost:8081/graphql`
 - pgAdmin 4: `http://localhost:5050`
 
-### Opción C: Despliegue en Nube (Render / Railway / Neon PostgreSQL)
-Se incluye el blueprint [`render.yaml`](render.yaml) y los `Dockerfile` multi-stage en [`donaciones/Dockerfile`](donaciones/Dockerfile) y [`logistica/Dockerfile`](logistica/Dockerfile). Variables de entorno soportadas:
+### Opción C: Despliegue en Nube (Railway)
+El sistema está desplegado en **Railway** (PaaS). Cada servicio se construye con su `Dockerfile` multi-etapa ([`donaciones/Dockerfile`](donaciones/Dockerfile), [`logistica/Dockerfile`](logistica/Dockerfile)): la etapa de build corre `mvn clean package` y la imagen final solo lleva el JRE y el `.jar`. Las tareas programadas usan `Dockerfile.cron` con el *Cron Schedule* de Railway.
+
+La interfaz completa entre el repositorio y Railway (qué define el repo, qué se configura en el panel y qué variables usa cada servicio) está en la [sección 7 de las justificaciones](docs/justificaciones-entrega-4.md#7-despliegue-en-nube--contenedores-requerimiento-detallado-4). Variables principales:
 - `PORT`: puerto HTTP del servicio (`8080` / `8081`).
-- `JDBC_DATABASE_URL`, `DB_USER`, `DB_PASSWORD`: conexión JDBC a PostgreSQL cloud.
+- `JDBC_DATABASE_URL`, `DB_USER`, `DB_PASSWORD`: conexión JDBC a PostgreSQL.
 - `LOGISTICA_URL` (en `donaciones`) y `DONACIONES_URL` (en `logistica`).
+- `CRON_API_KEY`: clave de los endpoints internos `/api/internal/cron/*`.
+- `MOSTRAR_ACCESOS_DEMO` (opcional): con `true`, el login muestra los botones de acceso rápido de demo. En producción quedan ocultos.
 
 ---
 

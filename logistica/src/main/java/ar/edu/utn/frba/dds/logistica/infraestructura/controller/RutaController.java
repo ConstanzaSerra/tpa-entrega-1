@@ -99,7 +99,7 @@ public class RutaController {
         
         try {
           //deberia ser un metodo de la ruta
-            List<Entrega> entregas = ruta.iniciar();
+            List<Entrega> entregas = ruta.iniciar(rutaRepository.buscarTodas());
             
             List<EntregaAfectadaDTO> entregasAfectadas = new ArrayList<>();
             

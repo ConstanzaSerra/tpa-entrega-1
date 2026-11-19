@@ -97,10 +97,66 @@ Para el requerimiento 17 de la Persona Administradora:
 
 ## 7. Despliegue en Nube / Contenedores (Requerimiento Detallado 4)
 
-Se preparó el sistema para las dos modalidades admitidas por la cátedra:
-1. **Despliegue Cloud PaaS (Render / Railway + Neon PostgreSQL)**:
-   - Se incluyeron `donaciones/Dockerfile`, `logistica/Dockerfile` (multi-stage build con Maven 3.9 + Eclipse Temurin JRE 17 Alpine) y el blueprint `render.yaml`.
-   - `EntityManagerProvider` en ambos microservicios lee dinámicamente `JDBC_DATABASE_URL`, `DB_USER` y `DB_PASSWORD`, permitiendo conectarse a cualquier base PostgreSQL administrada en la nube (Neon.tech, Supabase, Render PostgreSQL) o usar automáticamente HSQLDB en memoria cuando se ejecuta localmente sin Docker.
-2. **Despliegue Local Contenerizado + Exposición Pública (Docker Compose / Cloudflare Tunnels)**:
-   - `docker-compose.yml` levanta la arquitectura completa (`db`, `pgadmin`, `donaciones`, `logistica`) en una red interna donde `donaciones` y `logistica` se comunican vía GraphQL (`http://logistica:8081/graphql` y `http://donaciones:8080/graphql`).
-   - Puede exponerse públicamente al instante mediante `cloudflared tunnel --url http://localhost:8080`.
+### 7.1 Dónde está desplegado
+
+El sistema está desplegado en **Railway**, un proveedor **PaaS**: se le entrega el código y la plataforma se encarga de construir, ejecutar, reiniciar y publicar los servicios con HTTPS. El proyecto de Railway tiene:
+
+| Servicio en Railway | Carpeta raíz del repo | Cómo se construye | Qué hace |
+|---|---|---|---|
+| `donaciones` | `donaciones/` | `donaciones/Dockerfile` | Cliente liviano MVC, API GraphQL de donaciones. Único servicio público. |
+| `logistica` | `logistica/` | `logistica/Dockerfile` | Camiones, rutas, GPS y API GraphQL de logística. |
+| Cron de donaciones | `donaciones/` | `donaciones/Dockerfile.cron` | Dispara el matchmaking nocturno y la detección de inactividad. |
+| Cron de logística | `logistica/` | `logistica/Dockerfile.cron` | Dispara la planificación de rutas. |
+| Base de datos | — | Servicio administrado | PostgreSQL. ⚠ COMPLETAR: Railway PostgreSQL o Neon. |
+
+### 7.2 Interfaz entre el repositorio y Railway
+
+Qué queda definido **en el repositorio** y qué se configura **en el panel de Railway**:
+
+| Qué | Dónde se define |
+|---|---|
+| Cómo se compila (el equivalente a `npm run build`) | En el repo: etapa 1 de cada `Dockerfile`, `RUN mvn clean package -DskipTests` |
+| Cómo se arranca (el equivalente a `npm start`) | En el repo: `ENTRYPOINT ["java", "-jar", "app.jar"]` |
+| Imagen final y versión de Java | En el repo: etapa 2, `eclipse-temurin:17-jre-alpine` (solo el JRE y el `.jar`) |
+| Qué tareas corre cada cron | En el repo: `docker/ejecutar-tareas.sh` de cada servicio |
+| Qué carpeta es cada servicio (*Root Directory*) | Panel de Railway |
+| Qué Dockerfile usa el cron (`Dockerfile.cron`) | Panel de Railway (*Dockerfile Path*) |
+| Cada cuánto corren los cron (*Cron Schedule*) | Panel de Railway. ⚠ COMPLETAR horarios |
+| Variables de entorno y secretos | Panel de Railway (nunca en el repo) |
+| Cuándo se redespliega | Panel de Railway: cada push a la rama conectada |
+
+Railway no necesita un comando de build aparte: **si encuentra un `Dockerfile` en la carpeta del servicio, siempre construye con él**. Por eso el `Dockerfile` es el contrato entre el repo y la plataforma. Es el mismo archivo que usa `docker compose` en local, así que lo que anda en local se construye igual en la nube.
+
+**Build multi-etapa.** La primera etapa usa una imagen con Maven para compilar. La segunda copia únicamente el `.jar` sobre una imagen con solo el JRE. Así la imagen que corre en producción no incluye Maven ni el código fuente: es más liviana y expone menos superficie.
+
+**Variables de entorno:**
+
+| Variable | Servicio | Para qué |
+|---|---|---|
+| `PORT` | ambos | Puerto HTTP (Railway lo asigna) |
+| `JDBC_DATABASE_URL`, `DB_USER`, `DB_PASSWORD` | ambos | Conexión a PostgreSQL. Si faltan, el servicio no arranca (*fail fast*) |
+| `LOGISTICA_URL` | donaciones y su cron | Dirección del servicio de logística |
+| `DONACIONES_URL` | logística y cron de donaciones | Dirección del servicio de donaciones |
+| `CRON_API_KEY` | servicios y cron | Clave que exigen los endpoints `/api/internal/cron/*` |
+| `MOSTRAR_ACCESOS_DEMO` | donaciones | Opcional. Con `true` el login muestra los accesos rápidos de demo. Por defecto están ocultos, porque exponen contraseñas |
+
+**Tareas programadas.** El contenedor cron no tiene un demonio `cron` adentro: Railway lo enciende a la hora configurada, el script hace un `POST` al endpoint interno con la clave `CRON_API_KEY` y el contenedor termina. Así el servicio principal no necesita un temporizador propio que se pierda en cada reinicio.
+
+**¿Por qué no hay un `railway.json` en el repo?** Railway marcó como obsoleto su archivo de configuración (`railway.json` / `railway.toml`) y deja de leerlo el 1/12/2026. El reemplazo es un archivo de infraestructura como código en TypeScript (`.railway/railway.ts`), que no tiene sentido en un proyecto Java. Por eso lo que el `Dockerfile` no cubre se documenta en esta sección.
+
+### 7.3 Comparación de opciones evaluadas
+
+| Opción | Tipo | A favor | En contra |
+|---|---|---|---|
+| **Railway** + PostgreSQL administrado (elegida) | PaaS | Despliegue directo desde GitHub, construye con nuestro `Dockerfile`, HTTPS incluido, tareas programadas nativas | Plan con crédito limitado. Menos control sobre la máquina. Dependencia de un proveedor extranjero |
+| Render + Neon / Supabase | PaaS | Similar a Railway, con plan gratuito | En el plan gratuito el servicio se duerme por inactividad (*cold start*) |
+| Planes gratuitos de AWS / Azure / Oracle | IaaS | Control total de la máquina virtual | Hay que instalar y mantener el sistema operativo, Java, certificados y seguridad. Suelen pedir tarjeta de crédito |
+| Servidores del DISILAB | Infraestructura de la facultad | Los datos quedan en la universidad | Depende de coordinar acceso y disponibilidad |
+| Local + Cloudflare Tunnel | Equipo propio | Máxima **soberanía digital**: los datos no salen de nuestro equipo | Si se apaga la máquina, se cae el sistema. La cátedra lo acepta solo bajo condiciones |
+
+Elegimos un PaaS porque el objetivo de la entrega es el diseño del sistema, no administrar servidores. A cambio, los datos quedan en infraestructura de una empresa extranjera, bajo sus condiciones y su jurisdicción. Esa es la contracara en términos de privacidad y soberanía digital frente a las opciones locales o de la facultad.
+
+### 7.4 Ejecución local
+
+- `docker-compose.yml` levanta la arquitectura completa (`db`, `pgadmin`, `donaciones`, `logistica`) en una red interna. `donaciones` y `logistica` se comunican vía GraphQL (`http://logistica:8081/graphql` y `http://donaciones:8080/graphql`).
+- Sin Docker, los servicios necesitan una base configurada: si no hay conexión, no arrancan (*fail fast*). Para pruebas rápidas se puede elegir explícitamente la unidad de persistencia en memoria (`PERSISTENCE_UNIT=simple-persistence-unit`).

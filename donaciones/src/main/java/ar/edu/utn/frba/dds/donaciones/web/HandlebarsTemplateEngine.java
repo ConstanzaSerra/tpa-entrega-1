@@ -29,6 +29,9 @@ public class HandlebarsTemplateEngine implements FileRenderer {
       Object param = options.param(0, null);
       return Objects.equals(String.valueOf(context), String.valueOf(param));
     });
+
+    // Estados, categorias, fechas y numeros legibles: {{estadoTexto estado}}, {{fecha fechaRegistro}}...
+    VistaHelpers.register(this.handlebars);
   }
 
   @NotNull

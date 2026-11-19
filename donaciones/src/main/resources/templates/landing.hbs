@@ -8,45 +8,45 @@
       <h1 class="display-5 fw-bold mb-3">Trazabilidad transparente para cada donación solidaria</h1>
       <p class="lead mb-4 opacity-90">
         <strong>DonaTrack</strong> conecta a personas donantes y organizaciones con comedores, escuelas rurales y hospitales comunitarios,
-        garantizando el seguimiento en tiempo real desde la recepción en depósito hasta la entrega final.
+        con seguimiento de cada donación desde que llega al depósito hasta que se entrega.
       </p>
       <div class="d-flex flex-wrap gap-2">
         <a href="/registro" class="btn btn-warning btn-lg fw-semibold text-dark px-4">
-          <i class="bi bi-building-heart me-2 text-danger"></i>Registrar Entidad Beneficiaria
+          <i class="bi bi-house-heart me-2 text-danger"></i>Registrar Entidad Beneficiaria
         </a>
         <a href="/mapa-entregas" class="btn btn-light btn-lg px-4">
           <i class="bi bi-geo-alt-fill me-2 text-primary"></i>Mapa de Entregas Realizadas
         </a>
         <a href="/galeria" class="btn btn-outline-light btn-lg px-4">
-          <i class="bi bi-camera-fill me-2"></i>Ver Fotos de Entregas (Sin Login)
+          <i class="bi bi-camera-fill me-2"></i>Ver fotos de entregas
         </a>
       </div>
     </div>
     <div class="col-lg-4 mt-4 mt-lg-0">
       <div class="card bg-white text-dark border-0 shadow p-3 rounded-4">
-        <h6 class="fw-bold text-uppercase text-muted small mb-3"><i class="bi bi-graph-up-arrow me-1"></i>Impacto en Tiempo Real</h6>
+        <h6 class="fw-bold text-uppercase text-muted small mb-3"><i class="bi bi-graph-up-arrow me-1"></i>Impacto hasta hoy</h6>
         <div class="row g-2 text-center">
           <div class="col-6">
             <div class="p-3 bg-light rounded-3">
-              <div class="fs-2 fw-bold text-primary">{{totalDonaciones}}</div>
+              <div class="fs-2 fw-bold text-primary">{{numero totalDonaciones}}</div>
               <div class="small text-muted">Donaciones Registradas</div>
             </div>
           </div>
           <div class="col-6">
             <div class="p-3 bg-light rounded-3">
-              <div class="fs-2 fw-bold text-success">{{totalEntregadas}}</div>
+              <div class="fs-2 fw-bold text-success">{{numero totalEntregadas}}</div>
               <div class="small text-muted">Entregas Confirmadas</div>
             </div>
           </div>
           <div class="col-6">
             <div class="p-3 bg-light rounded-3">
-              <div class="fs-2 fw-bold text-indigo">{{totalDonantes}}</div>
+              <div class="fs-2 fw-bold text-indigo">{{numero totalDonantes}}</div>
               <div class="small text-muted">Personas Donantes</div>
             </div>
           </div>
           <div class="col-6">
             <div class="p-3 bg-light rounded-3">
-              <div class="fs-2 fw-bold text-warning">{{totalEntidades}}</div>
+              <div class="fs-2 fw-bold text-warning">{{numero totalEntidades}}</div>
               <div class="small text-muted">Entidades Beneficiarias</div>
             </div>
           </div>
@@ -81,7 +81,7 @@
       <div class="fs-2 text-danger mb-2"><i class="bi bi-truck"></i></div>
       <h5 class="fw-bold">3. Logística GPS y Evidencia</h5>
       <p class="text-muted small mb-0">
-        Seguimiento satelital en vivo de los camiones de reparto y confirmación de recepción con respaldo fotográfico por parte de cada entidad beneficiaria.
+        Seguimiento en el mapa de los camiones de reparto y confirmación de recepción con respaldo fotográfico por parte de cada entidad beneficiaria.
       </p>
     </div>
   </div>
@@ -103,16 +103,20 @@
   {{#each entregasDestacadas}}
   <div class="col-md-4">
     <div class="card card-donatrack h-100 overflow-hidden">
-      <img src="{{fotoPrincipal}}" class="card-img-top" alt="Foto donación entregada" style="height: 200px; object-fit: cover;">
+      {{#if fotoPrincipal}}
+      <img src="{{fotoPrincipal}}" class="card-img-top" alt="Foto de {{subcategoriaNombre}} recibida por {{entidadNombre}}" style="height: 200px; object-fit: cover;">
+      {{else}}
+      <div class="foto-pendiente card-img-top" style="height: 200px;"><i class="bi bi-camera"></i>Entrega sin foto registrada</div>
+      {{/if}}
       <div class="card-body">
-        <span class="badge bg-success mb-2"><i class="bi bi-check2-circle me-1"></i>ENTREGADA</span>
-        <span class="badge bg-secondary mb-2">{{categoriaNombre}}</span>
+        <span class="estado estado-entregada mb-2"><i class="bi bi-check2-circle me-1"></i>Entregada</span>
+        <span class="badge bg-secondary mb-2">{{legible categoriaNombre}}</span>
         <h6 class="fw-bold mb-1">{{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</h6>
         <p class="small text-muted mb-2">
           <i class="bi bi-building me-1"></i><strong>Destino:</strong> {{entidadNombre}}<br>
           <i class="bi bi-geo-alt me-1"></i>{{entidadDireccion}}<br>
           <i class="bi bi-person-heart me-1"></i><strong>Donante:</strong> {{donanteNombre}}<br>
-          <i class="bi bi-truck me-1"></i><strong>Camión:</strong> {{patenteCamion}} ({{fechaEntrega}})
+          <i class="bi bi-calendar-check me-1"></i><strong>Entregada:</strong> {{fecha fechaEntrega}}{{#if patenteCamion}} · camión {{patenteCamion}}{{/if}}
         </p>
       </div>
     </div>

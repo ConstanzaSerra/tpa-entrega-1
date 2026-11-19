@@ -107,7 +107,7 @@ public class WebPortalController {
     List<Map<String, Object>> entregas = armarEntregasEntregadasVista();
     model.put("entregas", entregas);
     try {
-      model.put("marcadoresJson", objectMapper.writeValueAsString(entregas));
+      model.put("marcadoresJson", jsonParaScript(entregas));
     } catch (Exception e) {
       model.put("marcadoresJson", "[]");
     }
@@ -221,6 +221,8 @@ public class WebPortalController {
   /** 4. Vista de Inicio de Sesión */
   public void mostrarLogin(Context ctx) {
     Map<String, Object> model = modeloBase(ctx, "Iniciar Sesión - DonaTrack");
+    // Los botones de acceso rapido muestran contrasenas: solo con MOSTRAR_ACCESOS_DEMO=true
+    model.put("mostrarAccesosDemo", "true".equalsIgnoreCase(System.getenv("MOSTRAR_ACCESOS_DEMO")));
     ctx.render("login.hbs", model);
   }
 
@@ -558,6 +560,24 @@ public class WebPortalController {
     }
 
     Donacion d = oDonacion.get();
+
+    // Una entidad solo puede confirmar donaciones asignadas a ella: sin este chequeo,
+    // cambiando el numero en la URL se podia confirmar la donacion de otra entidad.
+    if (u.getRol() == RolUsuario.ENTIDAD) {
+      EntidadBeneficiaria propia = resolverEntidadDeUsuario(u);
+      if (propia == null || d.getEntidadAsignada() == null
+          || !propia.getId().equals(d.getEntidadAsignada().getId())) {
+        ctx.redirect("/entidad/donaciones?error=" + urlEncode("La donación #" + donacionId + " no está asignada a tu entidad."));
+        return;
+      }
+    }
+    // Se recibe lo que llego: la donacion tiene que estar en camino (la ruta del camion ya inicio).
+    if (!puedeConfirmarRecepcion(d)) {
+      ctx.redirect("/entidad/donaciones?error=" + urlEncode("La donación #" + donacionId
+          + " todavía no está en camino: se puede confirmar cuando el camión inicia su recorrido."));
+      return;
+    }
+
     String fotoFinal = valor(ctx.formParam("fotoUrl"), "").trim();
 
     UploadedFile archivo = ctx.uploadedFile("fotoArchivo");
@@ -569,23 +589,21 @@ public class WebPortalController {
       } catch (Exception ignored) {}
     }
 
+    // La foto es el comprobante publico de la entrega: sin foto no se confirma.
+    // (Antes se usaba una foto de stock, que aparecia en la galeria como si fuera la real.)
     if (fotoFinal.isBlank()) {
-      fotoFinal = "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=800&q=80";
+      ctx.redirect("/entidad/donaciones?error=" + urlEncode("Para confirmar la recepción de la donación #" + donacionId
+          + " subí una foto o pegá el enlace de una foto de los bienes recibidos."));
+      return;
     }
 
-    // Avanzar estado de la donación hasta ENTREGADA garantizando trazabilidad
     try {
-      if (d.getEstado() == EstadoDonacion.ASIGNACION_REALIZADA) {
-        d.avanzarHacia(EstadoDonacion.LISTA_PARA_ENTREGAR);
-      }
-      if (d.getEstado() == EstadoDonacion.LISTA_PARA_ENTREGAR) {
-        d.avanzarHacia(EstadoDonacion.EN_TRASLADO);
-      }
-      if (d.getEstado() == EstadoDonacion.EN_TRASLADO) {
-        d.avanzarHacia(EstadoDonacion.ENTREGADA);
-      }
+      d.avanzarHacia(EstadoDonacion.ENTREGADA);
       donacionRepo.guardar(d);
-    } catch (IllegalStateException ignored) {}
+    } catch (IllegalStateException e) {
+      ctx.redirect("/entidad/donaciones?error=" + urlEncode("No se pudo confirmar la donación #" + donacionId + ": " + e.getMessage()));
+      return;
+    }
 
     // Actualizar satisfacción de necesidad en la entidad beneficiaria si coincide la subcategoría
     EntidadBeneficiaria entidad = d.getEntidadAsignada();
@@ -1114,14 +1132,14 @@ public class WebPortalController {
     if (u == null) return;
 
     Long rutaId = Long.valueOf(ctx.pathParam("id"));
-    logisticaPort.iniciarRuta(rutaId);
-    donacionRepo.buscarPorEstado(EstadoDonacion.LISTA_PARA_ENTREGAR).forEach(d -> {
-      try {
-        d.avanzarHacia(EstadoDonacion.EN_TRASLADO);
-        donacionRepo.guardar(d);
-      } catch (IllegalStateException ignored) {}
-    });
-    ctx.redirect("/admin/camiones?msg=" + urlEncode("Ruta #" + rutaId + " iniciada. Las entregas pasaron a EN_TRASLADO."));
+    // Las donaciones de ESTA ruta pasan a EN_TRASLADO cuando Logistica avisa con
+    // notificarInicioRuta (DonacionesGraphQLController); aca no se tocan las de otras rutas.
+    if (!logisticaPort.iniciarRuta(rutaId)) {
+      ctx.redirect("/admin/camiones?error=" + urlEncode("No se pudo iniciar la ruta #" + rutaId
+          + ": el camión ya está recorriendo otra ruta o esta ruta no está planificada."));
+      return;
+    }
+    ctx.redirect("/admin/camiones?msg=" + urlEncode("Ruta #" + rutaId + " iniciada. Sus entregas están en camino."));
   }
 
   /** 16.e POST Actualizar posición GPS de un camión vía GraphQL */
@@ -1287,11 +1305,30 @@ public class WebPortalController {
     ctx.redirect("/admin/deposito?msg=" + urlEncode("Subcategoría \"" + nombre + "\" agregada al catálogo."));
   }
 
+  /**
+   * JSON que se incrusta dentro de un <script> con {{{ }}} (sin escapar). Jackson no escapa
+   * "<", asi que un nombre cargado como "</script><script>..." cortaria el bloque y ejecutaria
+   * codigo ajeno (XSS). Escapado como secuencia unicode, el navegador lo lee igual como "<"
+   * pero no corta el script.
+   */
+  private String jsonParaScript(Object datos) throws com.fasterxml.jackson.core.JsonProcessingException {
+    return objectMapper.writeValueAsString(datos)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026");
+  }
+
+  /** La entidad confirma lo que recibio: solo donaciones en camino (EN_TRASLADO). */
+  private boolean puedeConfirmarRecepcion(Donacion d) {
+    return d.getEstado() == EstadoDonacion.EN_TRASLADO;
+  }
+
   private Map<String, Object> modeloBase(Context ctx, String tituloPagina) {
     Map<String, Object> model = new HashMap<>();
     model.put("tituloPagina", tituloPagina);
     model.put("msg", ctx.queryParam("msg"));
     model.put("error", ctx.queryParam("error"));
+    model.put("aviso", ctx.queryParam("aviso"));
     // Lo usa el layout para marcar en que seccion esta parada la persona.
     model.put("rutaActual", ctx.path());
 
@@ -1331,12 +1368,14 @@ public class WebPortalController {
           .filter(e -> d.getId().equals(e.donacionId()))
           .findFirst();
 
+      // Sin foto o sin camion registrados se muestra "sin foto" / se omite el dato:
+      // nunca una foto de stock ni una patente inventada en la galeria publica.
       List<String> fotos = evOpt.map(LogisticaPort.EntregaVista::fotosUrl)
-          .filter(f -> !f.isEmpty())
-          .orElse(List.of("https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=800&q=80"));
+          .filter(f -> f != null && !f.isEmpty())
+          .orElse(List.of());
       m.put("fotos", fotos);
-      m.put("fotoPrincipal", fotos.get(0));
-      m.put("patenteCamion", evOpt.map(LogisticaPort.EntregaVista::patenteCamion).orElse("AE-412-UT"));
+      m.put("fotoPrincipal", fotos.isEmpty() ? null : fotos.get(0));
+      m.put("patenteCamion", evOpt.map(LogisticaPort.EntregaVista::patenteCamion).orElse(null));
       m.put("fechaEntrega", evOpt.map(LogisticaPort.EntregaVista::fechaHoraEntrega)
           .orElse(d.getFechaRegistro() != null ? d.getFechaRegistro().toString() : "Reciente"));
 
@@ -1386,7 +1425,7 @@ public class WebPortalController {
     model.put("entregasActivas", entregasActivasVista);
     model.put("camionesActivos", camiones);
     try {
-      model.put("entregasActivasJson", objectMapper.writeValueAsString(entregasActivasVista));
+      model.put("entregasActivasJson", jsonParaScript(entregasActivasVista));
     } catch (Exception e) {
       model.put("entregasActivasJson", "[]");
     }
@@ -1400,7 +1439,7 @@ public class WebPortalController {
     m.put("estado", d.getEstado() != null ? d.getEstado().name() : "EN_DEPOSITO");
     m.put("esEnDeposito", d.getEstado() == EstadoDonacion.EN_DEPOSITO);
     m.put("esEntregada", d.getEstado() == EstadoDonacion.ENTREGADA);
-    m.put("puedeConfirmar", d.getEstado() != EstadoDonacion.ENTREGADA && d.getEstado() != EstadoDonacion.VENCIDA);
+    m.put("puedeConfirmar", puedeConfirmarRecepcion(d));
     m.put("fechaRegistro", d.getFechaRegistro() != null ? d.getFechaRegistro().toString() : "");
     m.put("subcategoriaNombre", d.getSubcategoria() != null ? d.getSubcategoria().getNombre() : "General");
     m.put("categoriaNombre", (d.getSubcategoria() != null && d.getSubcategoria().getCategoria() != null)

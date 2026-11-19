@@ -138,7 +138,15 @@ public class DonacionesApp {
         if (path.startsWith("/admin") || path.startsWith("/donante") || path.startsWith("/entidad")
             || path.startsWith("/registro") || path.equals("/login") || path.equals("/logout")) {
           if (!sesionManager.validarCsrfToken(ctx)) {
-            ctx.status(403).result("403 Prohibido - Ataque CSRF bloqueado: Token CSRF inválido o ausente. El formulario no puede enviarse desde un origen externo no autorizado.");
+            // Pagina propia en vez de texto plano: el caso mas comun no es un ataque sino un
+            // formulario abierto desde antes de un reinicio del servidor (token vencido).
+            ctx.status(403);
+            ctx.render("error.hbs", Map.of(
+                "tituloPagina", "No se pudo enviar el formulario - DonaTrack",
+                "tituloError", "No pudimos enviar el formulario",
+                "detalleError", "Por seguridad, el formulario venció o no se envió desde DonaTrack. "
+                    + "Volvé a la página, recargala y probá de nuevo.",
+                "icono", "bi-shield-exclamation"));
             ctx.skipRemainingHandlers();
           }
         }

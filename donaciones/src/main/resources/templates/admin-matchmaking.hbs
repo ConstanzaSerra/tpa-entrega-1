@@ -1,28 +1,28 @@
 {{#partial "contenido"}}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="encabezado-pagina mb-3">
   <div>
-    <h2 class="fw-bold mb-1"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Matchmaking y Selección de Entidad Beneficiaria</h2>
-    <p class="text-muted mb-0">Ejecutá los algoritmos de <em>Compatibilidad Semántica</em> y <em>Prioridad a Sub-atendidos</em> y seleccioná la entidad beneficiaria final para cada donación en depósito.</p>
+    <h2 class="fw-bold mb-1"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Asignar donaciones a entidades</h2>
+    <p class="text-muted mb-0">Para cada donación en depósito, el sistema sugiere entidades según qué necesitan y cuánto vienen recibiendo. Elegí a cuál se asigna.</p>
   </div>
   <a href="/admin/deposito" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver a Depósito</a>
 </div>
 
 <div class="row g-4">
   {{#each donacionesPendientes}}
-  <div class="col-12">
+  <div class="col-12" id="donacion-{{id}}">
     <div class="card card-donatrack p-4 bg-white">
-      <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center border-bottom pb-3 mb-3">
         <div>
           <span class="badge bg-dark me-1">Donación #{{id}}</span>
-          <span class="badge bg-warning text-dark me-1">{{estado}}</span>
-          <span class="badge bg-secondary">{{categoriaNombre}}</span>
+          <span class="estado {{estadoClase estado}}">{{estadoTexto estado}}</span>
+          <span class="badge bg-secondary">{{legible categoriaNombre}}</span>
           <h4 class="fw-bold mt-2 mb-0">{{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</h4>
-          <small class="text-muted">Donada por: <strong>{{donanteNombre}}</strong> · Fecha: {{fechaRegistro}}</small>
+          <small class="text-muted">Donada por: <strong>{{donanteNombre}}</strong> · Fecha: {{fecha fechaRegistro}}</small>
         </div>
         <form method="post" action="/admin/donaciones/{{id}}/matchmaking">
           <input type="hidden" name="_csrf" value="{{../csrfToken}}">
           <button type="submit" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-cpu me-1"></i>Recalcular Algoritmos de Matchmaking
+            <i class="bi bi-arrow-repeat me-1"></i>Recalcular sugerencias
           </button>
         </form>
       </div>
@@ -48,11 +48,12 @@
               </div>
               <p class="small text-muted mb-2"><i class="bi bi-geo-alt me-1"></i>{{direccion}}</p>
             </div>
-            <form method="post" action="/admin/donaciones/{{../id}}/asignar" class="mt-2">
+            <form method="post" action="/admin/donaciones/{{../id}}/asignar" class="mt-2"
+                  data-confirmar="¿Asignar la donación #{{../id}} a {{razonSocial}}? Se notifica a la entidad.">
               <input type="hidden" name="_csrf" value="{{@root.csrfToken}}">
               <input type="hidden" name="entidadBeneficiariaId" value="{{id}}">
               <button type="submit" class="btn btn-success btn-sm w-100 fw-semibold">
-                <i class="bi bi-check2-circle me-1"></i>Confirmar como Destino Final
+                <i class="bi bi-check2-circle me-1"></i>Asignar a esta entidad
               </button>
             </form>
           </div>
@@ -62,18 +63,20 @@
 
       <!-- Selección manual alternativa entre todas las entidades -->
       <div class="mt-3 pt-3 border-top">
-        <form method="post" action="/admin/donaciones/{{id}}/asignar" class="row g-2 align-items-center">
+        <form method="post" action="/admin/donaciones/{{id}}/asignar" class="row g-2 align-items-center"
+              data-confirmar="¿Asignar la donación #{{id}} a la entidad elegida? Se notifica a la entidad.">
           <input type="hidden" name="_csrf" value="{{../csrfToken}}">
-          <div class="col-auto small fw-semibold text-muted">O seleccionar otra entidad registrada:</div>
+          <label class="col-auto small fw-semibold text-muted" for="otraEntidad-{{id}}">O elegir otra entidad:</label>
           <div class="col-md-5">
-            <select name="entidadBeneficiariaId" class="form-select form-select-sm">
+            <select name="entidadBeneficiariaId" id="otraEntidad-{{id}}" class="form-select form-select-sm" required>
+              <option value="" selected disabled>Elegí una entidad…</option>
               {{#each ../todasEntidades}}
               <option value="{{id}}">{{razonSocial}} ({{direccion}})</option>
               {{/each}}
             </select>
           </div>
           <div class="col-auto">
-            <button type="submit" class="btn btn-outline-success btn-sm">Asignar Entidad</button>
+            <button type="submit" class="btn btn-outline-success btn-sm">Asignar</button>
           </div>
         </form>
       </div>
@@ -82,7 +85,7 @@
   {{else}}
   <div class="col-12">
     <div class="alert alert-success">
-      <i class="bi bi-check-circle me-1"></i>No hay donaciones pendientes en estado <code>EN_DEPOSITO</code>. Podés ingresar nuevas desde <a href="/admin/deposito">Depósito</a>.
+      <i class="bi bi-check-circle me-1"></i>No hay donaciones en depósito esperando asignación. Podés ingresar nuevas desde <a href="/admin/deposito">Depósito</a>.
     </div>
   </div>
   {{/each}}

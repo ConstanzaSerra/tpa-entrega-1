@@ -230,7 +230,7 @@ public class LogisticaGraphQLController {
                     }
                     Ruta ruta = rutaOpt.get();
                     try {
-                        List<Entrega> entregas = ruta.iniciar();
+                        List<Entrega> entregas = ruta.iniciar(rutaRepository.buscarTodas());
                         for (Entrega e : entregas) {
                             entregaRepository.guardar(e);
                         }

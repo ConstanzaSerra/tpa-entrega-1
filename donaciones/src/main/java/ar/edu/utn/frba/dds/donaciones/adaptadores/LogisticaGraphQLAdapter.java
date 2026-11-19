@@ -355,7 +355,11 @@ public class LogisticaGraphQLAdapter implements LogisticaPort {
           iniciarRuta(id: $id)
         }
         """;
-    ejecutarGraphQL(mutation, Map.of("id", rutaId));
+    JsonNode data = ejecutarGraphQL(mutation, Map.of("id", rutaId));
+    if (data != null && !data.path("iniciarRuta").asBoolean(false)) {
+      // Logistica respondio y rechazo el inicio (ruta no planificada o camion con otra ruta en curso)
+      return false;
+    }
     for (int i = 0; i < fallbackRutas.size(); i++) {
       RutaVista r = fallbackRutas.get(i);
       if (rutaId.equals(r.id())) {

@@ -1,8 +1,8 @@
 {{#partial "contenido"}}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="encabezado-pagina mb-3">
   <div>
     <h2 class="fw-bold mb-1"><i class="bi bi-box-seam-fill text-primary me-2"></i>Donaciones Asignadas a {{entidadNombre}}</h2>
-    <p class="text-muted mb-0">Consultá el estado de cada donación asignada y confirmá su recepción cargando fotos de los bienes recibidos.</p>
+    <p class="text-muted mb-0">Estado de cada donación asignada. Cuando llegue, confirmá la recepción con una foto.</p>
   </div>
   <div class="d-flex gap-2">
     <a href="/entidad/seguimiento" class="btn btn-primary"><i class="bi bi-truck me-1"></i>Seguir Entregas en Mapa</a>
@@ -16,15 +16,15 @@
     <div class="card card-donatrack p-4 bg-white">
       <div class="row align-items-center">
         <div class="col-lg-6">
-          <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
             <span class="badge bg-dark">Donación #{{id}}</span>
-            <span class="badge bg-primary badge-estado">{{estado}}</span>
-            <span class="badge bg-secondary">{{categoriaNombre}}</span>
+            <span class="estado {{estadoClase estado}}">{{estadoTexto estado}}</span>
+            <span class="badge bg-secondary">{{legible categoriaNombre}}</span>
           </div>
           <h4 class="fw-bold mb-1">{{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</h4>
           <p class="small text-muted mb-2">
             <i class="bi bi-person-heart me-1"></i><strong>Donante:</strong> {{donanteNombre}} ·
-            <i class="bi bi-calendar-event ms-1 me-1"></i>Fecha: {{fechaRegistro}}
+            <i class="bi bi-calendar-event ms-1 me-1"></i>Fecha: {{fecha fechaRegistro}}
           </p>
         </div>
 
@@ -32,30 +32,50 @@
         <div class="col-lg-6 mt-3 mt-lg-0">
           {{#if puedeConfirmar}}
           <div class="border rounded-3 p-3 bg-light">
-            <h6 class="fw-bold small mb-2"><i class="bi bi-camera-fill text-success me-1"></i>Confirmar Recepción de Entrega con Fotos</h6>
-            <form method="post" action="/entidad/donaciones/{{id}}/confirmar?_csrf={{../csrfToken}}" enctype="multipart/form-data">
+            <h6 class="fw-bold small mb-1"><i class="bi bi-camera-fill text-success me-1"></i>Confirmar recepción</h6>
+            <p class="small text-muted mb-2">Subí una foto de lo que recibieron. Se publica en la galería como comprobante de la entrega.</p>
+            <form method="post" action="/entidad/donaciones/{{id}}/confirmar?_csrf={{../csrfToken}}" enctype="multipart/form-data"
+                  data-confirmar="¿Confirmar que recibieron la donación #{{id}}? La foto se publica en la galería.">
               <input type="hidden" name="_csrf" value="{{../csrfToken}}">
               <div class="row g-2">
                 <div class="col-md-6">
-                  <label class="form-label small mb-1">Subir foto desde tu dispositivo</label>
-                  <input type="file" name="fotoArchivo" accept="image/*" class="form-control form-control-sm">
+                  <label class="form-label small mb-1" for="foto-{{id}}">Foto desde tu dispositivo</label>
+                  <!-- El input nativo muestra "Choose File" segun el idioma del navegador: se oculta y se usa un boton propio -->
+                  <input type="file" name="fotoArchivo" id="foto-{{id}}" accept="image/*" class="d-none input-foto">
+                  <label for="foto-{{id}}" class="btn btn-outline-secondary btn-sm w-100 text-truncate mb-0">
+                    <i class="bi bi-image me-1"></i><span class="nombre-foto">Elegir foto…</span>
+                  </label>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label small mb-1">O pegar URL de foto</label>
-                  <input type="url" name="fotoUrl" class="form-control form-control-sm" placeholder="https://...">
+                  <label class="form-label small mb-1" for="url-{{id}}">O enlace a la foto</label>
+                  <input type="url" name="fotoUrl" id="url-{{id}}" class="form-control form-control-sm" placeholder="https://…">
                 </div>
                 <div class="col-12 text-end mt-2">
                   <button type="submit" class="btn btn-success btn-sm fw-semibold">
-                    <i class="bi bi-check2-circle me-1"></i>Confirmar Recepción y Publicar Foto
+                    <i class="bi bi-check2-circle me-1"></i>Confirmar recepción
                   </button>
                 </div>
               </div>
             </form>
           </div>
           {{else}}
+          {{#if (eq estado "ENTREGADA")}}
           <div class="alert alert-success mb-0 py-2 small">
-            <i class="bi bi-check-circle-fill me-1"></i>Recepción confirmada y registrada en la galería y mapa público.
+            <i class="bi bi-check-circle-fill me-1"></i>Recepción confirmada. La foto está publicada en la galería.
           </div>
+          {{else}}{{#if (eq estado "VENCIDA")}}
+          <div class="alert alert-warning mb-0 py-2 small">
+            <i class="bi bi-calendar-x me-1"></i>Esta donación venció en el depósito y no va a ser entregada.
+          </div>
+          {{else}}{{#if (eq estado "ENTREGA_FALLIDA")}}
+          <div class="alert alert-danger mb-0 py-2 small">
+            <i class="bi bi-exclamation-triangle me-1"></i>No se pudo entregar{{#if justificacionFallida}}: {{justificacionFallida}}{{/if}}. Se va a reprogramar.
+          </div>
+          {{else}}
+          <div class="alert alert-light border mb-0 py-2 small">
+            <i class="bi bi-hourglass-split me-1"></i>Todavía en el depósito. Vas a poder confirmar la recepción cuando el camión salga hacia tu sede.
+          </div>
+          {{/if}}{{/if}}{{/if}}
           {{/if}}
         </div>
       </div>
@@ -89,5 +109,16 @@
   </ul>
 </nav>
 {{/if}}
+{{/partial}}
+
+{{#partial "scripts"}}
+<script>
+  document.querySelectorAll('.input-foto').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var etiqueta = document.querySelector('label[for="' + input.id + '"] .nombre-foto');
+      if (etiqueta) etiqueta.textContent = input.files.length ? input.files[0].name : 'Elegir foto…';
+    });
+  });
+</script>
 {{/partial}}
 {{> layout}}

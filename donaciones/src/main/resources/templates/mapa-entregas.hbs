@@ -1,5 +1,5 @@
 {{#partial "contenido"}}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="encabezado-pagina mb-3">
   <div>
     <h2 class="fw-bold mb-1"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Mapa Interactivo de Donaciones Entregadas</h2>
     <p class="text-muted mb-0">Hacé clic en cada marcador del mapa para inspeccionar el detalle de los bienes entregados, la entidad beneficiaria y su comprobante fotográfico.</p>
@@ -19,7 +19,7 @@
         <div class="border rounded-3 p-3 bg-light">
           <div class="d-flex justify-content-between">
             <span class="badge bg-success">Donación #{{id}}</span>
-            <small class="text-muted">{{fechaEntrega}}</small>
+            <small class="text-muted">{{fecha fechaEntrega}}</small>
           </div>
           <div class="fw-bold mt-1">{{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</div>
           <div class="small text-muted">
@@ -43,24 +43,36 @@
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
+  // Los textos vienen de lo que cargan las personas usuarias: se escapan antes de armar el HTML
+  // del popup, si no un nombre con <script> se ejecutaria en el navegador de quien mira el mapa (XSS).
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const puntos = [];
   marcadores.forEach((m, index) => {
     const lat = m.latitud || (-34.60 - index * 0.02);
     const lon = m.longitud || (-58.41 - index * 0.02);
+    const foto = m.fotoPrincipal
+      ? `<img src="${esc(m.fotoPrincipal)}" style="width:100%;height:110px;object-fit:cover;border-radius:6px;margin-bottom:6px;" alt="Foto de la entrega"/>`
+      : '';
     const popupHtml = `
       <div style="min-width:220px">
-        <img src="${m.fotoPrincipal}" style="width:100%;height:110px;object-fit:cover;border-radius:6px;margin-bottom:6px;" alt="Foto entrega"/>
-        <div class="badge bg-success mb-1">ENTREGADA · #${m.id}</div>
-        <h6 class="fw-bold mb-1">${m.cantidad} ${m.unidadMedida} de ${m.subcategoriaNombre}</h6>
+        ${foto}
+        <div class="estado estado-entregada mb-1">Entregada · #${esc(m.id)}</div>
+        <h6 class="fw-bold mb-1">${esc(m.cantidad)} ${esc(m.unidadMedida)} de ${esc(m.subcategoriaNombre)}</h6>
         <div class="small">
-          <strong>Entidad:</strong> ${m.entidadNombre}<br/>
-          <strong>Dirección:</strong> ${m.entidadDireccion}<br/>
-          <strong>Donante:</strong> ${m.donanteNombre}<br/>
-          <strong>Camión:</strong> ${m.patenteCamion}
+          <strong>Entidad:</strong> ${esc(m.entidadNombre)}<br/>
+          <strong>Dirección:</strong> ${esc(m.entidadDireccion)}<br/>
+          <strong>Donante:</strong> ${esc(m.donanteNombre)}
+          ${m.patenteCamion ? `<br/><strong>Camión:</strong> ${esc(m.patenteCamion)}` : ''}
         </div>
       </div>
     `;
     L.marker([lat, lon]).addTo(map).bindPopup(popupHtml);
+    puntos.push([lat, lon]);
   });
+  // Que todos los marcadores entren en pantalla (antes alguno quedaba cortado en el borde)
+  if (puntos.length > 0) {
+    map.fitBounds(puntos, { padding: [40, 40], maxZoom: 14 });
+  }
 </script>
 {{/partial}}
 {{> layout}}

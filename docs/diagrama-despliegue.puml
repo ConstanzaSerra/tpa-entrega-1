@@ -5,7 +5,8 @@
 ' 1. Cliente Liviano MVC con motor de plantillas Handlebars y Cookies HTTP en Donaciones (:8080)
 ' 2. Reemplazo de HTTP/REST por GraphQL (POST /graphql) para la integración entre Donaciones y Logística
 ' 3. Persistencia relacional PostgreSQL independiente por microservicio (Database-per-Service)
-' 4. Despliegue en contenedores Docker / PaaS Cloud (Render / Railway + Neon PostgreSQL)
+' 4. Despliegue en Railway (PaaS): un servicio por microservicio, construido con su Dockerfile,
+'    mas dos servicios cron efimeros que disparan las tareas programadas
 
 skinparam backgroundColor #FFFFFF
 skinparam node {
@@ -38,18 +39,23 @@ node "Celular del Chofer" <<device>> {
  artifact "App móvil GPS\n(reporte de posición)" as appMovil
 }
 
-' --- Nube / Entorno Contenerizado (Render / Railway / Docker) ---
-node "Cloud PaaS / Host Docker (Servicio Donaciones)" <<cloud>> {
+' --- Nube: proyecto en Railway (PaaS) ---
+node "Railway: servicio donaciones\n(Dockerfile multi-etapa)" <<cloud>> {
  artifact "tpa-donaciones.jar\n(Java 17 + Javalin 6 + Handlebars MVC +\ngraphql-java + Hibernate JPA)\n:8080" as donaciones
 }
 
-node "Cloud PaaS / Host Docker (Servicio Logística)" <<cloud>> {
+node "Railway: servicio logistica\n(Dockerfile multi-etapa)" <<cloud>> {
  artifact "tpa-logistica.jar\n(Java 17 + Javalin 6 +\ngraphql-java + Hibernate JPA)\n:8081" as logistica
 }
 
-node "Cluster PostgreSQL Cloud (Neon / Render DB)" <<cloud>> {
+node "PostgreSQL administrado" <<cloud>> {
  database "PostgreSQL\ndonatrack_donaciones" as dbDonaciones
  database "PostgreSQL\ndonatrack_logistica" as dbLogistica
+}
+
+node "Railway: servicios cron\n(Dockerfile.cron, Cron Schedule)" <<cloud>> {
+ artifact "cron donaciones\n(matchmaking + inactividad)" as cronDonaciones
+ artifact "cron logistica\n(planificacion de rutas)" as cronLogistica
 }
 
 ' --- Terceros ---
@@ -72,6 +78,9 @@ logistica --> planificador : HTTP async\n(lotes de ≤100)
 planificador --> logistica : HTTP\n(POST /planificador/callback)
 
 donaciones --> canales : envío externo de\nnotificaciones (Observer)
+
+cronDonaciones --> donaciones : HTTPS POST /api/internal/cron/*\n(header X-API-KEY)
+cronLogistica  --> logistica  : HTTPS POST /api/internal/cron/planificacion\n(header X-API-KEY)
 
 donaciones --> dbDonaciones : JDBC / TCP :5432
 logistica  --> dbLogistica  : JDBC / TCP :5432

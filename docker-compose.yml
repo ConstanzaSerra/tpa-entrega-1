@@ -48,6 +48,8 @@ services:
       DB_USER: "donatrack"
       DB_PASSWORD: "donatrack"
       LOGISTICA_URL: "http://logistica:8081"
+      # En local se muestran los botones de acceso rapido del login (en la nube no)
+      MOSTRAR_ACCESOS_DEMO: "true"
     ports:
       - "8080:8080"
     depends_on:

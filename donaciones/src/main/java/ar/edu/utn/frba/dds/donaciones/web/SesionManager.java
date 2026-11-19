@@ -7,6 +7,8 @@ import io.javalin.http.Context;
 import io.javalin.http.Cookie;
 import io.javalin.http.SameSite;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -101,7 +103,8 @@ public class SesionManager {
   public Usuario exigirRol(Context ctx, RolUsuario... rolesPermitidos) {
     Optional<Usuario> oUsuario = obtenerUsuarioActual(ctx);
     if (oUsuario.isEmpty()) {
-      ctx.redirect("/login?msg=Iniciá+sesión+para+acceder+a+esta+sección");
+      // Los textos con tildes se codifican: escritos tal cual en la URL llegaban como "Inici� sesi�n"
+      ctx.redirect("/login?aviso=" + URLEncoder.encode("Iniciá sesión para acceder a esta sección", StandardCharsets.UTF_8));
       return null;
     }
     Usuario u = oUsuario.get();
@@ -111,7 +114,7 @@ public class SesionManager {
           return u;
         }
       }
-      ctx.redirect("/?error=No+tenés+permisos+para+acceder+a+esa+pantalla");
+      ctx.redirect("/?error=" + URLEncoder.encode("No tenés permisos para acceder a esa pantalla", StandardCharsets.UTF_8));
       return null;
     }
     return u;

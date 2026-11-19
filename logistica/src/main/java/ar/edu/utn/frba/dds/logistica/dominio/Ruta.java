@@ -1,6 +1,7 @@
 package ar.edu.utn.frba.dds.logistica.dominio;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -38,6 +39,34 @@ public class Ruta {
   public Ruta(Camion camion) {
     this();
     this.camion = camion;
+  }
+
+  /**
+   * Un camion hace muchas rutas a lo largo del tiempo (historial y rutas planificadas en cola),
+   * pero solo puede estar recorriendo una a la vez. El camion no conoce sus rutas (la
+   * navegabilidad es Ruta -> Camion), por eso quien inicia la ruta pasa las demas rutas
+   * conocidas y la ruta verifica que su camion no este ocupado.
+   */
+  public List<Entrega> iniciar(Collection<Ruta> otrasRutas) {
+    if (camion != null && otrasRutas != null) {
+      boolean camionOcupado = otrasRutas.stream()
+          .filter(otra -> otra != this && (id == null || !id.equals(otra.getId())))
+          .anyMatch(otra -> otra.getEstado() == EstadoRuta.EN_CURSO && otra.usaElCamion(camion));
+      if (camionOcupado) {
+        throw new IllegalStateException("El camion " + camion.getPatente() + " ya tiene otra ruta en curso");
+      }
+    }
+    return iniciar();
+  }
+
+  private boolean usaElCamion(Camion otro) {
+    if (camion == null || otro == null) {
+      return false;
+    }
+    if (camion == otro) {
+      return true;
+    }
+    return camion.getId() != null && camion.getId().equals(otro.getId());
   }
 
   public List<Entrega> iniciar() {

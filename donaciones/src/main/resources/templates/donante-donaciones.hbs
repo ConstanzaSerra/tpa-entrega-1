@@ -1,12 +1,12 @@
 {{#partial "contenido"}}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="encabezado-pagina mb-3">
   <div>
     <h2 class="fw-bold mb-1"><i class="bi bi-gift-fill text-primary me-2"></i>Mis Donaciones Realizadas</h2>
     <p class="text-muted mb-0">Filtrá tus donaciones por estado, categoría o subcategoría y consultá la trazabilidad completa de cada una.</p>
   </div>
   <div class="d-flex gap-2">
-    <a href="/donante/seguimiento" class="btn btn-primary"><i class="bi bi-truck me-1"></i>Seguimiento en Tiempo Real</a>
-    <a href="/donante/entidades" class="btn btn-outline-primary"><i class="bi bi-building-heart me-1"></i>Ver Entidades</a>
+    <a href="/donante/seguimiento" class="btn btn-primary"><i class="bi bi-truck me-1"></i>Seguir mis entregas</a>
+    <a href="/donante/entidades" class="btn btn-outline-primary"><i class="bi bi-house-heart me-1"></i>Ver Entidades</a>
   </div>
 </div>
 
@@ -14,30 +14,30 @@
 <div class="card card-donatrack p-3 mb-4 bg-white">
   <form method="get" action="/donante/donaciones" class="row g-3 align-items-end">
     <div class="col-md-3">
-      <label class="form-label small fw-semibold">Estado de la Donación</label>
-      <select name="estado" class="form-select">
+      <label class="form-label small fw-semibold" for="campo-estado">Estado de la Donación</label>
+      <select id="campo-estado" name="estado" class="form-select">
         <option value="">Todos los estados</option>
-        <option value="EN_DEPOSITO" {{#if (eq filtroEstado "EN_DEPOSITO")}}selected{{/if}}>EN_DEPOSITO</option>
-        <option value="ASIGNACION_REALIZADA" {{#if (eq filtroEstado "ASIGNACION_REALIZADA")}}selected{{/if}}>ASIGNACION_REALIZADA</option>
-        <option value="LISTA_PARA_ENTREGAR" {{#if (eq filtroEstado "LISTA_PARA_ENTREGAR")}}selected{{/if}}>LISTA_PARA_ENTREGAR</option>
-        <option value="EN_TRASLADO" {{#if (eq filtroEstado "EN_TRASLADO")}}selected{{/if}}>EN_TRASLADO</option>
-        <option value="ENTREGADA" {{#if (eq filtroEstado "ENTREGADA")}}selected{{/if}}>ENTREGADA</option>
-        <option value="ENTREGA_FALLIDA" {{#if (eq filtroEstado "ENTREGA_FALLIDA")}}selected{{/if}}>ENTREGA_FALLIDA</option>
-        <option value="VENCIDA" {{#if (eq filtroEstado "VENCIDA")}}selected{{/if}}>VENCIDA</option>
+        <option value="EN_DEPOSITO" {{#if (eq filtroEstado "EN_DEPOSITO")}}selected{{/if}}>En depósito</option>
+        <option value="ASIGNACION_REALIZADA" {{#if (eq filtroEstado "ASIGNACION_REALIZADA")}}selected{{/if}}>Asignada</option>
+        <option value="LISTA_PARA_ENTREGAR" {{#if (eq filtroEstado "LISTA_PARA_ENTREGAR")}}selected{{/if}}>Lista para entregar</option>
+        <option value="EN_TRASLADO" {{#if (eq filtroEstado "EN_TRASLADO")}}selected{{/if}}>En camino</option>
+        <option value="ENTREGADA" {{#if (eq filtroEstado "ENTREGADA")}}selected{{/if}}>Entregada</option>
+        <option value="ENTREGA_FALLIDA" {{#if (eq filtroEstado "ENTREGA_FALLIDA")}}selected{{/if}}>Entrega fallida</option>
+        <option value="VENCIDA" {{#if (eq filtroEstado "VENCIDA")}}selected{{/if}}>Vencida</option>
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label small fw-semibold">Categoría</label>
-      <select name="categoria" class="form-select">
+      <label class="form-label small fw-semibold" for="campo-categoria">Categoría</label>
+      <select id="campo-categoria" name="categoria" class="form-select">
         <option value="">Todas las categorías</option>
-        <option value="ALIMENTOS" {{#if (eq filtroCategoria "ALIMENTOS")}}selected{{/if}}>ALIMENTOS</option>
-        <option value="VESTIMENTA" {{#if (eq filtroCategoria "VESTIMENTA")}}selected{{/if}}>VESTIMENTA</option>
-        <option value="MOBILIARIO" {{#if (eq filtroCategoria "MOBILIARIO")}}selected{{/if}}>MOBILIARIO</option>
+        <option value="ALIMENTOS" {{#if (eq filtroCategoria "ALIMENTOS")}}selected{{/if}}>Alimentos</option>
+        <option value="VESTIMENTA" {{#if (eq filtroCategoria "VESTIMENTA")}}selected{{/if}}>Vestimenta</option>
+        <option value="MOBILIARIO" {{#if (eq filtroCategoria "MOBILIARIO")}}selected{{/if}}>Mobiliario</option>
       </select>
     </div>
     <div class="col-md-4">
-      <label class="form-label small fw-semibold">Subcategoría de bien</label>
-      <input type="text" name="subcategoria" value="{{filtroSubcategoria}}" list="listaSubcat" class="form-control" placeholder="Ej: Fideos secos, Arroz, Camperas...">
+      <label class="form-label small fw-semibold" for="campo-subcategoria">Subcategoría de bien</label>
+      <input id="campo-subcategoria" type="text" name="subcategoria" value="{{filtroSubcategoria}}" list="listaSubcat" class="form-control" placeholder="Ej: Fideos secos, Arroz, Camperas...">
       <datalist id="listaSubcat">
         {{#each subcategoriasDisponibles}}
         <option value="{{nombre}}">{{categoria}}</option>
@@ -57,11 +57,11 @@
     <div class="card card-donatrack p-3 bg-white">
       <div class="row align-items-center">
         <div class="col-md-7">
-          <div class="d-flex align-items-center gap-2 mb-1">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
             <span class="badge bg-dark">#{{id}}</span>
-            <span class="badge bg-primary badge-estado">{{estado}}</span>
-            <span class="badge bg-secondary">{{categoriaNombre}}</span>
-            <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>Registrada: {{fechaRegistro}}</small>
+            <span class="estado {{estadoClase estado}}">{{estadoTexto estado}}</span>
+            <span class="badge bg-secondary">{{legible categoriaNombre}}</span>
+            <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>Registrada: {{fecha fechaRegistro}}</small>
           </div>
           <h5 class="fw-bold mb-1">{{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</h5>
           <p class="small text-muted mb-0">
@@ -73,7 +73,7 @@
             <div class="fw-bold text-muted mb-1"><i class="bi bi-clock-history me-1"></i>Historial de Trazabilidad:</div>
             {{#each historial}}
             <div class="d-flex justify-content-between border-bottom py-1">
-              <span class="fw-semibold">{{estado}}</span>
+              <span class="fw-semibold">{{estadoTexto estado}}</span>
               <span class="text-muted">{{fechaHora}}</span>
             </div>
             {{/each}}

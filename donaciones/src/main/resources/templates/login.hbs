@@ -4,25 +4,28 @@
     <div class="card card-donatrack p-4 bg-white">
       <div class="text-center mb-4">
         <i class="bi bi-box2-heart-fill text-primary display-5"></i>
-        <h3 class="fw-bold mt-2 mb-1">Iniciar Sesión</h3>
-        <p class="text-muted small">Ingresá como Persona Donante, Entidad Beneficiaria o Persona Administradora</p>
+        <h3 class="fw-bold mt-2 mb-1">Iniciar sesión</h3>
+        <p class="text-muted small">Ingresá con tu correo y contraseña</p>
       </div>
 
       <form method="post" action="/login" id="formLogin">
         <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="mb-3">
-          <label class="form-label fw-semibold">Correo Electrónico</label>
-          <input type="email" name="email" id="inputEmail" class="form-control" required placeholder="usuario@donatrack.org">
+          <label class="form-label fw-semibold" for="inputEmail">Correo electrónico</label>
+          <input type="email" name="email" id="inputEmail" class="form-control" required autocomplete="username" placeholder="usuario@donatrack.org">
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">Contraseña</label>
-          <input type="password" name="password" id="inputPass" class="form-control" required placeholder="••••••••">
+          <label class="form-label fw-semibold" for="inputPass">Contraseña</label>
+          <input type="password" name="password" id="inputPass" class="form-control" required autocomplete="current-password">
         </div>
         <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
-          <i class="bi bi-box-arrow-in-right me-1"></i>Ingresar con Cookie de Sesión
+          <i class="bi bi-box-arrow-in-right me-1"></i>Ingresar
         </button>
       </form>
 
+      {{!-- Accesos de demo con contrasenas a la vista: solo se muestran si el servidor corre con
+            MOSTRAR_ACCESOS_DEMO=true (local o una demo puntual), nunca por defecto en produccion. --}}
+      {{#if mostrarAccesosDemo}}
       <hr class="my-4">
 
       <div class="bg-light p-3 rounded-3">
@@ -32,13 +35,14 @@
             <i class="bi bi-person-heart me-1"></i><strong>Rol Persona Donante:</strong> ana@mail.com
           </button>
           <button type="button" class="btn btn-outline-success btn-sm text-start" onclick="loginDemo('comedor@sonrisas.org','entidad123')">
-            <i class="bi bi-building-heart me-1"></i><strong>Rol Entidad Beneficiaria:</strong> comedor@sonrisas.org
+            <i class="bi bi-house-heart me-1"></i><strong>Rol Entidad Beneficiaria:</strong> comedor@sonrisas.org
           </button>
           <button type="button" class="btn btn-outline-dark btn-sm text-start" onclick="loginDemo('admin@donatrack.org','admin123')">
             <i class="bi bi-shield-lock me-1"></i><strong>Rol Persona Administradora:</strong> admin@donatrack.org
           </button>
         </div>
       </div>
+      {{/if}}
 
       <div class="text-center mt-3 small">
         ¿No tenés cuenta? <a href="/registro" class="fw-semibold">Registrate acá</a>

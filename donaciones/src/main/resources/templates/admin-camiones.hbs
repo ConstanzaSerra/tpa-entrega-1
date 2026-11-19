@@ -1,10 +1,9 @@
 {{#partial "contenido"}}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="encabezado-pagina mb-3">
   <div>
-    <h2 class="fw-bold mb-1"><i class="bi bi-truck-front-fill text-primary me-2"></i>Administración de Camiones y Logística</h2>
-    <p class="text-muted mb-0">Integración mediante protocolo <strong>GraphQL</strong> (<code>POST /graphql</code>) con el microservicio de Logística extraído en la Entrega 2.</p>
+    <h2 class="fw-bold mb-1"><i class="bi bi-truck-front-fill text-primary me-2"></i>Flota y rutas</h2>
+    <p class="text-muted mb-0">Alta de camiones, planificación de rutas para donaciones asignadas e inicio de recorridos.</p>
   </div>
-  <span class="badge bg-success px-3 py-2"><i class="bi bi-hdd-network me-1"></i>Protocolo Activo: GraphQL</span>
 </div>
 
 <div class="row g-4 mb-4">
@@ -15,87 +14,93 @@
       <form method="post" action="/admin/camiones">
         <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="mb-2">
-          <label class="form-label small fw-semibold">Patente *</label>
-          <input type="text" name="patente" class="form-control form-control-sm" required placeholder="Ej: AG-550-UT">
+          <label class="form-label small fw-semibold" for="campo-patente">Patente *</label>
+          <input id="campo-patente" type="text" name="patente" class="form-control form-control-sm" required placeholder="Ej: AG-550-UT">
         </div>
         <div class="row g-2 mb-3">
           <div class="col-4">
-            <label class="form-label small">Volumen (m³)</label>
-            <input type="number" step="0.1" name="volumenM3" class="form-control form-control-sm" value="24.0" required>
+            <label class="form-label small" for="campo-volumenM3">Volumen (m³)</label>
+            <input id="campo-volumenM3" type="number" step="0.1" name="volumenM3" class="form-control form-control-sm" min="0.1" placeholder="Ej: 24" required>
           </div>
           <div class="col-4">
-            <label class="form-label small">Altura (m)</label>
-            <input type="number" step="0.1" name="alturaM" class="form-control form-control-sm" value="3.2" required>
+            <label class="form-label small" for="campo-alturaM">Altura (m)</label>
+            <input id="campo-alturaM" type="number" step="0.1" name="alturaM" class="form-control form-control-sm" min="0.1" placeholder="Ej: 3,2" required>
           </div>
           <div class="col-4">
-            <label class="form-label small">Carga (kg)</label>
-            <input type="number" step="10" name="capacidadKg" class="form-control form-control-sm" value="5000" required>
+            <label class="form-label small" for="campo-capacidadKg">Carga (kg)</label>
+            <input id="campo-capacidadKg" type="number" step="10" name="capacidadKg" class="form-control form-control-sm" min="10" placeholder="Ej: 5000" required>
           </div>
         </div>
         <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
-          <i class="bi bi-truck me-1"></i>Agregar Camión (Mutación GraphQL)
+          <i class="bi bi-truck me-1"></i>Agregar camión
         </button>
       </form>
 
       <hr>
-      <h6 class="fw-bold small mb-2"><i class="bi bi-signpost-split text-success me-1"></i>Asignar Donación a Ruta de Camión</h6>
+      <h6 class="fw-bold small mb-2"><i class="bi bi-signpost-split text-success me-1"></i>Planificar ruta para una donación asignada</h6>
+      {{#unless camiones}}
+      <p class="small text-muted mb-0">Primero registrá al menos un camión.</p>
+      {{else}}{{#unless donacionesAsignadas}}
+      <p class="small text-muted mb-0">No hay donaciones asignadas esperando ruta. Se asignan desde <a href="/admin/matchmaking">Matchmaking</a>.</p>
+      {{else}}
       <form method="post" action="/admin/rutas">
         <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="mb-2">
-          <label class="form-label small">Camión Disponible</label>
-          <select name="camionId" class="form-select form-select-sm" required>
+          <label class="form-label small" for="campo-camionId">Camión</label>
+          <select id="campo-camionId" name="camionId" class="form-select form-select-sm" required>
             {{#each camiones}}
-            <option value="{{id}}">#{{id}} - {{patente}} ({{capacidadKg}} kg)</option>
+            <option value="{{id}}">{{patente}} ({{numero capacidadKg}} kg)</option>
             {{/each}}
           </select>
         </div>
         <div class="mb-2">
-          <label class="form-label small">Donación con Asignación Realizada</label>
-          <select name="donacionId" class="form-select form-select-sm" required>
+          <label class="form-label small" for="campo-donacionId">Donación asignada</label>
+          <select id="campo-donacionId" name="donacionId" class="form-select form-select-sm" required>
             {{#each donacionesAsignadas}}
-            <option value="{{id}}">Donación #{{id}} - {{subcategoriaNombre}} -> {{entidadNombre}}</option>
+            <option value="{{id}}">#{{id}} · {{subcategoriaNombre}} → {{entidadNombre}}</option>
             {{/each}}
           </select>
         </div>
-        <button type="submit" class="btn btn-outline-success btn-sm w-100">Planificar Ruta</button>
+        <button type="submit" class="btn btn-outline-success btn-sm w-100">Planificar ruta</button>
       </form>
+      {{/unless}}{{/unless}}
     </div>
   </div>
 
   <!-- Flota de Camiones y Simulación GPS -->
   <div class="col-lg-8">
     <div class="card card-donatrack p-4 bg-white h-100">
-      <h5 class="fw-bold mb-3"><i class="bi bi-list-check text-primary me-1"></i>Flota de Camiones Disponibles</h5>
+      <h5 class="fw-bold mb-1"><i class="bi bi-list-check text-primary me-1"></i>Camiones</h5>
+      <p class="small text-muted mb-3">La columna <em>Simular GPS</em> reemplaza al celular del chofer, que en producción reporta la posición del camión.</p>
       <div class="table-responsive">
         <table class="table table-hover align-middle">
           <thead class="table-light">
             <tr>
-              <th>ID</th>
               <th>Patente</th>
               <th>Capacidad</th>
-              <th>Reporte GPS (Lat / Lon / km/h)</th>
-              <th class="text-end">Acción</th>
+              <th>Simular GPS (latitud, longitud, km/h)</th>
+              <th class="text-end"><span class="visually-hidden">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
             {{#each camiones}}
             <tr>
-              <td><strong>#{{id}}</strong></td>
               <td><span class="badge bg-dark fs-6">{{patente}}</span></td>
-              <td class="small">{{volumenM3}} m³ · {{alturaM}} m · {{capacidadKg}} kg</td>
+              <td class="small text-nowrap">{{numero volumenM3}} m³ · {{numero alturaM}} m · {{numero capacidadKg}} kg</td>
               <td>
                 <form method="post" action="/admin/camiones/{{id}}/posicion" class="d-flex gap-1">
                   <input type="hidden" name="_csrf" value="{{../csrfToken}}">
-                  <input type="number" step="0.0001" name="latitud" value="-34.6037" class="form-control form-control-sm" style="width:95px" title="Latitud">
-                  <input type="number" step="0.0001" name="longitud" value="-58.3816" class="form-control form-control-sm" style="width:95px" title="Longitud">
-                  <input type="number" step="1" name="velocidad" value="42" class="form-control form-control-sm" style="width:65px" title="Velocidad km/h">
-                  <button type="submit" class="btn btn-outline-primary btn-sm" title="Actualizar GPS"><i class="bi bi-geo-alt-fill"></i></button>
+                  <input type="number" step="0.0001" min="-90" max="90" name="latitud" placeholder="-34,6037" required class="form-control form-control-sm" style="width:100px" aria-label="Latitud del camión {{patente}}">
+                  <input type="number" step="0.0001" min="-180" max="180" name="longitud" placeholder="-58,3816" required class="form-control form-control-sm" style="width:100px" aria-label="Longitud del camión {{patente}}">
+                  <input type="number" step="1" min="0" name="velocidad" placeholder="km/h" class="form-control form-control-sm" style="width:70px" aria-label="Velocidad del camión {{patente}} en km/h">
+                  <button type="submit" class="btn btn-outline-primary btn-sm" title="Enviar posición"><i class="bi bi-geo-alt-fill"></i><span class="visually-hidden">Enviar posición</span></button>
                 </form>
               </td>
               <td class="text-end">
-                <form method="post" action="/admin/camiones/{{id}}/eliminar" class="d-inline">
+                <form method="post" action="/admin/camiones/{{id}}/eliminar" class="d-inline"
+                      data-confirmar="¿Eliminar el camión {{patente}}? Esta acción no se puede deshacer.">
                   <input type="hidden" name="_csrf" value="{{../csrfToken}}">
-                  <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                  <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar camión"><i class="bi bi-trash"></i><span class="visually-hidden">Eliminar camión {{patente}}</span></button>
                 </form>
               </td>
             </tr>
@@ -104,18 +109,23 @@
         </table>
       </div>
 
-      <h6 class="fw-bold mt-3 mb-2">Rutas Registradas en Logística</h6>
+      <h6 class="fw-bold mt-3 mb-2">Rutas</h6>
       <div class="d-flex flex-wrap gap-2">
         {{#each rutas}}
         <div class="border rounded-3 p-2 bg-light small d-flex align-items-center gap-2">
           <span class="badge bg-secondary">Ruta #{{id}}</span>
           <span>Camión <strong>{{patenteCamion}}</strong></span>
-          <span class="badge bg-primary">{{estado}}</span>
-          <form method="post" action="/admin/rutas/{{id}}/iniciar" class="d-inline">
+          <span class="estado {{estadoClase estado}}">{{estadoTexto estado}}</span>
+          {{#if (eq estado "PLANIFICADA")}}
+          <form method="post" action="/admin/rutas/{{id}}/iniciar" class="d-inline"
+                data-confirmar="¿Iniciar el recorrido de la ruta #{{id}}? Sus entregas pasan a estar en camino y se avisa a las entidades.">
             <input type="hidden" name="_csrf" value="{{../csrfToken}}">
-            <button type="submit" class="btn btn-success btn-sm py-0">Iniciar Recorrido</button>
+            <button type="submit" class="btn btn-success btn-sm py-0">Iniciar recorrido</button>
           </form>
+          {{/if}}
         </div>
+        {{else}}
+        <p class="small text-muted mb-0">Todavía no hay rutas planificadas.</p>
         {{/each}}
       </div>
     </div>

@@ -4,7 +4,7 @@
     <div class="card card-donatrack p-4 bg-white">
       <div class="d-flex align-items-center gap-3 mb-3">
         <div class="bg-primary-subtle text-primary p-3 rounded-circle fs-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
-          <i class="bi bi-building-heart"></i>
+          <i class="bi bi-house-heart"></i>
         </div>
         <div>
           <h2 class="fw-bold mb-1">Registro de Entidad Beneficiaria</h2>
@@ -21,24 +21,24 @@
         <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Razón Social de la Entidad *</label>
-            <input type="text" name="razonSocial" class="form-control" required placeholder="Ej: Comedor Comunitario Esperanza">
+            <label class="form-label fw-semibold" for="campo-razonSocial">Razón Social de la Entidad *</label>
+            <input id="campo-razonSocial" type="text" name="razonSocial" class="form-control" required placeholder="Ej: Comedor Comunitario Esperanza">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Dirección Completa (Sede de recepción) *</label>
-            <input type="text" name="direccion" class="form-control" required placeholder="Ej: Av. Rivadavia 4500, CABA">
+            <label class="form-label fw-semibold" for="campo-direccion">Dirección Completa (Sede de recepción) *</label>
+            <input id="campo-direccion" type="text" name="direccion" class="form-control" required placeholder="Ej: Av. Rivadavia 4500, CABA">
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold">Teléfono de Contacto *</label>
-            <input type="text" name="telefono" class="form-control" required placeholder="+54 11 4444-5555">
+            <label class="form-label fw-semibold" for="campo-telefono">Teléfono de Contacto *</label>
+            <input id="campo-telefono" type="text" name="telefono" class="form-control" required placeholder="+54 11 4444-5555">
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold">Correo del Representante *</label>
-            <input type="email" name="email" class="form-control" required placeholder="contacto@entidad.org">
+            <label class="form-label fw-semibold" for="campo-email">Correo del Representante *</label>
+            <input id="campo-email" type="email" name="email" class="form-control" required placeholder="contacto@entidad.org">
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold">Contraseña de acceso *</label>
-            <input type="password" name="password" class="form-control" required placeholder="Mínimo 6 caracteres">
+            <label class="form-label fw-semibold" for="campo-password">Contraseña de acceso *</label>
+            <input id="campo-password" type="password" name="password" class="form-control" required placeholder="Mínimo 6 caracteres">
           </div>
         </div>
 

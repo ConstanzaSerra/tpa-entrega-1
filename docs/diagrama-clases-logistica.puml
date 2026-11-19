@@ -43,7 +43,8 @@ class Ruta {
   - List<ParadaDeRuta> paradas
   - EstadoRuta estado
   - String linkMapa
-  + iniciar(): void
+  + iniciar(otrasRutas: Collection<Ruta>): List<Entrega>
+  + iniciar(): List<Entrega>
   + completar(): void
   + agregarParada(ParadaDeRuta): void
   + getEstado(): EstadoRuta
@@ -132,7 +133,15 @@ class PlanificacionScheduler {
 '  RELACIONES
 ' ─────────────────────────────────────────
 
-Ruta --> Camion
+Ruta "0..*" --> "1" Camion
+note on link
+  Un camión acumula muchas rutas en el tiempo
+  (historial y rutas PLANIFICADAS en cola),
+  pero tiene a lo sumo UNA ruta EN_CURSO.
+  La regla la valida Ruta.iniciar(otrasRutas).
+  El camión no conoce sus rutas: la navegabilidad
+  es solo Ruta -> Camion.
+end note
 Ruta --> EstadoRuta
 Ruta "1" *-- "0..*" ParadaDeRuta
 

@@ -1,8 +1,8 @@
 {{#partial "contenido"}}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="encabezado-pagina mb-4">
   <div>
     <h2 class="fw-bold mb-1"><i class="bi bi-images text-primary me-2"></i>Galería Pública de Donaciones Entregadas</h2>
-    <p class="text-muted mb-0">Evidencia fotográfica cargada por las entidades beneficiarias al confirmar la recepción en sede (acceso libre sin login).</p>
+    <p class="text-muted mb-0">Evidencia fotográfica cargada por las entidades beneficiarias al confirmar la recepción en su sede. Acceso público, sin necesidad de registrarse.</p>
   </div>
   <a href="/mapa-entregas" class="btn btn-primary"><i class="bi bi-geo-alt-fill me-1"></i>Ver en Mapa Interactivo</a>
 </div>
@@ -11,10 +11,14 @@
   {{#each entregas}}
   <div class="col-md-6 col-lg-4">
     <div class="card card-donatrack h-100 overflow-hidden">
-      <img src="{{fotoPrincipal}}" class="card-img-top" alt="Foto recepción de donación" style="height: 230px; object-fit: cover;">
+      {{#if fotoPrincipal}}
+      <img src="{{fotoPrincipal}}" class="card-img-top" alt="Foto de {{subcategoriaNombre}} recibida por {{entidadNombre}}" style="height: 230px; object-fit: cover;">
+      {{else}}
+      <div class="foto-pendiente card-img-top" style="height: 230px;"><i class="bi bi-camera"></i>Entrega sin foto registrada</div>
+      {{/if}}
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Recepción Confirmada</span>
+          <span class="estado estado-entregada"><i class="bi bi-check-circle me-1"></i>Recepción confirmada</span>
           <small class="text-muted">Donación #{{id}}</small>
         </div>
         <h5 class="fw-bold">{{cantidad}} {{unidadMedida}} de {{subcategoriaNombre}}</h5>
@@ -22,7 +26,7 @@
           <li><i class="bi bi-building-check text-primary me-1"></i><strong>Entidad Beneficiaria:</strong> {{entidadNombre}}</li>
           <li><i class="bi bi-geo-alt text-danger me-1"></i><strong>Dirección:</strong> {{entidadDireccion}}</li>
           <li><i class="bi bi-person-heart text-success me-1"></i><strong>Donante:</strong> {{donanteNombre}}</li>
-          <li><i class="bi bi-truck text-secondary me-1"></i><strong>Camión:</strong> {{patenteCamion}} · {{fechaEntrega}}</li>
+          <li><i class="bi bi-calendar-check text-secondary me-1"></i><strong>Entregada:</strong> {{fecha fechaEntrega}}{{#if patenteCamion}} · camión {{patenteCamion}}{{/if}}</li>
         </ul>
       </div>
     </div>

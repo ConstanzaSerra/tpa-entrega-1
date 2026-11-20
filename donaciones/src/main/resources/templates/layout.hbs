@@ -318,10 +318,75 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  // Acciones que no se pueden deshacer: el formulario declara data-confirmar="mensaje"
-  // y se pide confirmacion antes de enviarlo.
+  // ---- Validacion de formularios: todos los errores a la vez, cada uno debajo de su campo ----
+  // El navegador, por defecto, muestra los errores de a uno en un globito. Se desactiva
+  // (noValidate) y se usan las mismas reglas del HTML (required, type, pattern, minlength,
+  // min/max) para marcar en rojo todos los campos con problemas juntos.
+  // El servidor vuelve a validar todo: esto es solo una ayuda para quien completa el formulario.
+  function mensajeDeError(campo) {
+    var v = campo.validity;
+    if (v.valueMissing) {
+      return campo.type === 'file' ? 'Elegí un archivo.' : 'Este campo es obligatorio.';
+    }
+    if (campo.dataset.error) { return campo.dataset.error; }
+    if (v.typeMismatch && campo.type === 'email') { return 'Ingresá un correo válido, por ejemplo nombre@dominio.org.'; }
+    if (v.typeMismatch && campo.type === 'url') { return 'Ingresá un enlace válido, que empiece con https://'; }
+    if (v.tooShort) { return 'Tiene que tener al menos ' + campo.minLength + ' caracteres.'; }
+    if (v.rangeUnderflow) { return 'El valor mínimo es ' + campo.min + '.'; }
+    if (v.rangeOverflow) { return 'El valor máximo es ' + campo.max + '.'; }
+    if (v.badInput || v.stepMismatch) { return 'Ingresá un número válido.'; }
+    if (v.patternMismatch) { return 'El formato no es válido.'; }
+    return campo.validationMessage;
+  }
+
+  function marcarCampo(campo) {
+    var contenedor = campo.closest('.input-group') || campo;
+    var aviso = contenedor.nextElementSibling;
+    if (!aviso || !aviso.classList.contains('invalid-feedback')) { aviso = null; }
+    if (campo.validity.valid) {
+      campo.classList.remove('is-invalid');
+      if (aviso) { aviso.remove(); }
+      return true;
+    }
+    campo.classList.add('is-invalid');
+    if (!aviso) {
+      aviso = document.createElement('div');
+      aviso.className = 'invalid-feedback d-block';
+      contenedor.insertAdjacentElement('afterend', aviso);
+    }
+    aviso.textContent = mensajeDeError(campo);
+    return false;
+  }
+
+  function validarFormulario(form) {
+    var primero = null;
+    Array.prototype.forEach.call(form.elements, function (campo) {
+      if (!campo.willValidate || campo.type === 'hidden' || campo.type === 'submit') { return; }
+      if (!marcarCampo(campo) && !primero) { primero = campo; }
+    });
+    if (primero) { primero.focus(); }
+    return !primero;
+  }
+
+  document.querySelectorAll('form').forEach(function (form) { form.noValidate = true; });
+
+  // Una vez que se intento enviar, cada campo se revalida mientras se corrige
+  document.addEventListener('input', function (e) {
+    if (e.target.form && e.target.form.dataset.intentado) { marcarCampo(e.target); }
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target.form && e.target.form.dataset.intentado) { marcarCampo(e.target); }
+  });
+
   document.addEventListener('submit', function (e) {
-    var mensaje = e.target.getAttribute && e.target.getAttribute('data-confirmar');
+    var form = e.target;
+    form.dataset.intentado = 'si';
+    if (!validarFormulario(form)) {
+      e.preventDefault();
+      return;
+    }
+    // Acciones que no se pueden deshacer: el formulario declara data-confirmar="mensaje"
+    var mensaje = form.getAttribute('data-confirmar');
     if (mensaje && !window.confirm(mensaje)) {
       e.preventDefault();
     }

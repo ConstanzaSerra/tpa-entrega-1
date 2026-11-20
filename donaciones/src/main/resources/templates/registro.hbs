@@ -17,28 +17,34 @@
         <strong>¿Sos una persona donante?</strong> Las personas donantes son registradas presencialmente en el depósito de recepción o mediante la carga del padrón oficial por el equipo administrador. Si ya estás registrado/a, <a href="/login" class="fw-semibold">iniciá sesión acá</a>.
       </div>
 
+      <p class="small text-muted mb-3">Los campos marcados con * son obligatorios.</p>
       <form method="post" action="/registro/entidad">
         <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold" for="campo-razonSocial">Razón Social de la Entidad *</label>
-            <input id="campo-razonSocial" type="text" name="razonSocial" class="form-control" required placeholder="Ej: Comedor Comunitario Esperanza">
+            <label class="form-label fw-semibold" for="campo-razonSocial">Razón social *</label>
+            <input id="campo-razonSocial" type="text" name="razonSocial" class="form-control{{#if errores.razonSocial}} is-invalid{{/if}}" value="{{valores.razonSocial}}" required autocomplete="organization" placeholder="Ej: Comedor Comunitario Esperanza">
+            {{#if errores.razonSocial}}<div class="invalid-feedback">{{errores.razonSocial}}</div>{{/if}}
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold" for="campo-direccion">Dirección Completa (Sede de recepción) *</label>
-            <input id="campo-direccion" type="text" name="direccion" class="form-control" required placeholder="Ej: Av. Rivadavia 4500, CABA">
+            <label class="form-label fw-semibold" for="campo-direccion">Dirección de la sede *</label>
+            <input id="campo-direccion" type="text" name="direccion" class="form-control{{#if errores.direccion}} is-invalid{{/if}}" value="{{valores.direccion}}" required autocomplete="street-address" placeholder="Ej: Av. Rivadavia 4500, CABA">
+            {{#if errores.direccion}}<div class="invalid-feedback">{{errores.direccion}}</div>{{/if}}
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold" for="campo-telefono">Teléfono de Contacto *</label>
-            <input id="campo-telefono" type="text" name="telefono" class="form-control" required placeholder="+54 11 4444-5555">
+            <label class="form-label fw-semibold" for="campo-telefono">Teléfono *</label>
+            <input id="campo-telefono" type="tel" name="telefono" class="form-control{{#if errores.telefono}} is-invalid{{/if}}" value="{{valores.telefono}}" required autocomplete="tel" pattern="\+?\(?[0-9][0-9 \-\(\)]{5,24}" data-error="Ingresá un teléfono válido: solo números, espacios, guiones o paréntesis. Ej: +54 11 4444-5555." placeholder="+54 11 4444-5555">
+            {{#if errores.telefono}}<div class="invalid-feedback">{{errores.telefono}}</div>{{/if}}
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold" for="campo-email">Correo del Representante *</label>
-            <input id="campo-email" type="email" name="email" class="form-control" required placeholder="contacto@entidad.org">
+            <label class="form-label fw-semibold" for="campo-email">Correo *</label>
+            <input id="campo-email" type="email" name="email" class="form-control{{#if errores.email}} is-invalid{{/if}}" value="{{valores.email}}" required autocomplete="email" placeholder="contacto@entidad.org">
+            {{#if errores.email}}<div class="invalid-feedback">{{errores.email}}</div>{{/if}}
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold" for="campo-password">Contraseña de acceso *</label>
-            <input id="campo-password" type="password" name="password" class="form-control" required placeholder="Mínimo 6 caracteres">
+            <label class="form-label fw-semibold" for="campo-password">Contraseña (mínimo 6) *</label>
+            <input id="campo-password" type="password" name="password" class="form-control{{#if errores.password}} is-invalid{{/if}}" required autocomplete="new-password" minlength="6" placeholder="Mínimo 6 caracteres">
+            {{#if errores.password}}<div class="invalid-feedback">{{errores.password}}</div>{{/if}}
           </div>
         </div>
 

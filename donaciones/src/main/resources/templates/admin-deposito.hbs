@@ -242,21 +242,21 @@
         </div>
 
         <div class="col-6 adm-hum">
-          <label class="form-label small" for="campo-nombre">Nombre</label>
-          <input id="campo-nombre" type="text" name="nombre" class="form-control form-control-sm" placeholder="Carlos">
+          <label class="form-label small" for="campo-nombre">Nombre *</label>
+          <input id="campo-nombre" type="text" name="nombre" class="form-control form-control-sm req-hum" required placeholder="Carlos">
         </div>
         <div class="col-6 adm-hum">
-          <label class="form-label small" for="campo-apellido">Apellido</label>
-          <input id="campo-apellido" type="text" name="apellido" class="form-control form-control-sm" placeholder="López">
+          <label class="form-label small" for="campo-apellido">Apellido *</label>
+          <input id="campo-apellido" type="text" name="apellido" class="form-control form-control-sm req-hum" required placeholder="López">
         </div>
         <div class="col-6 adm-hum">
-          <label class="form-label small" for="campo-dni">DNI</label>
-          <input id="campo-dni" type="number" name="dni" class="form-control form-control-sm" placeholder="32000111">
+          <label class="form-label small" for="campo-dni">DNI *</label>
+          <input id="campo-dni" type="number" name="dni" class="form-control form-control-sm req-hum" required min="1000000" max="99999999" data-error="Ingresá un DNI de 7 u 8 dígitos, sin puntos." placeholder="32000111">
         </div>
 
         <div class="col-8 adm-jur d-none">
-          <label class="form-label small" for="campo-razonSocial">Razón Social</label>
-          <input id="campo-razonSocial" type="text" name="razonSocial" class="form-control form-control-sm" placeholder="Fundación Sur">
+          <label class="form-label small" for="campo-razonSocial">Razón Social *</label>
+          <input id="campo-razonSocial" type="text" name="razonSocial" class="form-control form-control-sm req-jur" placeholder="Fundación Sur">
         </div>
         <div class="col-4 adm-jur d-none">
           <label class="form-label small" for="campo-tipoJuridico">Tipo Jurídico</label>
@@ -269,8 +269,8 @@
         </div>
 
         <div class="col-6">
-          <label class="form-label small" for="campo-telefono">Teléfono</label>
-          <input id="campo-telefono" type="text" name="telefono" class="form-control form-control-sm" placeholder="+54 11 5555-0000">
+          <label class="form-label small" for="campo-telefono">Teléfono *</label>
+          <input id="campo-telefono" type="tel" name="telefono" class="form-control form-control-sm" required pattern="\+?\(?[0-9][0-9 \-\(\)]{5,24}" data-error="Ingresá un teléfono válido: solo números, espacios, guiones o paréntesis. Ej: +54 11 4444-5555." placeholder="+54 11 5555-0000">
         </div>
       </div>
       <button type="submit" class="btn btn-primary w-100 mt-3 fw-semibold">
@@ -403,6 +403,9 @@
     const esJur = document.getElementById('adminTipoDonante').value === 'JURIDICA';
     document.querySelectorAll('.adm-hum').forEach(e => e.classList.toggle('d-none', esJur));
     document.querySelectorAll('.adm-jur').forEach(e => e.classList.toggle('d-none', !esJur));
+    // Solo son obligatorios los campos del tipo elegido (los ocultos no se validan)
+    document.querySelectorAll('.req-hum').forEach(e => { e.required = !esJur; });
+    document.querySelectorAll('.req-jur').forEach(e => { e.required = esJur; });
   }
 
   // El combo de subcategorias muestra solo las de la categoria elegida.

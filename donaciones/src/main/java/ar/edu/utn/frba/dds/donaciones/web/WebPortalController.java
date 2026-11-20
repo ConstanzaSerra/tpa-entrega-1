@@ -31,6 +31,10 @@ import java.util.stream.Collectors;
  */
 public class WebPortalController {
 
+  /** Foto que se muestra en galeria, inicio y mapa cuando la entrega todavia no tiene fotos cargadas. */
+  private static final String FOTO_ILUSTRATIVA_DONACION =
+      "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=800&q=80";
+
   private final DonacionRepository donacionRepo;
   private final DonanteRepository donanteRepo;
   private final EntidadRepository entidadRepo;
@@ -130,17 +134,21 @@ public class WebPortalController {
   public void registrarDonante(Context ctx) {
     String tipo = valor(ctx.formParam("tipo"), "HUMANA");
     String emailStr = valor(ctx.formParam("email"), "").trim().toLowerCase();
-    String password = valor(ctx.formParam("password"), "donante123");
-    String telefonoStr = valor(ctx.formParam("telefono"), "+54 11 0000-0000");
-    String whatsappStr = valor(ctx.formParam("whatsapp"), "");
+    String password = valor(ctx.formParam("password"), "");
+    String telefonoStr = valor(ctx.formParam("telefono"), "").trim();
+    String whatsappStr = valor(ctx.formParam("whatsapp"), "").trim();
     String medioPreferido = valor(ctx.formParam("medioPreferido"), "EMAIL");
 
-    if (emailStr.isBlank()) {
-      ctx.redirect("/registro?error=" + urlEncode("El correo electrónico es obligatorio"));
-      return;
+    ValidadorFormulario validador = new ValidadorFormulario()
+        .obligatorio("email", emailStr, "el correo").email("email", emailStr)
+        .obligatorio("password", password, "la contraseña").longitudMinima("password", password, 6, "la contraseña")
+        .obligatorio("telefono", telefonoStr, "el teléfono").telefono("telefono", telefonoStr)
+        .telefono("whatsapp", whatsappStr);
+    if (!validador.errores().containsKey("email") && usuarioRepo.buscarPorEmail(emailStr).isPresent()) {
+      validador.agregar("email", "Ya hay una cuenta con el correo " + emailStr + ".");
     }
-    if (usuarioRepo.buscarPorEmail(emailStr).isPresent()) {
-      ctx.redirect("/registro?error=" + urlEncode("Ya existe un usuario registrado con el correo " + emailStr));
+    if (validador.hayErrores()) {
+      ctx.redirect("/registro?error=" + urlEncode(validador.resumen()));
       return;
     }
 
@@ -195,14 +203,28 @@ public class WebPortalController {
     String direccion = valor(ctx.formParam("direccion"), "").trim();
     String telefono = valor(ctx.formParam("telefono"), "").trim();
     String emailStr = valor(ctx.formParam("email"), "").trim().toLowerCase();
-    String password = valor(ctx.formParam("password"), "entidad123");
+    // Sin contrasena por defecto: antes, si faltaba, la cuenta quedaba con "entidad123"
+    String password = valor(ctx.formParam("password"), "");
 
-    if (razonSocial.isBlank() || emailStr.isBlank()) {
-      ctx.redirect("/registro?error=" + urlEncode("Completá razón social y correo electrónico"));
-      return;
+    ValidadorFormulario validador = new ValidadorFormulario()
+        .obligatorio("razonSocial", razonSocial, "la razón social")
+        .obligatorio("direccion", direccion, "la dirección de la sede")
+        .obligatorio("telefono", telefono, "el teléfono").telefono("telefono", telefono)
+        .obligatorio("email", emailStr, "el correo").email("email", emailStr)
+        .obligatorio("password", password, "la contraseña").longitudMinima("password", password, 6, "la contraseña");
+    if (!validador.errores().containsKey("email") && usuarioRepo.buscarPorEmail(emailStr).isPresent()) {
+      validador.agregar("email", "Ya hay una cuenta con este correo. Si es tuya, iniciá sesión.");
     }
-    if (usuarioRepo.buscarPorEmail(emailStr).isPresent()) {
-      ctx.redirect("/registro?error=" + urlEncode("Ya existe un usuario con el correo " + emailStr));
+    if (validador.hayErrores()) {
+      // Se vuelve a mostrar el formulario con lo que la persona escribio (salvo la contrasena)
+      // y cada error debajo de su campo, en lugar de redirigir a un formulario vacio.
+      Map<String, Object> model = modeloBase(ctx, "Registro - DonaTrack");
+      model.put("valores", Map.of("razonSocial", razonSocial, "direccion", direccion,
+          "telefono", telefono, "email", emailStr));
+      model.put("errores", validador.errores());
+      model.put("error", "Revisá los campos marcados en rojo.");
+      ctx.status(400);
+      ctx.render("registro.hbs", model);
       return;
     }
 
@@ -840,10 +862,23 @@ public class WebPortalController {
 
     String tipo = valor(ctx.formParam("tipo"), "HUMANA");
     String emailStr = valor(ctx.formParam("email"), "").trim().toLowerCase();
-    String telefonoStr = valor(ctx.formParam("telefono"), "+54 11 0000-0000");
+    String telefonoStr = valor(ctx.formParam("telefono"), "").trim();
 
-    if (emailStr.isBlank()) {
-      ctx.redirect("/admin/deposito?error=" + urlEncode("El email del donante es obligatorio"));
+    // Antes los datos faltantes se completaban con valores inventados (DNI 30000000,
+    // telefono +54 11 0000-0000, "Nombre Apellido"): ahora se rechazan y se dice que falta.
+    ValidadorFormulario validador = new ValidadorFormulario()
+        .obligatorio("email", emailStr, "el correo del donante").email("email", emailStr)
+        .obligatorio("telefono", telefonoStr, "el teléfono del donante").telefono("telefono", telefonoStr);
+    if ("JURIDICA".equalsIgnoreCase(tipo)) {
+      validador.obligatorio("razonSocial", ctx.formParam("razonSocial"), "la razón social");
+    } else {
+      validador.obligatorio("nombre", ctx.formParam("nombre"), "el nombre")
+          .obligatorio("apellido", ctx.formParam("apellido"), "el apellido")
+          .obligatorio("dni", ctx.formParam("dni"), "el DNI")
+          .enteroEntre("dni", ctx.formParam("dni"), 1_000_000, 99_999_999, "Ingresá un DNI válido, de 7 u 8 dígitos y sin puntos.");
+    }
+    if (validador.hayErrores()) {
+      ctx.redirect("/admin/deposito?error=" + urlEncode("No se registró el donante. " + validador.resumen()));
       return;
     }
 
@@ -1368,13 +1403,13 @@ public class WebPortalController {
           .filter(e -> d.getId().equals(e.donacionId()))
           .findFirst();
 
-      // Sin foto o sin camion registrados se muestra "sin foto" / se omite el dato:
-      // nunca una foto de stock ni una patente inventada en la galeria publica.
+      // Si la entrega tiene fotos cargadas se muestran esas; si no, una foto ilustrativa
+      // para que la tarjeta de la galeria no quede vacia.
       List<String> fotos = evOpt.map(LogisticaPort.EntregaVista::fotosUrl)
           .filter(f -> f != null && !f.isEmpty())
-          .orElse(List.of());
+          .orElse(List.of(FOTO_ILUSTRATIVA_DONACION));
       m.put("fotos", fotos);
-      m.put("fotoPrincipal", fotos.isEmpty() ? null : fotos.get(0));
+      m.put("fotoPrincipal", fotos.get(0));
       m.put("patenteCamion", evOpt.map(LogisticaPort.EntregaVista::patenteCamion).orElse(null));
       m.put("fechaEntrega", evOpt.map(LogisticaPort.EntregaVista::fechaHoraEntrega)
           .orElse(d.getFechaRegistro() != null ? d.getFechaRegistro().toString() : "Reciente"));

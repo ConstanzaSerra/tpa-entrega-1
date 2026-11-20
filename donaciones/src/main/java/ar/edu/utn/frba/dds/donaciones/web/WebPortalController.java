@@ -31,9 +31,13 @@ import java.util.stream.Collectors;
  */
 public class WebPortalController {
 
-  /** Foto que se muestra en galeria, inicio y mapa cuando la entrega todavia no tiene fotos cargadas. */
-  private static final String FOTO_ILUSTRATIVA_DONACION =
-      "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=800&q=80";
+  /**
+   * Fotos que se muestran en galeria, inicio y mapa cuando la entrega todavia no tiene fotos cargadas.
+   * Se van alternando para que dos tarjetas seguidas no tengan la misma foto.
+   */
+  private static final List<String> FOTOS_ILUSTRATIVAS_DONACION = List.of(
+      "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=800&q=80",
+      "/img/donacion-alimentos.jpg");
 
   private final DonacionRepository donacionRepo;
   private final DonanteRepository donanteRepo;
@@ -1407,7 +1411,7 @@ public class WebPortalController {
       // para que la tarjeta de la galeria no quede vacia.
       List<String> fotos = evOpt.map(LogisticaPort.EntregaVista::fotosUrl)
           .filter(f -> f != null && !f.isEmpty())
-          .orElse(List.of(FOTO_ILUSTRATIVA_DONACION));
+          .orElse(List.of(FOTOS_ILUSTRATIVAS_DONACION.get(idx % FOTOS_ILUSTRATIVAS_DONACION.size())));
       m.put("fotos", fotos);
       m.put("fotoPrincipal", fotos.get(0));
       m.put("patenteCamion", evOpt.map(LogisticaPort.EntregaVista::patenteCamion).orElse(null));

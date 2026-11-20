@@ -36,6 +36,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
 import io.javalin.http.UnauthorizedResponse;
+import io.javalin.http.staticfiles.Location;
 import java.util.List;
 import java.util.Map;
 
@@ -118,6 +119,8 @@ public class DonacionesApp {
       config.showJavalinBanner = false;
       config.jsonMapper(new JavalinJackson(mapper, false));
       config.fileRenderer(new HandlebarsTemplateEngine());
+      // Archivos estaticos (imagenes) de src/main/resources/public, ej. /img/donacion-alimentos.jpg
+      config.staticFiles.add("/public", Location.CLASSPATH);
     }).start(puerto);
 
     // Filtro de Seguridad CSRF: Protección contra robo y falsificación de formularios (Cross-Site Request Forgery)

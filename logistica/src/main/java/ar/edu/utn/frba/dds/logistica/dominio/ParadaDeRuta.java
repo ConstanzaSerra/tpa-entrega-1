@@ -7,6 +7,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.CascadeType;
 
@@ -20,6 +21,7 @@ public class ParadaDeRuta {
   private String direccion;
   
   @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "parada_id")
   private List<Entrega> entregas;
 
   public ParadaDeRuta() {
@@ -33,7 +35,9 @@ public class ParadaDeRuta {
   }
 
   public void agregarEntrega(Entrega entrega) {
-    this.entregas.add(entrega);
+    if (entrega != null && !this.entregas.contains(entrega)) {
+      this.entregas.add(entrega);
+    }
   }
 
   public Long getId() { return id; }

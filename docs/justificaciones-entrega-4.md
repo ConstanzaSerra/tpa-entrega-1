@@ -34,6 +34,12 @@ Se implementó el manejo de sesiones mediante **Cookies HTTP** (`donatrack_sessi
    - Rutas `/entidad/*` exigen `RolUsuario.ENTIDAD` (o `ADMIN`) y operan sobre la `EntidadBeneficiaria` asociada al usuario.
    - Rutas `/admin/*` exigen `RolUsuario.ADMIN`.
 
+### 2.1 Evolución / Alternativa con Proveedor de Identidad Externo (Keycloak / OIDC)
+Como alternativa y evolución del manejo local de credenciales, el diseño permite delegar la autenticación en un proveedor de identidad externo (*Identity Provider - IdP*) como **Keycloak** mediante **OAuth 2.0 / OpenID Connect (OIDC)**:
+- **Flujo Authorization Code**: Al ingresar a `/login`, el servidor redirige al endpoint de autorización del *realm* de Keycloak (`/realms/donatrack/protocol/openid-connect/auth`). Luego de autenticar al usuario, Keycloak redirige al callback de nuestra aplicación con un `code` que el backend intercambia por un **ID Token / Access Token (JWT)** firmado por Keycloak.
+- **Impacto en el Modelo**: La tabla `usuario` deja de almacenar `password_hash` y pasa a vincular el identificador externo del sujeto (`sub` o `email` validado por Keycloak) y sus roles de *realm* (`ADMIN`, `DONANTE`, `ENTIDAD`) con el `PersonaDonante` o `EntidadBeneficiaria` del dominio.
+- **Trade-off**: Delegar en Keycloak aporta SSO, doble factor (MFA), políticas de rotación de contraseñas y recuperación de cuenta sin código propio, a cambio de operar un servicio adicional (contenedor Keycloak + base de datos de identidad) en la infraestructura cloud. Para el despliegue en Railway se priorizó la autenticación liviana integrada para minimizar el consumo de recursos del PaaS.
+
 ---
 
 ## 3. Reemplazo de HTTP/REST entre Microservicios por GraphQL (Requerimiento Detallado 3b)
@@ -107,7 +113,7 @@ El sistema está desplegado en **Railway**, un proveedor **PaaS**: se le entrega
 | `logistica` | `logistica/` | `logistica/Dockerfile` | Camiones, rutas, GPS y API GraphQL de logística. |
 | Cron de donaciones | `donaciones/` | `donaciones/Dockerfile.cron` | Dispara el matchmaking nocturno y la detección de inactividad. |
 | Cron de logística | `logistica/` | `logistica/Dockerfile.cron` | Dispara la planificación de rutas. |
-| Base de datos | — | Servicio administrado | PostgreSQL. ⚠ COMPLETAR: Railway PostgreSQL o Neon. |
+| Base de datos | — | Servicio administrado | PostgreSQL administrado en Railway (`donatrack_donaciones` y `donatrack_logistica`). |
 
 ### 7.2 Interfaz entre el repositorio y Railway
 
@@ -121,7 +127,7 @@ Qué queda definido **en el repositorio** y qué se configura **en el panel de R
 | Qué tareas corre cada cron | En el repo: `docker/ejecutar-tareas.sh` de cada servicio |
 | Qué carpeta es cada servicio (*Root Directory*) | Panel de Railway |
 | Qué Dockerfile usa el cron (`Dockerfile.cron`) | Panel de Railway (*Dockerfile Path*) |
-| Cada cuánto corren los cron (*Cron Schedule*) | Panel de Railway. ⚠ COMPLETAR horarios |
+| Cada cuánto corren los cron (*Cron Schedule*) | Panel de Railway (expresión cron UTC, ej. `0 3 * * *` para 00:00 ART en donaciones y `0 5 * * *` en logística) |
 | Variables de entorno y secretos | Panel de Railway (nunca en el repo) |
 | Cuándo se redespliega | Panel de Railway: cada push a la rama conectada |
 

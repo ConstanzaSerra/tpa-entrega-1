@@ -144,6 +144,13 @@ note on link
 end note
 Ruta --> EstadoRuta
 Ruta "1" *-- "0..*" ParadaDeRuta
+note on link
+  Composición: ParadaDeRuta representa la visita
+  puntual dentro de esa Ruta (con las entregas de
+  ese viaje), no al catálogo de entidades.
+  Dentro de una misma Ruta, agregarParada() unifica
+  entregas del mismo destino sin duplicar la parada.
+end note
 
 ParadaDeRuta "1" o-- "0..*" Entrega
 

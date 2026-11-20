@@ -10,6 +10,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Enumerated;
 import javax.persistence.EnumType;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.CascadeType;
@@ -24,6 +25,7 @@ public class Ruta {
   private Camion camion;
   
   @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "ruta_id")
   private List<ParadaDeRuta> paradas;
   
   @Enumerated(EnumType.STRING)
@@ -91,7 +93,27 @@ public class Ruta {
     this.estado = EstadoRuta.COMPLETADA;
   }
 
+  /**
+   * Cada ParadaDeRuta pertenece a una Ruta especifica (composicion Ruta 1 *-- * ParadaDeRuta)
+   * porque modela la visita puntual de ese recorrido con las entregas de ese viaje.
+   * Dentro de una misma ruta, si se agrega dos veces la misma parada o una segunda parada
+   * para la misma entidad beneficiaria, se unifican sus entregas en la parada existente
+   * para no persistir dos veces la misma parada en la misma ruta.
+   */
   public void agregarParada(ParadaDeRuta parada) {
+    if (parada == null || this.paradas.contains(parada)) {
+      return;
+    }
+    if (parada.getEntidadBeneficiariaId() != null) {
+      for (ParadaDeRuta existente : this.paradas) {
+        if (parada.getEntidadBeneficiariaId().equals(existente.getEntidadBeneficiariaId())) {
+          for (Entrega entrega : parada.getEntregas()) {
+            existente.agregarEntrega(entrega);
+          }
+          return;
+        }
+      }
+    }
     this.paradas.add(parada);
   }
 

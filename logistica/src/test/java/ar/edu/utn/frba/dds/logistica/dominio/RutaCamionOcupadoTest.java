@@ -74,4 +74,21 @@ class RutaCamionOcupadoTest {
 
         assertThrows(IllegalStateException.class, () -> nueva.iniciar(List.of(enCurso)));
     }
+
+    @Test
+    void agregarParadaParaLaMismaEntidadEnLaMismaRutaUnificaLasEntregasSinDuplicarLaParada() {
+        Ruta ruta = new Ruta(camion);
+        ParadaDeRuta parada1 = new ParadaDeRuta(10L, "Av. Medrano 951");
+        parada1.agregarEntrega(new Entrega(100L, 10L, "Av. Medrano 951"));
+
+        ParadaDeRuta parada2MismoDestino = new ParadaDeRuta(10L, "Av. Medrano 951");
+        parada2MismoDestino.agregarEntrega(new Entrega(101L, 10L, "Av. Medrano 951"));
+
+        ruta.agregarParada(parada1);
+        ruta.agregarParada(parada2MismoDestino);
+        ruta.agregarParada(parada1);
+
+        assertEquals(1, ruta.getParadas().size());
+        assertEquals(2, ruta.getParadas().get(0).getEntregas().size());
+    }
 }
